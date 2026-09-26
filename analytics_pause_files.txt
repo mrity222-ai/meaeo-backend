@@ -1,0 +1,634 @@
+
+
+===== app\graph\marketing.py =====
+
+from langgraph.graph import END, START
+
+from app.graph.base import BaseGraph
+from app.registry import AgentRegistry
+
+
+class MarketingGraph(BaseGraph):
+
+    def __init__(self):
+        super().__init__()
+        
+        self.registry = AgentRegistry()
+
+    def _research_route(
+        self,
+        state,
+    ) -> str:
+
+        if state.get("status") == "failed":
+            return "end"
+
+        return "strategy"
+
+    def _agent_route(
+        self,
+        state,
+        success_node: str,
+    ) -> str:
+
+        if state.get("status") == "failed":
+            return "end"
+
+        return success_node
+
+    def _planner_route(
+        self,
+        state,
+    ) -> str:
+
+        return self._agent_route(
+            state,
+            "brand_asset",
+        )
+
+    def _strategy_route(
+        self,
+        state,
+    ) -> str:
+
+        return self._agent_route(
+            state,
+            "content_writer",
+        )
+
+    def _content_route(
+        self,
+        state,
+    ) -> str:
+
+        return self._agent_route(
+            state,
+           
+            "image_generator",
+        )
+
+    def _image_route(
+        self,
+        state,
+    ) -> str:
+
+        if state.get("status") == "failed":
+            return "end"
+
+        return "scheduler"
+
+    def _publisher_route(
+        self,
+        state,
+    ) -> str:
+
+        if state.get("status") == "failed":
+            return "end"
+
+        return "analytics"
+
+    def build(
+        self,
+        async_mode: bool = False,
+    ):
+
+        def node_method(agent_name: str):
+
+            agent = self.registry.get(
+                agent_name
+            )
+
+            if async_mode:
+                return agent.ainvoke
+
+            return agent.invoke
+
+
+        self.graph.add_node(
+            "planner",
+            node_method("planner"),
+        )
+
+        self.graph.add_node(
+            "brand_asset",
+            node_method("brand_asset"),
+        )
+
+        self.graph.add_node(
+            "research",
+            node_method("research"),
+        )
+
+        self.graph.add_node(
+            "strategy",
+            node_method("strategy"),
+        )
+
+        self.graph.add_node(
+            "content_writer",
+            node_method("content_writer"),
+        )
+
+        self.graph.add_node(
+            "image_generator",
+            node_method("image_generator"),
+        )
+
+        self.graph.add_node(
+            "scheduler",
+            node_method("scheduler"),
+        )
+
+        self.graph.add_node(
+            "publisher",
+            node_method("publisher"),
+        )
+
+        self.graph.add_node(
+            "analytics",
+            node_method("analytics"),
+        )
+
+        
+
+
+
+
+        self.graph.add_edge(
+            START,
+            "planner",
+        )
+
+        self.graph.add_conditional_edges(
+            "planner",
+            self._planner_route,
+            {
+                "brand_asset": "brand_asset",
+                "end": END,
+            },
+        )
+        self.graph.add_edge(
+            "brand_asset",
+            "research",
+        )
+        
+        self.graph.add_conditional_edges(
+            "research",
+            self._research_route,
+            {
+                "strategy": "strategy",
+                "end": END,
+            },
+        )
+        self.graph.add_conditional_edges(
+            "strategy",
+            self._strategy_route,
+            {
+                "content_writer": "content_writer",
+                "end": END,
+            },
+        )
+
+        self.graph.add_conditional_edges(
+            "content_writer",
+            self._content_route,
+            {
+                "image_generator": "image_generator",
+                "end": END,
+            },
+        )
+
+        self.graph.add_conditional_edges(
+            "image_generator",
+            self._image_route,
+            {
+                "scheduler": "scheduler",
+                "end": END,
+            },
+        )
+
+        self.graph.add_edge(
+            "scheduler",
+            "publisher",
+        )
+
+        self.graph.add_conditional_edges(
+            "publisher",
+            self._publisher_route,
+            {
+                "analytics": "analytics",
+                "end": END,
+            },
+        )
+        
+        self.graph.add_edge(
+            "analytics",
+            END,
+        )
+
+        return self.graph.compile()
+
+
+===== app\graph\runner.py =====
+
+from app.campaign.manager import CampaignManager
+from app.graph.marketing import MarketingGraph
+from app.database.session import SessionLocal
+from app.security.tenant import TenantContext
+from app.services.campaign_post_service import (
+    CampaignPostService,
+)
+
+
+class GraphRunner:
+
+    def __init__(self):
+
+        self.graph = MarketingGraph().build()
+        self.campaign_manager = CampaignManager()
+
+    def run(
+        self,
+        state,
+    ):
+
+        tenant_id = state.get(
+            "tenant_id"
+        )
+
+        if not tenant_id:
+
+            state["status"] = "failed"
+
+            state.setdefault(
+                "errors",
+                [],
+            ).append(
+                "Tenant context is required."
+            )
+
+            return state
+
+        execution_mode = state.get(
+            "execution_mode",
+            "autonomous",
+        )
+
+        if execution_mode not in {
+            "autonomous",
+            "human_intervention",
+        }:
+
+            state["status"] = "failed"
+
+            state.setdefault(
+                "errors",
+                [],
+            ).append(
+                "Invalid execution mode. "
+                "Expected 'autonomous' or "
+                "'human_intervention'."
+            )
+
+            return state
+
+        state["execution_mode"] = (
+            execution_mode
+        )
+
+        state = self.graph.invoke(
+            state
+        )
+
+        if state.get("status") == "failed":
+            return state
+
+        try:
+
+            bundle = self.campaign_manager.save(
+                state,
+            )
+
+        except Exception as exc:
+
+            state["status"] = "failed"
+
+            state.setdefault(
+                "errors",
+                [],
+            ).append(
+                "Campaign persistence failed: "
+                f"{exc}"
+            )
+
+            return state
+
+        state["campaign_bundle"] = bundle
+
+        # -------------------------------------------------
+        # Human intervention workflow
+        #
+        # Persist generated posts for review.
+        # Nothing is sent to the publisher here.
+        # -------------------------------------------------
+
+        if execution_mode == "human_intervention":
+
+            campaign = state.get(
+                "campaign"
+            )
+
+            if campaign is None:
+
+                state["status"] = "failed"
+
+                state.setdefault(
+                    "errors",
+                    [],
+                ).append(
+                    "Campaign state is missing."
+                )
+
+                return state
+
+            db = SessionLocal()
+
+            try:
+
+                service = CampaignPostService(
+                    db
+                )
+
+                # CampaignManager persistence has already
+                # created the campaign. Resolve its ID
+                # through the tenant-scoped campaign data.
+                from sqlalchemy import select
+                from app.database.models import Campaign
+
+                campaign_record = db.scalar(
+                    select(Campaign).where(
+                        Campaign.tenant_id
+                        == tenant_id,
+                        Campaign.campaign_name
+                        == campaign.campaign_name,
+                    )
+                )
+
+                if campaign_record is None:
+
+                    raise ValueError(
+                        "Persisted campaign could not "
+                        "be resolved."
+                    )
+
+                posts = (
+                    service.create_from_content(
+                        TenantContext(
+                            tenant_id=tenant_id
+                        ),
+                        campaign_record.id,
+                        state["content"],
+                    )
+                )
+
+                state[
+                    "campaign_posts"
+                ] = posts
+
+                state[
+                    "campaign_id"
+                ] = campaign_record.id
+
+                state["status"] = (
+                    "awaiting_approval"
+                )
+
+            except Exception as exc:
+
+                state["status"] = "failed"
+
+                state.setdefault(
+                    "errors",
+                    [],
+                ).append(
+                    "Campaign post persistence failed: "
+                    f"{exc}"
+                )
+
+                return state
+
+            finally:
+
+                db.close()
+
+        return state
+
+
+===== app\agents\analytics.py =====
+
+from app.agents.task import BaseTaskAgent
+from app.analytics.manager import AnalyticsManager
+from app.graph.state import AgentState
+
+
+class AnalyticsAgent(BaseTaskAgent):
+
+    def invoke(
+        self,
+        state: AgentState,
+    ) -> AgentState:
+
+        self._require(
+            state,
+            "campaign",
+        )
+
+        self._require(
+            state,
+            "publishing",
+        )
+
+        tenant_id = state.get(
+            "tenant_id"
+        )
+
+        campaign = state["campaign"]
+        publishing = state["publishing"]
+
+        campaign_name = (
+            campaign.campaign_name
+        )
+
+        result = AnalyticsManager.collect(
+            tenant_id=tenant_id,
+            campaign_name=campaign_name,
+            publishing=publishing,
+        )
+
+        if result.analytics is not None:
+            state["analytics"] = (
+                result.analytics
+            )
+
+        state["status"] = (
+            "success"
+            if result.success
+            else "failed"
+        )
+
+        if not result.success:
+            state.setdefault(
+                "errors",
+                [],
+            ).append(
+                result.error
+                if getattr(
+                    result,
+                    "error",
+                    None,
+                )
+                else "Analytics collection failed."
+            )
+
+        return state
+
+    async def ainvoke(
+        self,
+        state: AgentState,
+    ) -> AgentState:
+
+        self._require(
+            state,
+            "campaign",
+        )
+
+        self._require(
+            state,
+            "publishing",
+        )
+
+        tenant_id = state.get(
+            "tenant_id"
+        )
+
+        campaign = state["campaign"]
+        publishing = state["publishing"]
+
+        campaign_name = (
+            campaign.campaign_name
+        )
+
+        result = await AnalyticsManager.acollect(
+            tenant_id=tenant_id,
+            campaign_name=campaign_name,
+            publishing=publishing,
+        )
+
+        if result.analytics is not None:
+            state["analytics"] = (
+                result.analytics
+            )
+
+        state["status"] = (
+            "success"
+            if result.success
+            else "failed"
+        )
+
+        if not result.success:
+            state.setdefault(
+                "errors",
+                [],
+            ).append(
+                result.error
+                if getattr(
+                    result,
+                    "error",
+                    None,
+                )
+                else "Analytics collection failed."
+            )
+
+        return state
+
+    def get_state_key(self) -> str:
+        return "analytics"
+
+
+===== app\models\config.py =====
+
+from pydantic import SecretStr
+from pydantic_settings import (
+    BaseSettings,
+    SettingsConfigDict,
+)
+
+
+class ModelSettings(BaseSettings):
+
+    DEFAULT_BRAND: str = "brand_001"
+
+    HF_TOKEN: SecretStr
+
+    TEXT_MODEL_PROVIDER: str = "huggingface"
+    TEXT_MODEL_ALIAS: str = "default_chat"
+
+    IMAGE_MODEL_PROVIDER: str = "huggingface"
+    IMAGE_MODEL_ALIAS: str = "default"
+    IMAGE_MODEL: str = "black-forest-labs/FLUX.1-schnell"
+
+    IMAGE_OUTPUT_DIR: str = "generated/images"
+
+    TAVILY_API_KEY: SecretStr
+    FIRECRAWL_API_KEY: SecretStr | None = None
+
+    DATAFORSEO_API_KEY: str | None = None
+    DATAFORSEO_LOGIN: str | None = None
+    DATAFORSEO_PASSWORD: str | None = None
+
+    DATABASE_URL: str = "sqlite:///./app.db"
+    DATABASE_POOL_SIZE: int = 5
+    DATABASE_MAX_OVERFLOW: int = 10
+    DATABASE_TIMEOUT: int = 30
+
+    STORAGE_BACKEND: str = "json"
+
+    PUBLISH_PROVIDER: str = "mock"
+    PUBLISH_MODE: str = "development"
+    PUBLISH_TIMEZONE: str = "UTC"
+
+    CREDENTIAL_ENCRYPTION_KEY: SecretStr
+
+    META_API_VERSION: str = "v26.0"
+    META_APP_ID: str | None = None
+    META_APP_SECRET: str | None = None
+    META_REDIRECT_URI: str | None = None
+    META_CONFIG_ID: str | None = None
+
+    JWT_SECRET_KEY: SecretStr
+    JWT_ALGORITHM: str = "HS256"
+    JWT_EXPIRE_MINUTES: int = 60
+
+    LLM_MAX_RETRIES: int = 3
+
+    TEMPERATURE: float = 0.8
+    MAX_TOKENS: int = 4096
+
+    ASSET_STORAGE_ROOT: str = "data/assets"
+    ASSET_PUBLIC_BASE_URL: str = (
+        "http://localhost:8000"
+    )
+    ASSET_URL_TTL_SECONDS: int = 3600
+    ASSET_SIGNING_SECRET: SecretStr
+    ASSET_STORAGE_BACKEND: str = "local"
+
+
+    
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        extra="ignore",
+    )
+
+
+settings = ModelSettings()

@@ -1,0 +1,10 @@
+{
+    "style": "modern",
+    "photography": "commercial",
+    "lighting": "natural",
+    "composition": "minimal",
+    "background": "clean",
+    "text_overlay": false,
+    "logo_position": "top_right",
+    "preferred_aspect_ratio": "1:1"    
+}

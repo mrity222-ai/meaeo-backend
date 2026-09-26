@@ -1,0 +1,16 @@
+{
+    "brand_id": "brand_001",
+    "name": "ABC Dental Clinic",
+    "website": "https://abcdental.com",
+    "industry": "Dental Clinic",
+    "description": "...",
+    "country": "India",
+    "timezone": "Asia/Kolkata",
+    "language": "en",
+    "contact_details": {
+        "phone": "",
+        "email": "",
+        "whatsapp": "",
+        "address": ""
+    }
+}

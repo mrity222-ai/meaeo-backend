@@ -1,0 +1,165 @@
+@import "tailwindcss";
+
+:root {
+  --background: #fcfaff;
+  --foreground: #0f172a;
+
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+
+  --primary: #7c3aed;
+  --primary-foreground: #ffffff;
+
+  --secondary: #f3e8ff;
+  --secondary-foreground: #6b21a8;
+
+  --muted: #f5f3ff;
+  --muted-foreground: #64748b;
+
+  --border: #e9d5ff;
+  --input: #e9d5ff;
+  --ring: #7c3aed;
+
+  --radius: 0.85rem;
+}
+
+.dark {
+  --background: #09090b;
+  --foreground: #fafafa;
+
+  --card: #18181b;
+  --card-foreground: #fafafa;
+
+  --primary: #8b5cf6;
+  --primary-foreground: #ffffff;
+
+  --secondary: #27272a;
+  --secondary-foreground: #fafafa;
+
+  --muted: #27272a;
+  --muted-foreground: #a1a1aa;
+
+  --border: #27272a;
+  --input: #27272a;
+  --ring: #8b5cf6;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: linear-gradient(135deg, #faf8ff 0%, #f3ebff 40%, #eee5ff 100%);
+  background-attachment: fixed;
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+  min-height: 100vh;
+}
+
+button,
+a,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* 3D Elevated Cards */
+.card-3d {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(221, 214, 254, 0.75);
+  box-shadow: 0 10px 30px -5px rgba(124, 58, 237, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.03), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-3d-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-3d-hover:hover {
+  transform: translateY(-6px) scale(1.01);
+  box-shadow: 0 22px 38px -8px rgba(124, 58, 237, 0.2), 0 12px 18px -8px rgba(124, 58, 237, 0.12), inset 0 1px 0 rgba(255, 255, 255, 1);
+  border-color: rgba(167, 139, 250, 0.85);
+}
+
+/* Purple Gradient Buttons */
+.btn-purple-gradient {
+  background: linear-gradient(135deg, #9333ea 0%, #6366f1 50%, #7c3aed 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 8px 20px -4px rgba(124, 58, 237, 0.35) !important;
+  transition: all 0.2s ease-in-out !important;
+}
+
+.btn-purple-gradient:hover {
+  background: linear-gradient(135deg, #7e22ce 0%, #4f46e5 50%, #6d28d9 100%) !important;
+  box-shadow: 0 12px 25px -4px rgba(124, 58, 237, 0.5) !important;
+  transform: translateY(-2px) !important;
+}
+
+.btn-purple-gradient:active {
+  transform: translateY(0) scale(0.98) !important;
+}
+
+/* Purple Active Slider/Tab */
+.active-purple-slider {
+  background: linear-gradient(135deg, #9333ea 0%, #6366f1 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 6px 18px -3px rgba(124, 58, 237, 0.4) !important;
+  transform: scale(1.02);
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  display: flex;
+  width: max-content;
+  animation: marquee 20s linear infinite;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+

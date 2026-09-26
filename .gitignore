@@ -1,0 +1,38 @@
+# Environment & Secrets (Protected from GitHub Secret Scanning Push Protection)
+.env
+.env.local
+.env.development
+.env.production
+
+# Production Database Preservation (Protects live user data from git pull overwrite)
+*.db
+*.sqlite
+app.db
+
+# Virtual Environments
+venv/
+.venv/
+env/
+
+# Python Cache & Bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Node.js & Next.js Build Artifacts
+node_modules/
+.next/
+out/
+build/
+dist/
+
+# Logs & System Temp
+*.log
+.DS_Store
+Thumbs.db
+
+# Temp Scratch Testing Outputs
+scratch/
