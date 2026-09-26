@@ -1579,6 +1579,16 @@ function CampaignPostCard({
         </details>
       </div>
 
+      {post.image_url && (
+        <div className="mt-3 overflow-hidden rounded-xl border border-neutral-200 bg-neutral-900/5 shadow-xs">
+          <img
+            src={post.image_url}
+            alt={post.title}
+            className="w-full max-h-80 object-cover hover:scale-101 transition-transform duration-300"
+          />
+        </div>
+      )}
+
       <p className="mt-3 line-clamp-3 text-xs leading-5 text-neutral-600">
         {post.caption}
       </p>

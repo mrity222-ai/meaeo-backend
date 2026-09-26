@@ -10,11 +10,11 @@ from app.image.schemas import GeneratedImageResult
 class ImageGenerationManager:
 
     def __init__(self):
-
-        self.provider = (
-            ImageProviderFactory.get()
-        )
         self.cache = ImageCache()
+
+    @property
+    def provider(self):
+        return ImageProviderFactory.get()
 
     def generate(
         self,
