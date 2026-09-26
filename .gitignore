@@ -1,8 +1,8 @@
-# Environment & Secrets (Protected from GitHub Secret Scanning Push Protection)
+# Environment & Secrets Protection (GitHub Push Protection Compliance)
 .env
 .env.local
-.env.development
 .env.production
+*.env
 
 # Production Database Preservation (Protects live user data from git pull overwrite)
 *.db
