@@ -799,12 +799,12 @@ export default function ConnectionsPage() {
             <div className="flex items-center gap-2">
               <img
                 src="/logo/app logo.png"
-                alt="meaeco logo"
+                alt="maeaco logo"
                 className="h-7 w-7 rounded-lg object-contain"
               />
 
               <span className="text-base font-bold tracking-tight text-neutral-950">
-                meaeco
+                maeaco
               </span>
             </div>
           </div>
@@ -859,7 +859,7 @@ export default function ConnectionsPage() {
               </h1>
 
               <p className="mt-1 max-w-2xl text-sm text-neutral-500 sm:text-base">
-                Connect your social platforms so meaeco can create, schedule, and
+                Connect your social platforms so maeaco can create, schedule, and
                 publish content automatically.
               </p>
             </div>
@@ -934,7 +934,7 @@ export default function ConnectionsPage() {
 
                   <p className="mt-1 text-sm text-neutral-500">
                     Connections use secure authorization.
-                    Your passwords are never stored by meaeco.
+                    Your passwords are never stored by maeaco.
                   </p>
                 </div>
               </div>

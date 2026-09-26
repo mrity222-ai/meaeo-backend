@@ -13,7 +13,7 @@ interface SubscriptionPaywallModalProps {
 export function SubscriptionPaywallModal({
   isOpen,
   onClose,
-  title = "Upgrade Your meaeco Plan",
+  title = "Upgrade Your maeaco Plan",
   description = "You've reached the free preview limit. Upgrade to a paid plan to unlock unlimited AI post generation, 3D brand assets, and automatic publishing on schedule.",
 }: SubscriptionPaywallModalProps) {
   const router = RouterHook();

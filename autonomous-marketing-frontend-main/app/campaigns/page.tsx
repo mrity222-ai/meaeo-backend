@@ -364,12 +364,12 @@ export default function CampaignsPage() {
             <div className="flex items-center gap-2">
               <img
                 src="/logo/app logo.png"
-                alt="meaeco logo"
+                alt="maeaco logo"
                 className="h-7 w-7 rounded-lg object-contain"
               />
 
               <span className="text-base font-bold tracking-tight text-neutral-950">
-                meaeco
+                maeaco
               </span>
             </div>
           </div>
@@ -644,7 +644,7 @@ export default function CampaignsPage() {
                   </h2>
 
                   <p className="mt-1 max-w-xl text-sm text-[#71717a]">
-                    meaeco can create the strategy, content, schedule,
+                    maeaco can create the strategy, content, schedule,
                     and optimization plan automatically.
                   </p>
                 </div>
@@ -725,7 +725,7 @@ function CreateCampaignModal({
               Create a campaign
             </h2>
             <p className="mt-1 max-w-md text-sm text-[#71717a]">
-              Describe the outcome you want. meaeco will build the campaign from your business onboarding context.
+              Describe the outcome you want. maeaco will build the campaign from your business onboarding context.
             </p>
           </div>
 

@@ -67,7 +67,7 @@ export function DashboardOverview() {
           </div>
 
           <p className="mt-1 text-sm text-muted-foreground">
-            What meaeco has been doing.
+            What maeaco has been doing.
           </p>
 
           <div className="mt-5 space-y-4">

@@ -141,11 +141,11 @@ export default function LoginPage() {
               <Link href="/" className="flex items-center gap-3">
                 <img
                   src="/logo/app logo.png"
-                  alt="meaeco logo"
+                  alt="maeaco logo"
                   className="h-10 w-10 object-contain rounded-xl"
                 />
                 <span className="text-2xl font-black tracking-tight text-white">
-                  meaeco
+                  maeaco
                 </span>
               </Link>
             </div>
@@ -188,7 +188,7 @@ export default function LoginPage() {
           {/* Center Message */}
           <div className="relative my-auto max-w-xl z-10">
             <h1 className="text-4xl xl:text-5xl font-black tracking-tight text-white leading-[1.15]">
-              meaeco is ready when you are.
+              maeaco is ready when you are.
             </h1>
             <p className="mt-6 text-base xl:text-lg leading-relaxed text-purple-100/90 font-normal">
               Create campaigns, publish content, connect your platforms, and learn from your marketing performance — all from one workspace.
@@ -217,10 +217,10 @@ export default function LoginPage() {
               >
                 <img
                   src="/logo/app logo.png"
-                  alt="meaeco logo"
+                  alt="maeaco logo"
                   className="h-8 w-8 object-contain"
                 />
-                <span className="text-xl font-black text-zinc-950">meaeco</span>
+                <span className="text-xl font-black text-zinc-950">maeaco</span>
               </Link>
 
               <Link

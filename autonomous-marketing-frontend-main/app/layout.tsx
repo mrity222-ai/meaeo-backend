@@ -3,7 +3,7 @@ import "./globals.css";
 import { AuthGuard } from "@/components/auth/auth-guard";
 
 export const metadata: Metadata = {
-  title: "meaeco - Autonomous AI Marketing Platform",
+  title: "maeaco - Autonomous AI Marketing Platform",
   description:
     "Autonomous AI-powered marketing for businesses that want to grow.",
   icons: {

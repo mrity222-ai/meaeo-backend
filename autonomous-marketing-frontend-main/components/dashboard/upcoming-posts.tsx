@@ -31,7 +31,7 @@ export function UpcomingPosts() {
         </div>
 
         <p className="mt-1 text-sm text-muted-foreground">
-          Content scheduled by meaeco
+          Content scheduled by maeaco
         </p>
       </div>
 

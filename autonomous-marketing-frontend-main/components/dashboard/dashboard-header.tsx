@@ -12,7 +12,7 @@ export function DashboardHeader() {
         </h1>
 
         <p className="mt-1 text-sm text-muted-foreground">
-          Here&apos;s what meaeco is working on.
+          Here&apos;s what maeaco is working on.
         </p>
       </div>
 

@@ -849,10 +849,10 @@ export function OnboardingForm() {
         >
           <img
             src="/logo/app logo.png"
-            alt="meaeco logo"
+            alt="maeaco logo"
             className="h-8 w-8 object-contain"
           />
-          <span className="text-xl font-bold tracking-tight">meaeco</span>
+          <span className="text-xl font-bold tracking-tight">maeaco</span>
         </Link>
 
         <button

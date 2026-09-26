@@ -454,7 +454,7 @@ def generate_preview_posts(
         campaign = Campaign(
             tenant_id=tenant.tenant_id,
             business_account_id=payload.business_account_id,
-            campaign_name="meaeco AI Trial Campaign",
+            campaign_name="maeaco AI Trial Campaign",
             status="draft",
             execution_mode="autonomous",
             review_required=True,
@@ -467,7 +467,7 @@ def generate_preview_posts(
     bp = db.scalar(
         select(BusinessProfile).where(BusinessProfile.tenant_id == tenant.tenant_id)
     )
-    biz_name = (bp.business_name if bp and bp.business_name else "meaeco Client Business")
+    biz_name = (bp.business_name if bp and bp.business_name else "maeaco Client Business")
     biz_industry = (bp.industry_type if bp and bp.industry_type else "Retail & Services")
 
     # 3. Generate 2 AI Posts using Gemini Provider / Registry fallback
@@ -479,8 +479,8 @@ def generate_preview_posts(
             "title": f"Discover Innovation with {biz_name}!",
             "objective": "Brand Awareness & Customer Engagement",
             "content_pillar": "Product Showcase",
-            "caption": f"🚀 Elevate your experience with {biz_name}! We bring you top-tier quality and modern AI-driven solutions built for your everyday success. Try it today and transform how you work!\n\n✨ Powered by meaeco AI Automation.",
-            "hashtags": [f"#{biz_name.replace(' ', '')}", "#Innovation", "#Growth", "#meaecoAI", "#TopQuality"],
+            "caption": f"🚀 Elevate your experience with {biz_name}! We bring you top-tier quality and modern AI-driven solutions built for your everyday success. Try it today and transform how you work!\n\n✨ Powered by maeaco AI Automation.",
+            "hashtags": [f"#{biz_name.replace(' ', '')}", "#Innovation", "#Growth", "#maeacoAI", "#TopQuality"],
             "call_to_action": "Click the link in bio to learn more!",
             "visual_theme": "Modern Purple Gradient 3D Studio Setup",
             "image_prompt": f"A sleek 3D render showcasing {biz_name} products with vibrant purple ambient lighting and minimalist elevated podium.",
@@ -492,7 +492,7 @@ def generate_preview_posts(
             "objective": "Trust Building & Value Proposition",
             "content_pillar": "Customer Highlight",
             "caption": f"💡 Quality you can count on! At {biz_name}, customer satisfaction is at the core of everything we build. Experience seamless efficiency and premium service tailored just for you.\n\n💬 Drop a comment below if you're ready to upgrade!",
-            "hashtags": [f"#{biz_name.replace(' ', '')}", "#CustomerFirst", "#Excellence", "#UpgradeNow", "#meaeco"],
+            "hashtags": [f"#{biz_name.replace(' ', '')}", "#CustomerFirst", "#Excellence", "#UpgradeNow", "#maeaco"],
             "call_to_action": "Send us a message or visit our website!",
             "visual_theme": "Professional Purple Metallic 3D Banner",
             "image_prompt": f"High resolution commercial 3D banner displaying {biz_name} logo badge with purple holographic reflections.",

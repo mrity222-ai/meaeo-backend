@@ -387,7 +387,7 @@ export function DashboardPage() {
           <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="mb-1 text-sm font-medium text-muted-foreground">
-                meaeco Marketing Workspace
+                maeaco Marketing Workspace
               </p>
 
               <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
@@ -1222,7 +1222,7 @@ function EmptyCampaignState() {
       </h3>
 
       <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
-        Create your first campaign to start using meaeco.
+        Create your first campaign to start using maeaco.
       </p>
 
       <Link

@@ -215,10 +215,10 @@ export default function AnalyticsPage() {
           <div className="flex items-center gap-2">
             <img
               src="/logo/app logo.png"
-              alt="meaeco logo"
+              alt="maeaco logo"
               className="h-7 w-7 rounded-lg object-contain"
             />
-            <span className="text-base font-bold tracking-tight text-neutral-950">meaeco</span>
+            <span className="text-base font-bold tracking-tight text-neutral-950">maeaco</span>
           </div>
           <div className="flex items-center gap-1.5">
             <button

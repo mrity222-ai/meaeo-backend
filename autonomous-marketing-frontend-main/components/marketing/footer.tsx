@@ -16,10 +16,10 @@ export function Footer() {
             <Link href="/" className="flex items-center gap-3 font-bold text-zinc-900">
               <img
                 src="/logo/app logo.png"
-                alt="meaeco logo"
+                alt="maeaco logo"
                 className="h-8 w-8 object-contain"
               />
-              <span className="text-lg tracking-tight font-black">meaeco</span>
+              <span className="text-lg tracking-tight font-black">maeaco</span>
             </Link>
 
             <p className="mt-3 text-sm text-zinc-500 max-w-sm">
@@ -103,7 +103,7 @@ export function Footer() {
 
         {/* Bottom Copyright Bar */}
         <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-purple-100 pt-8 text-xs text-zinc-500 sm:flex-row">
-          <p>© {new Date().getFullYear()} meaeco. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} maeaco. All rights reserved.</p>
           <p className="flex items-center gap-1">
             Built with <span className="text-purple-600">💜</span> for small businesses
           </p>

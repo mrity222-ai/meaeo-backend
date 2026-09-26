@@ -1,7 +1,7 @@
 module.exports = {
   apps: [
     {
-      name: "meaeco-backend",
+      name: "maeaco-backend",
       script: "run_api.py",
       interpreter: "python",
       env: {
@@ -10,7 +10,7 @@ module.exports = {
       }
     },
     {
-      name: "meaeco-frontend",
+      name: "maeaco-frontend",
       cwd: "./autonomous-marketing-frontend-main",
       script: "node_modules/next/dist/bin/next",
       args: "start -p 3000",

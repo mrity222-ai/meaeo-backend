@@ -200,10 +200,10 @@ export default function ForgotPasswordPage() {
             >
               <img
                 src="/logo/app logo.png"
-                alt="meaeco logo"
+                alt="maeaco logo"
                 className="h-8 w-8 rounded-lg object-contain"
               />
-              meaeco
+              maeaco
             </Link>
           </div>
 
@@ -233,10 +233,10 @@ export default function ForgotPasswordPage() {
               >
                 <img
                   src="/logo/app logo.png"
-                  alt="meaeco logo"
+                  alt="maeaco logo"
                   className="h-8 w-8 rounded-lg object-contain"
                 />
-                meaeco
+                maeaco
               </Link>
             </div>
 

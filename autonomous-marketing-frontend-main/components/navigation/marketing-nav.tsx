@@ -18,7 +18,7 @@ export function MarketingNav() {
   return (
     <header className="sticky top-0 z-50 border-b border-zinc-200/70 bg-white/90 backdrop-blur-xl text-zinc-900 transition-all">
       <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6 lg:px-8">
-        {/* Logo: meaeco */}
+        {/* Logo: maeaco */}
         <Link
           href="/"
           className="flex items-center gap-3 transition-transform hover:scale-[1.01]"
@@ -26,12 +26,12 @@ export function MarketingNav() {
         >
           <img
             src="/logo/app logo.png"
-            alt="meaeco logo"
+            alt="maeaco logo"
             className="h-10 w-10 object-contain"
           />
           <div className="flex flex-col">
             <span className="text-xl font-black tracking-tight text-zinc-950 leading-none">
-              meaeco
+              maeaco
             </span>
             <span className="text-[11px] font-medium text-zinc-500 tracking-tight mt-0.5">
               AI Marketing Platform

@@ -134,12 +134,12 @@ export function DashboardSidebar({
           >
             <img
               src="/logo/app logo.png"
-              alt="meaeco logo"
+              alt="maeaco logo"
               className="h-8 w-8 rounded-lg object-contain shadow-xs"
             />
 
             <span className="text-lg font-bold tracking-tight text-slate-900">
-              meaeco
+              maeaco
             </span>
           </Link>
 

@@ -299,7 +299,7 @@ export function HeroSection() {
                 {/* Laptop Camera Dot */}
                 <div className="absolute left-1/2 top-1.5 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-zinc-800 ring-1 ring-zinc-700" />
 
-                {/* Screen Content: meaeco Dashboard */}
+                {/* Screen Content: maeaco Dashboard */}
                 <div className="relative aspect-[16/10] w-full overflow-hidden rounded-[14px] bg-[#F8F9FD] text-zinc-900 select-none">
                   
                   <div className="flex h-full w-full">
@@ -315,7 +315,7 @@ export function HeroSection() {
                           />
                           <div className="flex flex-col">
                             <span className="text-xs font-black tracking-tight leading-none text-zinc-950">
-                              meaeco
+                              maeaco
                             </span>
                             <span className="text-[9px] font-medium text-zinc-400">
                               AI Platform
