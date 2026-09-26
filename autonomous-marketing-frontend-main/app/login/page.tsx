@@ -355,17 +355,6 @@ export default function LoginPage() {
                   Create one
                 </Link>
               </div>
-
-              {/* Super Admin Portal Login Button */}
-              <div className="mt-5">
-                <Link
-                  href="/admin/login"
-                  className="flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-purple-50/80 hover:bg-purple-100/90 border border-purple-200/70 text-xs font-bold text-purple-700 transition shadow-xs"
-                >
-                  <Lock className="h-3.5 w-3.5 text-purple-600" />
-                  <span>Super Admin Portal Login</span>
-                </Link>
-              </div>
             </div>
 
             {/* Bottom Disclaimer */}
