@@ -11,6 +11,7 @@ import {
   Clock3,
   Cpu,
   FileText,
+  Key,
   RefreshCw,
   Sparkles,
   Zap,
@@ -350,7 +351,19 @@ export default function AdminAIPage() {
         </section>
 
         {/* Navigation cards */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <Link
+            href="/admin/settings"
+            className="rounded-xl border border-purple-200 bg-purple-50/50 p-5 transition-colors hover:bg-purple-100/50"
+          >
+            <Key className="h-5 w-5 text-purple-600" />
+            <h3 className="mt-4 font-semibold text-purple-950">AI Keys & Models</h3>
+            <p className="mt-1 text-sm text-purple-800/80">
+              Configure & test API Keys (Gemini, FLUX, OpenAI, Stability).
+            </p>
+            <ChevronRight className="mt-4 h-4 w-4 text-purple-600" />
+          </Link>
+
           <Link
             href="/admin/ai/runs"
             className="rounded-xl border border-border bg-card p-5 transition-colors hover:bg-muted/40"

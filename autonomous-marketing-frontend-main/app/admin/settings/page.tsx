@@ -150,6 +150,34 @@ export default function AdminSettingsPage() {
   }
 
   const handleChange = (key: string, value: any) => {
+    if (typeof value === "string") {
+      const trimmed = value.trim();
+      // Smart Auto-Detect: If user pasted a Hugging Face token (starts with hf_) into STABILITY_API_KEY field
+      if (key === "STABILITY_API_KEY" && trimmed.startsWith("hf_")) {
+        setFormData((prev) => ({
+          ...prev,
+          HF_TOKEN: trimmed,
+          IMAGE_MODEL_PROVIDER: "huggingface",
+          IMAGE_MODEL: "black-forest-labs/FLUX.1-schnell",
+          STABILITY_API_KEY: "",
+        }));
+        setSuccessMsg("Smart Auto-Detect: Hugging Face token recognized! Saved to HF_TOKEN & set active provider to HuggingFace (FLUX.1-schnell).");
+        return;
+      }
+      // Smart Auto-Detect: If user pasted a Gemini key (starts with AQ.) into OPENAI_API_KEY field
+      if (key === "OPENAI_API_KEY" && trimmed.startsWith("AQ.")) {
+        setFormData((prev) => ({
+          ...prev,
+          GEMINI_API_KEY: trimmed,
+          TEXT_MODEL_PROVIDER: "gemini",
+          TEXT_MODEL_ALIAS: "gemini-3.8-flash",
+          OPENAI_API_KEY: "",
+        }));
+        setSuccessMsg("Smart Auto-Detect: Google Gemini key recognized! Saved to GEMINI_API_KEY & set active provider to Gemini (gemini-3.8-flash).");
+        return;
+      }
+    }
+
     setFormData((prev) => ({
       ...prev,
       [key]: value,
