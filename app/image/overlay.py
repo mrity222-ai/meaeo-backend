@@ -103,16 +103,17 @@ class ImageOverlayProcessor:
         logo_file = None
 
         if logo_path is not None:
-
-            logo_file = Path(
-                logo_path
-            )
-
-            if not logo_file.exists():
-                raise FileNotFoundError(
-                    f"Brand logo does not exist: "
-                    f"{logo_file}"
-                )
+            candidate = Path(logo_path)
+            if candidate.exists() and candidate.is_file():
+                logo_file = candidate
+            else:
+                # Search data/assets for the asset file
+                import glob
+                matches = glob.glob(f"data/assets/**/{candidate.name}*", recursive=True)
+                if matches:
+                    logo_file = Path(matches[0])
+                else:
+                    logo_file = None
 
         output.parent.mkdir(
             parents=True,
