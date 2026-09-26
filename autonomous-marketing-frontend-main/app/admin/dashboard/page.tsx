@@ -465,12 +465,12 @@ export default function AdminDashboardPage() {
             />
 
             <div className="divide-y divide-neutral-100">
-              {(liveRecentActivity.length > 0 ? liveRecentActivity : recentActivity).map((activity) => {
+              {(liveRecentActivity.length > 0 ? liveRecentActivity : recentActivity).map((activity, idx) => {
                 const Icon = activity.icon;
 
                 return (
                   <div
-                    key={`${activity.title}-${activity.time}`}
+                    key={`act-${idx}-${activity.title}-${activity.time}`}
                     className="flex items-start gap-4 py-4 first:pt-0 last:pb-0"
                   >
                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-purple-100 bg-purple-50">
