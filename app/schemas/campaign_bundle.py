@@ -1,3 +1,4 @@
+from typing import Any
 from pydantic import BaseModel, Field
 
 from app.schemas.brand import BrandProfile
@@ -12,7 +13,7 @@ from app.schemas.strategy import MarketingStrategy
 class CampaignBundle(BaseModel):
 
     campaign: CampaignSpec
-    brand: BrandProfile
+    brand: Any
     research: ResearchReport
     strategy: MarketingStrategy
     content: ContentPlan
