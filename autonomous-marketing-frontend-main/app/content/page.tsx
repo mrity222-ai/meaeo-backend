@@ -72,6 +72,7 @@ export default function ContentReviewPage() {
   const [activeFilter, setActiveFilter] = useState("All");
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [bulkLoading, setBulkLoading] = useState(false);
+  const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
   const loadContentQueue = async () => {
@@ -496,17 +497,25 @@ export default function ContentReviewPage() {
 
                     {/* Post Image Media Preview */}
                     {post.imageUrl && (
-                      <div className="mt-4 overflow-hidden rounded-xl border border-purple-100 bg-black/5 shadow-xs">
+                      <div
+                        onClick={() => setPreviewImageUrl(post.imageUrl!)}
+                        className="group relative mt-4 cursor-pointer overflow-hidden rounded-xl border border-purple-100 bg-black/5 shadow-xs transition hover:border-purple-300 hover:shadow-md"
+                      >
                         <img
                           src={post.imageUrl}
                           alt={post.title}
-                          className="w-full max-h-96 object-cover hover:scale-101 transition-transform duration-300"
+                          className="w-full max-h-96 object-cover transition-transform duration-300 group-hover:scale-[1.02]"
                           onError={(e) => {
                             // Fallback image if local static server URL is unavailable
                             (e.target as HTMLImageElement).src =
                               "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80";
                           }}
                         />
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-colors group-hover:bg-black/25">
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1.5 text-xs font-bold text-neutral-900 shadow-lg opacity-0 transition-opacity backdrop-blur-xs group-hover:opacity-100">
+                            <Eye size={13} /> Click to View Full Image
+                          </span>
+                        </div>
                       </div>
                     )}
 
@@ -535,6 +544,43 @@ export default function ContentReviewPage() {
           )}
         </div>
       </div>
+
+      {/* Lightbox Image Preview Modal */}
+      {previewImageUrl && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/85 p-4 backdrop-blur-md"
+          onClick={() => setPreviewImageUrl(null)}
+        >
+          <div
+            className="relative max-w-5xl max-h-[90vh] overflow-hidden rounded-2xl bg-neutral-950 border border-white/10 shadow-2xl p-2 flex flex-col items-center justify-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
+              <a
+                href={previewImageUrl}
+                download="ai_campaign_image.png"
+                target="_blank"
+                rel="noreferrer"
+                className="flex h-9 items-center gap-1.5 px-4 rounded-full bg-white/20 hover:bg-white/30 text-white text-xs font-bold backdrop-blur-md transition shadow-md"
+              >
+                Download HD Image
+              </a>
+              <button
+                type="button"
+                onClick={() => setPreviewImageUrl(null)}
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 hover:bg-white/30 text-white backdrop-blur-md transition shadow-md text-xs font-bold"
+              >
+                ✕
+              </button>
+            </div>
+            <img
+              src={previewImageUrl}
+              alt="AI Generated Campaign Visual"
+              className="max-h-[82vh] w-auto max-w-full object-contain rounded-xl shadow-lg"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

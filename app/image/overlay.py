@@ -350,22 +350,19 @@ class ImageOverlayProcessor:
 
     @staticmethod
     def _resolve_logo(
-        brand: BrandProfile,
+        brand: Any,
         logo_name: str | None,
     ) -> str | None:
 
-        if not brand.logos:
+        logos = brand.get("logos", {}) if isinstance(brand, dict) else getattr(brand, "logos", {})
+        if not isinstance(logos, dict) or not logos:
             return None
 
         if logo_name:
-            return brand.logos.get(
-                logo_name
-            )
+            return logos.get(logo_name)
 
         return next(
-            iter(
-                brand.logos.values()
-            ),
+            iter(logos.values()),
             None,
         )
 
@@ -975,76 +972,44 @@ class ImageOverlayProcessor:
 
     @staticmethod
     def _build_text_lines(
-        brand: BrandProfile,
+        brand: Any,
     ) -> list[str]:
 
         lines = []
 
-        if brand.name.strip():
-            lines.append(
-                brand.name.strip()
-            )
+        brand_name = ""
+        if isinstance(brand, dict):
+            brand_name = brand.get("name") or brand.get("brand_name") or ""
+        else:
+            brand_name = getattr(brand, "name", getattr(brand, "brand_name", ""))
 
-        contact = getattr(
-            brand,
-            "contact_details",
-            {},
-        )
+        if brand_name and str(brand_name).strip():
+            lines.append(str(brand_name).strip())
 
-        phone = contact.get(
-            "phone",
-            "",
-        ).strip()
+        contact = brand.get("contact_details", {}) if isinstance(brand, dict) else getattr(brand, "contact_details", {})
+        if not isinstance(contact, dict):
+            contact = {}
 
-        email = contact.get(
-            "email",
-            "",
-        ).strip()
-
-        whatsapp = contact.get(
-            "whatsapp",
-            "",
-        ).strip()
-
-        address = contact.get(
-            "address",
-            "",
-        ).strip()
-
-        website = (
-            brand.website.strip()
-            if getattr(
-                brand,
-                "website",
-                "",
-            )
-            else ""
-        )
+        phone = str(contact.get("phone", "")).strip()
+        email = str(contact.get("email", "")).strip()
+        whatsapp = str(contact.get("whatsapp", "")).strip()
+        address = str(contact.get("address", "")).strip()
+        website = str(brand.get("website", "") if isinstance(brand, dict) else getattr(brand, "website", "")).strip()
 
         if phone:
-            lines.append(
-                f"Phone: {phone}"
-            )
+            lines.append(f"Phone: {phone}")
 
         if whatsapp:
-            lines.append(
-                f"WhatsApp: {whatsapp}"
-            )
+            lines.append(f"WhatsApp: {whatsapp}")
 
         if email:
-            lines.append(
-                f"Email: {email}"
-            )
+            lines.append(f"Email: {email}")
 
         if website:
-            lines.append(
-                website
-            )
+            lines.append(website)
 
         if address:
-            lines.append(
-                address
-            )
+            lines.append(address)
 
         return lines
 

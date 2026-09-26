@@ -250,6 +250,9 @@ export default function CampaignDetailPage({
   const [editingPost, setEditingPost] =
     useState<CampaignPostResponse | null>(null);
 
+  const [previewImageUrl, setPreviewImageUrl] =
+    useState<string | null>(null);
+
   const [rejectingPost, setRejectingPost] =
     useState<CampaignPostResponse | null>(null);
 
@@ -1184,6 +1187,7 @@ export default function CampaignDetailPage({
                         key={post.id}
                         post={post}
                         onEdit={setEditingPost}
+                        onPreviewImage={setPreviewImageUrl}
                         onApprove={(selectedPost) => {
                           void handleApprovePost(selectedPost);
                         }}
@@ -1438,6 +1442,41 @@ export default function CampaignDetailPage({
             }}
             onSchedule={handleSchedulePost}
           />
+        {/* Lightbox Image Preview Modal */}
+        {previewImageUrl && (
+          <div
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/85 p-4 backdrop-blur-md"
+            onClick={() => setPreviewImageUrl(null)}
+          >
+            <div
+              className="relative max-w-5xl max-h-[90vh] overflow-hidden rounded-2xl bg-neutral-950 border border-white/10 shadow-2xl p-2 flex flex-col items-center justify-center"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
+                <a
+                  href={previewImageUrl}
+                  download="ai_campaign_image.png"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex h-9 items-center gap-1.5 px-4 rounded-full bg-white/20 hover:bg-white/30 text-white text-xs font-bold backdrop-blur-md transition shadow-md"
+                >
+                  Download HD Image
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setPreviewImageUrl(null)}
+                  className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 hover:bg-white/30 text-white backdrop-blur-md transition shadow-md"
+                >
+                  <XCircle size={20} />
+                </button>
+              </div>
+              <img
+                src={previewImageUrl}
+                alt="AI Generated Campaign Visual"
+                className="max-h-[82vh] w-auto max-w-full object-contain rounded-xl shadow-lg"
+              />
+            </div>
+          </div>
         )}
       </main>
     </div>
@@ -1481,6 +1520,7 @@ function CampaignPostCard({
   onApprove,
   onReject,
   onSchedule,
+  onPreviewImage,
   actionLoading,
 }: {
   post: CampaignPostResponse;
@@ -1488,6 +1528,7 @@ function CampaignPostCard({
   onApprove: (post: CampaignPostResponse) => void;
   onReject: (post: CampaignPostResponse) => void;
   onSchedule: (post: CampaignPostResponse) => void;
+  onPreviewImage?: (url: string) => void;
   actionLoading: boolean;
 }) {
   const platforms =
@@ -1580,12 +1621,20 @@ function CampaignPostCard({
       </div>
 
       {post.image_url && (
-        <div className="mt-3 overflow-hidden rounded-xl border border-neutral-200 bg-neutral-900/5 shadow-xs">
+        <div
+          onClick={() => onPreviewImage?.(post.image_url!)}
+          className="group relative mt-3 cursor-pointer overflow-hidden rounded-xl border border-neutral-200 bg-neutral-950/5 shadow-xs transition hover:border-purple-300 hover:shadow-md"
+        >
           <img
             src={post.image_url}
             alt={post.title}
-            className="w-full max-h-80 object-cover hover:scale-101 transition-transform duration-300"
+            className="w-full max-h-80 object-cover transition-transform duration-300 group-hover:scale-[1.02]"
           />
+          <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-colors group-hover:bg-black/25">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1.5 text-xs font-bold text-neutral-900 shadow-lg opacity-0 transition-opacity backdrop-blur-xs group-hover:opacity-100">
+              <Eye size={13} /> Click to View Full Image
+            </span>
+          </div>
         </div>
       )}
 

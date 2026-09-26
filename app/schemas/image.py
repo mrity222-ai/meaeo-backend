@@ -39,7 +39,7 @@ class ImageStrategy(BaseModel):
 
     source_mode: ImageSourceMode = ImageSourceMode.AI
 
-    overlay_target: OverlayTarget = OverlayTarget.NONE
+    overlay_target: OverlayTarget = OverlayTarget.BOTH
 
     def requires_ai_generation(
         self,
