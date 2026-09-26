@@ -64,6 +64,7 @@ export default function AdminUserDetailPage() {
 
   const [user, setUser] = useState<UserDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [updating, setUpdating] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -76,11 +77,13 @@ export default function AdminUserDetailPage() {
 
   async function loadUser() {
     setLoading(true);
+    setErrorMsg(null);
     try {
       const data = await apiRequest<UserDetail>(`/admin/users/${userId}`);
       setUser(data);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to load user detail:", err);
+      setErrorMsg(err?.detail || err?.message || "Failed to connect to backend server.");
     } finally {
       setLoading(false);
     }
@@ -135,11 +138,22 @@ export default function AdminUserDetailPage() {
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Users
         </Link>
-        <div className="rounded-xl border border-border p-8 text-center">
-          <p className="text-lg font-medium text-foreground">User not found</p>
+        <div className="rounded-xl border border-border p-8 text-center max-w-md mx-auto bg-card">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-purple-100 text-purple-600 mx-auto mb-3">
+            <RefreshCw className="h-6 w-6" />
+          </div>
+          <p className="text-lg font-bold text-foreground">User Details Unavailable</p>
           <p className="text-sm text-muted-foreground mt-1">
-            Could not retrieve details for user {userId}.
+            {errorMsg || `Could not retrieve details for user ${userId}.`}
           </p>
+          <button
+            type="button"
+            onClick={loadUser}
+            className="mt-5 inline-flex items-center gap-2 rounded-xl bg-purple-600 px-5 py-2.5 text-xs font-bold text-white hover:bg-purple-700 transition shadow-sm"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Retry Connection
+          </button>
         </div>
       </div>
     );
