@@ -1442,6 +1442,8 @@ export default function CampaignDetailPage({
             }}
             onSchedule={handleSchedulePost}
           />
+        )}
+
         {/* Lightbox Image Preview Modal */}
         {previewImageUrl && (
           <div
