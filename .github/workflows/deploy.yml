@@ -1,0 +1,54 @@
+name: CI/CD Deployment Pipeline (maeaco)
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    name: Build & Verification Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/installation-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: autonomous-marketing-frontend-main/package-lock.json
+
+      - name: Install Frontend Dependencies
+        run: |
+          cd autonomous-marketing-frontend-main
+          npm ci
+
+      - name: Verify Frontend Build
+        run: |
+          cd autonomous-marketing-frontend-main
+          npm run build
+
+  deploy-vps:
+    name: Deploy to Server via SSH & Docker
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Deploy to VPS using Docker Compose
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          passphrase: ${{ secrets.VPS_PASSPHRASE }}
+          script: |
+            cd /var/www/maeaco-system
+            git pull origin main
+            docker compose down --remove-orphans
+            docker compose up -d --build
+            docker image prune -f

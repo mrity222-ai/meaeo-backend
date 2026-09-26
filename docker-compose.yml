@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: maeaco_backend
+    restart: always
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+      - ./app.db:/app/app.db
+      - ./brands:/app/brands
+    ports:
+      - "8000:8000"
+    networks:
+      - maeaco_network
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:8000
+    container_name: maeaco_frontend
+    restart: always
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - maeaco_network
+
+  nginx:
+    image: nginx:alpine
+    container_name: maeaco_nginx
+    restart: always
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.docker.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - maeaco_network
+
+networks:
+  maeaco_network:
+    driver: bridge
