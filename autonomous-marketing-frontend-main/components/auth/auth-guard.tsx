@@ -9,12 +9,23 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
 
+  const PUBLIC_ROUTES = [
+    "/",
+    "/login",
+    "/signup",
+    "/forgot-password",
+    "/privacy",
+    "/terms",
+    "/data-deletion",
+    "/refund-policy",
+    "/contact",
+    "/support",
+  ];
+
   const isPublicRoute =
-    pathname === "/" ||
-    pathname === "/login" ||
-    pathname === "/signup" ||
-    pathname === "/forgot-password" ||
+    (pathname ? PUBLIC_ROUTES.includes(pathname) : false) ||
     (pathname ? pathname.startsWith("/admin") : false);
+
 
   const [isAuthorized, setIsAuthorized] = useState<boolean>(isPublicRoute);
 

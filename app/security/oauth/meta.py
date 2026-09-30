@@ -1,3 +1,7 @@
+import base64
+import hashlib
+import hmac
+import json
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urlencode
 
@@ -6,6 +10,42 @@ import httpx
 from app.models.config import settings
 from app.schemas.credentials import OAuthCredential
 from app.security.oauth.base import OAuthProvider
+
+
+def parse_signed_request(signed_request: str, app_secret: str) -> dict:
+    """
+    Decodes and validates Meta signed_request using HMAC SHA-256.
+    Returns the parsed payload dictionary.
+    """
+    if not signed_request or "." not in signed_request:
+        raise ValueError("Invalid signed_request format.")
+
+    encoded_sig, payload = signed_request.split(".", 1)
+
+    # Base64url decode signature
+    sig_bytes = base64.urlsafe_b64decode(encoded_sig + "=" * (-len(encoded_sig) % 4))
+
+    # Base64url decode payload
+    payload_bytes = base64.urlsafe_b64decode(payload + "=" * (-len(payload) % 4))
+    data = json.loads(payload_bytes.decode("utf-8"))
+
+    # Verify algorithm
+    algorithm = data.get("algorithm", "").upper()
+    if algorithm != "HMAC-SHA256":
+        raise ValueError(f"Unsupported signed_request algorithm: {algorithm}")
+
+    # Compute expected signature
+    expected_sig = hmac.new(
+        app_secret.encode("utf-8"),
+        payload.encode("utf-8"),
+        hashlib.sha256,
+    ).digest()
+
+    if not hmac.compare_digest(sig_bytes, expected_sig):
+        raise ValueError("Bad signed_request signature.")
+
+    return data
+
 
 
 class MetaOAuthProvider(OAuthProvider):

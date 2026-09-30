@@ -65,16 +65,18 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Company Links */}
+          {/* Company & Legal Links */}
           <div className="lg:col-span-2">
-            <div className="text-xs font-bold uppercase tracking-wider text-zinc-900">Company</div>
+            <div className="text-xs font-bold uppercase tracking-wider text-zinc-900">Legal & Support</div>
             <ul className="mt-4 space-y-2.5 text-sm">
-              <li><a href="#" className="hover:text-purple-600 transition-colors">About</a></li>
-              <li><a href="#" className="hover:text-purple-600 transition-colors">Contact</a></li>
-              <li><a href="#" className="hover:text-purple-600 transition-colors">Privacy</a></li>
-              <li><a href="#" className="hover:text-purple-600 transition-colors">Terms</a></li>
+              <li><Link href="/privacy" className="hover:text-purple-600 transition-colors">Privacy Policy</Link></li>
+              <li><Link href="/terms" className="hover:text-purple-600 transition-colors">Terms of Service</Link></li>
+              <li><Link href="/data-deletion" className="hover:text-purple-600 transition-colors">Data Deletion</Link></li>
+              <li><Link href="/refund-policy" className="hover:text-purple-600 transition-colors">Refund Policy</Link></li>
+              <li><Link href="/contact" className="hover:text-purple-600 transition-colors">Contact Support</Link></li>
             </ul>
           </div>
+
 
           {/* Newsletter Subscribe */}
           <div className="lg:col-span-2">
@@ -103,11 +105,23 @@ export function Footer() {
 
         {/* Bottom Copyright Bar */}
         <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-purple-100 pt-8 text-xs text-zinc-500 sm:flex-row">
-          <p>© {new Date().getFullYear()} maeaco. All rights reserved.</p>
+          <p>
+            © {new Date().getFullYear()} <strong>maeaco</strong>. A product of{" "}
+            <a
+              href="https://www.avedatechnologies.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-bold text-purple-700 hover:underline"
+            >
+              Aveda Technologies
+            </a>
+            . All rights reserved.
+          </p>
           <p className="flex items-center gap-1">
-            Built with <span className="text-purple-600">💜</span> for small businesses
+            Built with <span className="text-purple-600">💜</span> for global businesses
           </p>
         </div>
+
 
       </div>
     </footer>
