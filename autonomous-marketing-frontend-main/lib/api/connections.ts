@@ -153,12 +153,14 @@ export async function startPlatformOAuth(
 
   let redirectUri: string | undefined;
 
+  const apiBase = (process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000").replace(/\/$/, "");
+
   if (normalizedPlatform === "meta") {
-    redirectUri = process.env.NEXT_PUBLIC_META_REDIRECT_URI || "http://127.0.0.1:8000/oauth/meta/callback";
+    redirectUri = process.env.NEXT_PUBLIC_META_REDIRECT_URI || `${apiBase}/oauth/meta/callback`;
   } else if (normalizedPlatform === "google_business") {
-    redirectUri = process.env.NEXT_PUBLIC_GOOGLE_BUSINESS_REDIRECT_URI || "http://127.0.0.1:8000/oauth/google-business/callback";
+    redirectUri = process.env.NEXT_PUBLIC_GOOGLE_BUSINESS_REDIRECT_URI || `${apiBase}/oauth/google-business/callback`;
   } else if (normalizedPlatform === "linkedin") {
-    redirectUri = process.env.NEXT_PUBLIC_LINKEDIN_REDIRECT_URI || "http://127.0.0.1:8000/oauth/linkedin/callback";
+    redirectUri = process.env.NEXT_PUBLIC_LINKEDIN_REDIRECT_URI || `${apiBase}/oauth/linkedin/callback`;
   }
 
   if (!redirectUri) {

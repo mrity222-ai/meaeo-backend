@@ -322,7 +322,9 @@ async def oauth_start(
         norm_req = clean_redirect_uri.replace("localhost", "127.0.0.1")
         norm_cfg = configured_redirect_uri.replace("localhost", "127.0.0.1")
 
-        if norm_req != norm_cfg:
+        # Allow match if exact match, or if both target the standard callback path for the platform
+        expected_path = f"/oauth/{platform}/callback"
+        if norm_req != norm_cfg and not (clean_redirect_uri.endswith(expected_path) and configured_redirect_uri.endswith(expected_path)):
             raise ValueError(
                 f"redirect_uri does not match the configured OAuth redirect URI for {platform}."
             )
