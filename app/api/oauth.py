@@ -316,9 +316,13 @@ async def oauth_start(
                 f"{platform.upper()}_REDIRECT_URI is not configured."
             )
 
-        configured_redirect_uri = configured_redirect_uri.strip()
+        configured_redirect_uri = configured_redirect_uri.strip().rstrip('/')
+        clean_redirect_uri = redirect_uri.strip().rstrip('/')
 
-        if redirect_uri != configured_redirect_uri:
+        norm_req = clean_redirect_uri.replace("localhost", "127.0.0.1")
+        norm_cfg = configured_redirect_uri.replace("localhost", "127.0.0.1")
+
+        if norm_req != norm_cfg:
             raise ValueError(
                 f"redirect_uri does not match the configured OAuth redirect URI for {platform}."
             )

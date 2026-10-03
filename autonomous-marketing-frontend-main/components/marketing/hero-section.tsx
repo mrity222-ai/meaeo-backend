@@ -54,18 +54,39 @@ export function HeroSection() {
           {/* Main Headline (Strictly 2 lines) */}
           <h1 className="tracking-tight text-center">
             <span className="block text-[26px] min-[420px]:text-3xl sm:text-5xl md:text-6xl lg:text-[70px] font-black text-zinc-950 leading-tight sm:leading-[1.1] whitespace-nowrap">
-              Manage Your Marketing
+              Dominate Local SEO & Social.
             </span>
             <span className="mt-1 sm:mt-2 block text-[26px] min-[420px]:text-3xl sm:text-5xl md:text-6xl lg:text-[70px] font-black leading-tight sm:leading-[1.1] bg-gradient-to-r from-[#3B07B4] via-[#7B2CBF] to-[#D925A3] bg-clip-text text-transparent whitespace-nowrap">
-              Anywhere, Automatically.
+              Outrank Competitors Automatically.
             </span>
           </h1>
 
           {/* Subtitle */}
           <p className="mx-auto mt-5 max-w-2xl text-base sm:text-lg font-normal text-zinc-600 leading-relaxed">
-            Create branded posts, schedule campaigns, publish across social platforms,
-            and track growth from one web and mobile app.
+            maeaco AI analyzes your top competitors, designs daily branded posts with your logo, optimizes your Google Business Profile, auto-replies to reviews 24/7, and boosts your organic reach.
           </p>
+
+          {/* 7 Core Feature Pills Bar */}
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
+            <span className="rounded-full bg-emerald-100 border border-emerald-200 px-3 py-1 text-[11px] font-bold text-emerald-800">
+              🔍 Local SEO #1 Ranking
+            </span>
+            <span className="rounded-full bg-amber-100 border border-amber-200 px-3 py-1 text-[11px] font-bold text-amber-800">
+              ⚔️ AI Competitor Intelligence
+            </span>
+            <span className="rounded-full bg-purple-100 border border-purple-200 px-3 py-1 text-[11px] font-bold text-purple-800">
+              🎨 Daily Post Design & Logo
+            </span>
+            <span className="rounded-full bg-blue-100 border border-blue-200 px-3 py-1 text-[11px] font-bold text-blue-800">
+              ⭐ 24/7 GMB Review Auto-Responder
+            </span>
+            <span className="rounded-full bg-indigo-100 border border-indigo-200 px-3 py-1 text-[11px] font-bold text-indigo-800">
+              📊 Analytics Optimization
+            </span>
+            <span className="rounded-full bg-teal-100 border border-teal-200 px-3 py-1 text-[11px] font-bold text-teal-800">
+              🚀 Organic Reach Growth
+            </span>
+          </div>
 
           {/* CTA Buttons */}
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
@@ -88,59 +109,28 @@ export function HeroSection() {
             </a>
           </div>
 
-          {/* App Store Badges */}
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-3.5">
-            {/* Apple App Store */}
+          {/* App Store & Google Play Badges */}
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
             <a
               href="#app-store"
-              className="inline-flex items-center gap-2.5 rounded-xl bg-black px-4 py-2 text-white shadow-md transition-all hover:opacity-90 hover:scale-[1.02]"
+              className="inline-block transition-transform hover:scale-105"
             >
-              {/* Apple SVG */}
-              <svg className="h-6 w-6 fill-current" viewBox="0 0 24 24">
-                <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.84c.62-.76 1.05-1.82.93-2.88-.93.04-2.06.62-2.71 1.38-.57.65-.99 1.73-.85 2.76 1.04.08 2-.6 2.63-1.26z" />
-              </svg>
-              <div className="text-left">
-                <div className="text-[9px] uppercase tracking-wider text-zinc-300 font-medium leading-none">
-                  Download on the
-                </div>
-                <div className="text-sm font-bold leading-tight text-white font-sans">
-                  App Store
-                </div>
-              </div>
+              <img
+                src="/badges/app-store.png"
+                alt="Download on the App Store"
+                className="h-10 sm:h-11 w-auto object-contain drop-shadow-sm"
+              />
             </a>
 
-            {/* Google Play Store */}
             <a
               href="#google-play"
-              className="inline-flex items-center gap-2.5 rounded-xl bg-black px-4 py-2 text-white shadow-md transition-all hover:opacity-90 hover:scale-[1.02]"
+              className="inline-block transition-transform hover:scale-105"
             >
-              {/* Google Play SVG */}
-              <svg className="h-5 w-5" viewBox="0 0 24 24">
-                <path
-                  fill="#EA4335"
-                  d="M3.6 1.8L13.8 12 3.6 22.2c-.4-.4-.6-1-.6-1.7V3.5c0-.7.2-1.3.6-1.7z"
-                />
-                <path
-                  fill="#FBBC04"
-                  d="M17.2 8.6L13.8 12l3.4 3.4 3.8-2.2c1.1-.6 1.1-1.7 0-2.4l-3.8-2.2z"
-                />
-                <path
-                  fill="#34A853"
-                  d="M3.6 22.2l10.2-10.2 3.4 3.4-11.4 6.5c-.8.5-1.7.5-2.2.3z"
-                />
-                <path
-                  fill="#4285F4"
-                  d="M3.6 1.8c.5-.3 1.4-.2 2.2.3l11.4 6.5-3.4 3.4L3.6 1.8z"
-                />
-              </svg>
-              <div className="text-left">
-                <div className="text-[9px] uppercase tracking-wider text-zinc-300 font-medium leading-none">
-                  GET IT ON
-                </div>
-                <div className="text-sm font-bold leading-tight text-white font-sans">
-                  Google Play
-                </div>
-              </div>
+              <img
+                src="/badges/google-play.png"
+                alt="GET IT ON Google Play"
+                className="h-10 sm:h-11 w-auto object-contain drop-shadow-sm"
+              />
             </a>
           </div>
         </div>

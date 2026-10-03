@@ -2,8 +2,27 @@
 
 import Link from "next/link";
 import { Instagram, Facebook, Linkedin, Youtube, ArrowRight } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
 
 export function Footer() {
+  const pathname = usePathname();
+  const router = useRouter();
+
+  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, targetId: string) => {
+    e.preventDefault();
+
+    if (pathname === "/") {
+      const element = document.getElementById(targetId);
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth" });
+        window.history.replaceState(null, "", "/");
+      }
+    } else {
+      sessionStorage.setItem("targetSection", targetId);
+      router.push("/");
+    }
+  };
+
   return (
     <footer className="bg-[#FAF8FF] border-t border-purple-100 text-zinc-600">
       <div className="mx-auto max-w-7xl px-6 py-16 lg:px-8">
@@ -28,16 +47,16 @@ export function Footer() {
 
             {/* Social Icons */}
             <div className="mt-6 flex items-center gap-3 text-zinc-500">
-              <a href="#" aria-label="Instagram" className="rounded-lg p-2 hover:bg-purple-100/70 hover:text-purple-600 transition-colors">
+              <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="rounded-lg p-2 hover:bg-purple-100/70 hover:text-purple-600 transition-colors">
                 <Instagram className="h-4 w-4" />
               </a>
-              <a href="#" aria-label="Facebook" className="rounded-lg p-2 hover:bg-purple-100/70 hover:text-purple-600 transition-colors">
+              <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="rounded-lg p-2 hover:bg-purple-100/70 hover:text-purple-600 transition-colors">
                 <Facebook className="h-4 w-4" />
               </a>
-              <a href="#" aria-label="LinkedIn" className="rounded-lg p-2 hover:bg-purple-100/70 hover:text-purple-600 transition-colors">
+              <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" className="rounded-lg p-2 hover:bg-purple-100/70 hover:text-purple-600 transition-colors">
                 <Linkedin className="h-4 w-4" />
               </a>
-              <a href="#" aria-label="YouTube" className="rounded-lg p-2 hover:bg-purple-100/70 hover:text-purple-600 transition-colors">
+              <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" aria-label="YouTube" className="rounded-lg p-2 hover:bg-purple-100/70 hover:text-purple-600 transition-colors">
                 <Youtube className="h-4 w-4" />
               </a>
             </div>
@@ -47,10 +66,46 @@ export function Footer() {
           <div className="lg:col-span-2">
             <div className="text-xs font-bold uppercase tracking-wider text-zinc-900">Product</div>
             <ul className="mt-4 space-y-2.5 text-sm">
-              <li><a href="#features" className="hover:text-purple-600 transition-colors">Features</a></li>
-              <li><a href="#pricing" className="hover:text-purple-600 transition-colors">Pricing</a></li>
-              <li><a href="#" className="hover:text-purple-600 transition-colors">Integrations</a></li>
-              <li><a href="#" className="hover:text-purple-600 transition-colors">Changelog</a></li>
+              <li>
+                <Link href="/examples" className="hover:text-purple-600 font-semibold text-purple-700 transition-colors">
+                  Examples & Showcase
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/features"
+                  className="hover:text-purple-600 transition-colors"
+                >
+                  Features & AI Core
+                </Link>
+              </li>
+              <li>
+                <a
+                  href="#pricing"
+                  onClick={(e) => handleNavClick(e, "pricing")}
+                  className="hover:text-purple-600 transition-colors cursor-pointer"
+                >
+                  Pricing
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#how-it-works"
+                  onClick={(e) => handleNavClick(e, "how-it-works")}
+                  className="hover:text-purple-600 transition-colors cursor-pointer"
+                >
+                  How It Works
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#about"
+                  onClick={(e) => handleNavClick(e, "about")}
+                  className="hover:text-purple-600 transition-colors cursor-pointer"
+                >
+                  About Platform
+                </a>
+              </li>
             </ul>
           </div>
 
@@ -58,14 +113,29 @@ export function Footer() {
           <div className="lg:col-span-2">
             <div className="text-xs font-bold uppercase tracking-wider text-zinc-900">Resources</div>
             <ul className="mt-4 space-y-2.5 text-sm">
-              <li><a href="#" className="hover:text-purple-600 transition-colors">Blog</a></li>
-              <li><a href="#" className="hover:text-purple-600 transition-colors">Help Center</a></li>
-              <li><a href="#" className="hover:text-purple-600 transition-colors">Guides</a></li>
-              <li><a href="#" className="hover:text-purple-600 transition-colors">Case Studies</a></li>
+              <li>
+                <Link href="/contact" className="hover:text-purple-600 transition-colors">
+                  Help Center
+                </Link>
+              </li>
+              <li>
+                <Link href="/contact" className="hover:text-purple-600 transition-colors">
+                  Guides & Support
+                </Link>
+              </li>
+              <li>
+                <a
+                  href="#features"
+                  onClick={(e) => handleNavClick(e, "features")}
+                  className="hover:text-purple-600 transition-colors cursor-pointer"
+                >
+                  AI Features
+                </a>
+              </li>
             </ul>
           </div>
 
-          {/* Company & Legal Links */}
+          {/* Legal & Support Links */}
           <div className="lg:col-span-2">
             <div className="text-xs font-bold uppercase tracking-wider text-zinc-900">Legal & Support</div>
             <ul className="mt-4 space-y-2.5 text-sm">
@@ -76,7 +146,6 @@ export function Footer() {
               <li><Link href="/contact" className="hover:text-purple-600 transition-colors">Contact Support</Link></li>
             </ul>
           </div>
-
 
           {/* Newsletter Subscribe */}
           <div className="lg:col-span-2">
@@ -121,7 +190,6 @@ export function Footer() {
             Built with <span className="text-purple-600">💜</span> for global businesses
           </p>
         </div>
-
 
       </div>
     </footer>

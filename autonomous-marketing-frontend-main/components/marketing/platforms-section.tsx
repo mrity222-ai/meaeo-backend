@@ -11,7 +11,7 @@ export function PlatformsSection() {
   const marqueePlatforms = [...platforms, ...platforms, ...platforms, ...platforms];
 
   return (
-    <section className="relative border-y border-purple-100/80 bg-gradient-to-r from-[#FAF8FF] via-purple-50/40 to-[#FAF8FF] py-12 text-zinc-900 overflow-hidden">
+    <section id="about" className="relative border-y border-purple-100/80 bg-gradient-to-r from-[#FAF8FF] via-purple-50/40 to-[#FAF8FF] py-12 text-zinc-900 overflow-hidden">
       
       {/* Title */}
       <div className="mx-auto max-w-7xl px-6 lg:px-8 text-center mb-8">

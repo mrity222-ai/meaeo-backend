@@ -154,7 +154,7 @@ export async function startPlatformOAuth(
   let redirectUri: string | undefined;
 
   if (normalizedPlatform === "meta") {
-    redirectUri = process.env.NEXT_PUBLIC_META_REDIRECT_URI || "https://crewless-trailing-charity.ngrok-free.dev/api/v1/oauth/callback/meta";
+    redirectUri = process.env.NEXT_PUBLIC_META_REDIRECT_URI || "http://127.0.0.1:8000/oauth/meta/callback";
   } else if (normalizedPlatform === "google_business") {
     redirectUri = process.env.NEXT_PUBLIC_GOOGLE_BUSINESS_REDIRECT_URI || "http://127.0.0.1:8000/oauth/google-business/callback";
   } else if (normalizedPlatform === "linkedin") {
