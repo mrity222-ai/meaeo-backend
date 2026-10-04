@@ -18,13 +18,17 @@ const PUBLIC_ROUTES = [
   "/refund-policy",
   "/contact",
   "/support",
+  "/admin/login",
 ];
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
 
-  const isPublicRoute = Boolean(pathname && PUBLIC_ROUTES.includes(pathname));
+  const isPublicRoute = Boolean(
+    pathname &&
+      (PUBLIC_ROUTES.includes(pathname) || pathname.startsWith("/admin/login"))
+  );
 
   const [isAuthorized, setIsAuthorized] = useState<boolean>(isPublicRoute);
 

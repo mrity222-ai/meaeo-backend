@@ -35,3 +35,5 @@ grandalf
 google-auth
 celery
 redis
+email-validator
+ollama
