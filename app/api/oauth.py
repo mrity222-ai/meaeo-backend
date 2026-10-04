@@ -386,10 +386,16 @@ async def oauth_start(
 @oauth_router.get(
     "/{platform}/callback"
 )
+@oauth_router.get(
+    "/callback/{platform}"
+)
 async def oauth_callback(
     platform: str,
-    code: str = Query(...),
-    state: str = Query(...),
+    code: str = Query(None),
+    state: str = Query(None),
+    error: str = Query(None),
+    error_code: str = Query(None),
+    error_message: str = Query(None),
 ):
     """
     OAuth callback.
@@ -408,6 +414,15 @@ async def oauth_callback(
     """
 
     platform = platform.strip().lower().replace("-", "_")
+
+    if error or error_message or not code:
+        err_msg = error_message or error or "OAuth authorization was denied or failed."
+        redirect_url = build_connections_redirect_url(
+            status="error",
+            message=err_msg,
+            oauth=platform,
+        )
+        return RedirectResponse(url=redirect_url)
 
     try:
         flow = build_flow_service()

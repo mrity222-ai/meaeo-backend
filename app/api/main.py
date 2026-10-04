@@ -176,6 +176,16 @@ app.include_router(
     oauth_router
 )
 
+app.include_router(
+    business_account_oauth_router,
+    prefix="/api/v1",
+)
+
+app.include_router(
+    oauth_router,
+    prefix="/api/v1",
+)
+
 
 # ---------------------------------------------------------
 # Campaigns
