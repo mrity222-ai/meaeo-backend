@@ -38,8 +38,21 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    const token = getAuthToken();
-    if (!token) {
+    const isAdminRoute = Boolean(pathname && pathname.startsWith("/admin"));
+    const userToken = getAuthToken();
+    const adminToken = typeof window !== "undefined" ? localStorage.getItem("admin_token") : null;
+
+    if (isAdminRoute) {
+      if (!adminToken && !userToken) {
+        setIsAuthorized(false);
+        router.replace("/admin/login");
+      } else {
+        setIsAuthorized(true);
+      }
+      return;
+    }
+
+    if (!userToken) {
       setIsAuthorized(false);
       router.replace("/login");
     } else {

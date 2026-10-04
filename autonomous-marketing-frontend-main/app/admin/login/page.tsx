@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { ArrowRight, Loader2, Lock, ShieldCheck, Sparkles, AlertCircle } from "lucide-react";
 import { apiRequest } from "@/lib/api/client";
+import { saveAuthToken } from "@/lib/auth";
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState("admin@marketingsystem.com");
@@ -34,6 +35,9 @@ export default function AdminLoginPage() {
       if (res.access_token) {
         localStorage.setItem("admin_token", res.access_token);
         localStorage.setItem("admin_user", JSON.stringify(res.user));
+        try {
+          saveAuthToken(res.access_token);
+        } catch (_) {}
         window.location.href = "/admin/dashboard";
       }
     } catch (err: any) {
