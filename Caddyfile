@@ -1,0 +1,9 @@
+# Caddyfile for Dockerized Full-Stack maeaco Deployment
+
+{$FRONTEND_DOMAIN:localhost} {
+    reverse_proxy frontend:3000
+}
+
+{$BACKEND_DOMAIN:api.localhost} {
+    reverse_proxy backend:8000
+}
