@@ -30,7 +30,7 @@ psycopg[binary]
 PyJWT
 python-multipart
 alembic
-psycopg2
+psycopg2-binary>=2.9.9
 grandalf
 google-auth
 celery

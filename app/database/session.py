@@ -8,33 +8,23 @@ from app.models.config import settings
 
 def _build_engine():
 
-    database_url = settings.DATABASE_URL
+    database_url = settings.DATABASE_URL.strip()
+    if database_url.startswith("postgres://"):
+        database_url = database_url.replace("postgres://", "postgresql://", 1)
 
     engine_kwargs = {}
 
-    if database_url.startswith(
-        "sqlite"
-    ):
-
-        engine_kwargs[
-            "connect_args"
-        ] = {
+    if database_url.startswith("sqlite"):
+        engine_kwargs["connect_args"] = {
             "check_same_thread": False,
         }
-
     else:
-
         engine_kwargs.update(
             {
-                "pool_size": (
-                    settings.DATABASE_POOL_SIZE
-                ),
-                "max_overflow": (
-                    settings.DATABASE_MAX_OVERFLOW
-                ),
-                "pool_timeout": (
-                    settings.DATABASE_TIMEOUT
-                ),
+                "pool_size": settings.DATABASE_POOL_SIZE,
+                "max_overflow": settings.DATABASE_MAX_OVERFLOW,
+                "pool_timeout": settings.DATABASE_TIMEOUT,
+                "pool_pre_ping": True,
             }
         )
 

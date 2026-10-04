@@ -1,0 +1,7 @@
+# Caddyfile for maeaco API Production Server
+# Replace api.maeaco.com with your actual backend domain name.
+
+api.maeaco.com {
+    # Automatic HTTPS via Let's Encrypt SSL
+    reverse_proxy 127.0.0.1:8000
+}
