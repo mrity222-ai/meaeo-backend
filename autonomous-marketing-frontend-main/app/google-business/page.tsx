@@ -31,6 +31,7 @@ import {
   Zap,
 } from "lucide-react";
 
+import { DashboardTopHeader } from "@/components/navigation/dashboard-top-header";
 import { DashboardSidebar } from "@/components/navigation/dashboard-sidebar";
 import { UserAccountMenu } from "@/components/navigation/user-account-menu";
 import {
@@ -112,8 +113,10 @@ export default function GoogleBusinessPage() {
       if (st.business_name) setBusinessName(st.business_name);
       if (st.city) setBusinessCity(st.city);
       if (st.category) setSeoIndustry(st.category);
-    } catch {
-      // fallback
+    } catch (error) {
+      if (error instanceof Error && error.message.startsWith("Business selection changed")) return;
+      setStatus(null);
+      showError(error instanceof Error ? error.message : "Google connection status is unavailable.");
     } finally {
       setLoadingStatus(false);
     }
@@ -125,8 +128,9 @@ export default function GoogleBusinessPage() {
     try {
       const data = await getGoogleReviews();
       setReviews(data);
-    } catch {
-      // Keep empty if none
+    } catch (error) {
+      if (error instanceof Error && error.message.startsWith("Business selection changed")) return;
+      showError(error instanceof Error ? error.message : "Google reviews could not be loaded.");
     } finally {
       setLoadingReviews(false);
     }
@@ -137,17 +141,24 @@ export default function GoogleBusinessPage() {
     try {
       const data = await getLocalPosts();
       setPostsList(data);
-    } catch {
-      // silence
+    } catch (error) {
+      if (error instanceof Error && error.message.startsWith("Business selection changed")) return;
+      showError(error instanceof Error ? error.message : "Google posts could not be loaded.");
     } finally {
       setLoadingPosts(false);
     }
   };
 
   useEffect(() => {
-    loadStatusAndProfile();
-    loadReviews();
-    loadPosts();
+    const reload = () => {
+      setStatus(null); setReviews([]); setPostsList([]); setSeoResult(null); setDraftReplies({});
+      setOfferTitle(""); setOfferSummary(""); setBusinessName(""); setBusinessCity(""); setCurrentDescription("");
+      void loadStatusAndProfile(); void loadReviews(); void loadPosts();
+    };
+    reload();
+    window.addEventListener("business-context-changed", reload);
+    window.addEventListener("storage", reload);
+    return () => { window.removeEventListener("business-context-changed", reload); window.removeEventListener("storage", reload); };
   }, []);
 
   // Handle AI Review Reply Generation
@@ -237,7 +248,8 @@ export default function GoogleBusinessPage() {
         terms_conditions: offerTerms,
       });
       setPostsList((prev) => [post, ...prev]);
-      showSuccess("Promotional offer published directly to Google Business Profile!");
+      if (post.status === "published") showSuccess("Promotional offer published to Google Business Profile.");
+      else showError(post.error_message || `Google post status: ${post.status}`);
     } catch (err: any) {
       showError(err.message || "Failed to publish offer to Google");
     } finally {
@@ -271,10 +283,12 @@ export default function GoogleBusinessPage() {
     if (!seoResult?.optimized_description) return;
     setPushingToGbp(true);
     try {
-      await updateGbpDescription({
-        location_name: businessName || status?.business_name || "Main Location",
+      if (!status?.external_account_id) throw new Error("Connect your Google Business location first.");
+      const result = await updateGbpDescription({
+        location_name: status.external_account_id,
         description: seoResult.optimized_description,
       });
+      if (!result.success) throw new Error(result.error || "Google did not confirm this update.");
       setCurrentDescription(seoResult.optimized_description);
       showSuccess("Optimized description pushed to Google Business Profile!");
     } catch (err: any) {
@@ -310,45 +324,22 @@ export default function GoogleBusinessPage() {
     <div className="min-h-screen bg-background text-foreground">
       <DashboardSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      <div className="lg:pl-72">
-        {/* Mobile Header */}
-        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-background/95 px-4 backdrop-blur lg:hidden">
-          <button
-            onClick={() => setSidebarOpen(true)}
-            aria-label="Open menu"
-            className="rounded-lg p-2 hover:bg-muted"
-          >
-            <Menu className="h-5 w-5" />
-          </button>
-          <div className="flex items-center gap-2">
-            <Store className="h-5 w-5 text-blue-600" />
-            <span className="font-semibold text-foreground">Google Business Suite</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <button
-              type="button"
-              onClick={loadReviews}
-              className="rounded-lg p-2 hover:bg-muted"
-            >
-              <RefreshCw className={`h-5 w-5 ${loadingReviews ? "animate-spin" : ""}`} />
+      <div className="md:pl-[230px]">
+        <DashboardTopHeader title="Google Business" subtitle="Reviews, offers and local profile"
+          onMenuClick={() => setSidebarOpen(true)} actions={
+            <button type="button" onClick={loadReviews} disabled={loadingReviews} aria-label="Refresh Google reviews"
+              className="ui-button-secondary inline-flex min-h-11 items-center gap-2 border border-border px-3 text-sm disabled:opacity-50">
+              <RefreshCw className={`h-4 w-4 ${loadingReviews ? "animate-spin" : ""}`} /><span className="hidden sm:inline">Refresh</span>
             </button>
-            <UserAccountMenu />
-          </div>
-        </header>
-
-        {/* Desktop Top Header Bar */}
-        <div className="hidden h-16 items-center justify-between border-b px-8 lg:flex">
-          <div>
-            <p className="text-xs text-muted-foreground">Google Workspace Integration</p>
-            <p className="text-sm font-semibold text-foreground">Google Business Profile Suite (Live API)</p>
-          </div>
-
+          } />
+        <div className="border-b border-border bg-card px-4 py-3 sm:px-6 lg:px-8">
           {/* Quick Context Inputs (Auto-synced from DB) */}
-          <div className="flex items-center gap-3 text-xs">
+          <div className="flex flex-wrap items-center gap-3 text-xs">
             <div className="flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-1.5 shadow-xs">
               <Building className="h-3.5 w-3.5 text-blue-600" />
               <input
                 type="text"
+                aria-label="Business name"
                 value={businessName}
                 onChange={(e) => setBusinessName(e.target.value)}
                 className="bg-transparent text-foreground font-semibold focus:outline-none w-36 placeholder:text-muted-foreground"
@@ -359,6 +350,7 @@ export default function GoogleBusinessPage() {
               <MapPin className="h-3.5 w-3.5 text-emerald-600" />
               <input
                 type="text"
+                aria-label="Business city"
                 value={businessCity}
                 onChange={(e) => setBusinessCity(e.target.value)}
                 className="bg-transparent text-foreground font-semibold focus:outline-none w-24 placeholder:text-muted-foreground"
@@ -373,18 +365,18 @@ export default function GoogleBusinessPage() {
             ) : (
               <Link
                 href="/connections"
-                className="inline-flex items-center gap-1 rounded-xl bg-blue-50 px-3 py-1.5 font-bold text-[11px] text-blue-700 border border-blue-200 hover:bg-blue-100 transition"
+                className="ui-button-secondary inline-flex items-center gap-1 px-3 py-1.5 font-bold text-[11px] text-blue-700 border border-blue-200 transition"
               >
                 <Store className="h-3.5 w-3.5" />
                 Connect Google Account
               </Link>
             )}
-            <UserAccountMenu />
+
           </div>
         </div>
 
         {/* Main Content Area */}
-        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl px-4 py-8 pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-8 sm:px-6 lg:px-8">
           {/* Notifications */}
           {successBanner && (
             <div className="mb-6 flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 shadow-xs">
@@ -507,7 +499,7 @@ export default function GoogleBusinessPage() {
                 </div>
               </div>
               <div className="mt-3 flex items-baseline gap-2">
-                <span className="text-2xl font-black text-foreground">{postsList.length}</span>
+                <span className="text-2xl font-black text-foreground">{postsList.filter(post => post.status === "published").length}</span>
                 <span className="rounded-md bg-purple-50 px-2 py-0.5 text-[11px] font-bold text-purple-700">
                   Published
                 </span>
@@ -547,8 +539,8 @@ export default function GoogleBusinessPage() {
               onClick={() => setActiveTab("reviews")}
               className={`inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs font-bold transition ${
                 activeTab === "reviews"
-                  ? "active-purple-slider"
-                  : "bg-white/80 text-slate-600 border border-purple-100 hover:bg-purple-50 hover:text-purple-700"
+                  ? "ui-nav-active"
+                  : "bg-card/80 text-slate-600 border border-border hover:bg-purple-50 hover:text-purple-700"
               }`}
             >
               <MessageSquare className="h-4 w-4" />
@@ -564,8 +556,8 @@ export default function GoogleBusinessPage() {
               onClick={() => setActiveTab("offers")}
               className={`inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs font-bold transition ${
                 activeTab === "offers"
-                  ? "active-purple-slider"
-                  : "bg-white/80 text-slate-600 border border-purple-100 hover:bg-purple-50 hover:text-purple-700"
+                  ? "ui-nav-active"
+                  : "bg-card/80 text-slate-600 border border-border hover:bg-purple-50 hover:text-purple-700"
               }`}
             >
               <Percent className="h-4 w-4" />
@@ -576,8 +568,8 @@ export default function GoogleBusinessPage() {
               onClick={() => setActiveTab("seo")}
               className={`inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs font-bold transition ${
                 activeTab === "seo"
-                  ? "active-purple-slider"
-                  : "bg-white/80 text-slate-600 border border-purple-100 hover:bg-purple-50 hover:text-purple-700"
+                  ? "ui-nav-active"
+                  : "bg-card/80 text-slate-600 border border-border hover:bg-purple-50 hover:text-purple-700"
               }`}
             >
               <Zap className="h-4 w-4" />
@@ -623,7 +615,7 @@ export default function GoogleBusinessPage() {
                   <button
                     onClick={loadReviews}
                     disabled={loadingReviews}
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-4 py-2 text-xs font-semibold text-foreground hover:bg-muted transition"
+                    className="ui-button-secondary inline-flex items-center gap-1.5 border border-border px-4 py-2 text-xs font-semibold transition"
                   >
                     <RefreshCw className={`h-3.5 w-3.5 ${loadingReviews ? "animate-spin" : ""}`} />
                     Sync Live Reviews
@@ -672,7 +664,7 @@ export default function GoogleBusinessPage() {
                   ) : (
                     <button
                       onClick={loadReviews}
-                      className="mt-4 inline-flex items-center gap-2 rounded-xl bg-purple-600 px-5 py-2 text-xs font-bold text-white hover:bg-purple-700 transition"
+                      className="ui-button-primary mt-4 inline-flex items-center gap-2 px-5 py-2 text-xs font-bold transition"
                     >
                       <RefreshCw className="h-4 w-4" />
                       Sync Reviews Now
@@ -768,7 +760,7 @@ export default function GoogleBusinessPage() {
                               <button
                                 onClick={() => handleGenerateReply(review)}
                                 disabled={isGenerating}
-                                className="inline-flex items-center gap-1.5 rounded-lg border border-purple-200 bg-purple-50 px-3 py-1 text-xs font-bold text-purple-700 hover:bg-purple-100 transition disabled:opacity-60"
+                                className="ui-button-secondary inline-flex items-center gap-1.5 border border-purple-200 px-3 py-1 text-xs font-bold text-purple-700 transition disabled:opacity-60"
                               >
                                 {isGenerating ? (
                                   <>
@@ -801,7 +793,7 @@ export default function GoogleBusinessPage() {
                               <button
                                 onClick={() => handleSendReply(review.id)}
                                 disabled={isSending || !draft.trim()}
-                                className="inline-flex items-center gap-1.5 rounded-xl bg-purple-600 px-5 py-2 text-xs font-bold text-white shadow-md shadow-purple-200 hover:bg-purple-700 transition disabled:opacity-50"
+                                className="ui-button-primary inline-flex items-center gap-1.5 px-5 py-2 text-xs font-bold transition disabled:opacity-50"
                               >
                                 {isSending ? (
                                   <>
@@ -870,7 +862,7 @@ export default function GoogleBusinessPage() {
                   <button
                     onClick={handleGenerateOffer}
                     disabled={generatingOffer}
-                    className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-purple-600 py-3 text-xs font-bold text-white shadow-md shadow-purple-200 hover:bg-purple-700 transition disabled:opacity-60"
+                    className="ui-button-primary w-full inline-flex items-center justify-center gap-2 py-3 text-xs font-bold transition disabled:opacity-60"
                   >
                     {generatingOffer ? (
                       <>
@@ -900,7 +892,7 @@ export default function GoogleBusinessPage() {
                     <p className="text-xs text-foreground leading-relaxed">{offerSummary}</p>
 
                     <div className="flex items-center gap-3">
-                      <div className="rounded-lg border border-purple-200 bg-white px-3 py-1.5 text-xs font-mono font-bold text-purple-700">
+                      <div className="rounded-lg border border-purple-200 bg-card px-3 py-1.5 text-xs font-mono font-bold text-purple-700">
                         CODE: {offerCoupon || "SAVE20"}
                       </div>
                       <span className="text-xs text-muted-foreground">{offerTerms || "Terms apply."}</span>
@@ -1032,7 +1024,7 @@ export default function GoogleBusinessPage() {
                 <button
                   onClick={handleRunSeo}
                   disabled={runningSeo}
-                  className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-purple-600 py-3 text-xs font-bold text-white shadow-md shadow-purple-200 hover:bg-purple-700 transition disabled:opacity-60"
+                  className="ui-button-primary w-full inline-flex items-center justify-center gap-2 py-3 text-xs font-bold transition disabled:opacity-60"
                 >
                   {runningSeo ? (
                     <>
@@ -1105,7 +1097,7 @@ export default function GoogleBusinessPage() {
                           <button
                             onClick={handlePushDescription}
                             disabled={pushingToGbp}
-                            className="inline-flex items-center gap-1 rounded-lg bg-purple-600 px-3 py-1 text-xs font-bold text-white hover:bg-purple-700 disabled:opacity-60"
+                            className="ui-button-primary inline-flex items-center gap-1 px-3 py-1 text-xs font-bold disabled:opacity-60"
                           >
                             {pushingToGbp ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
                             Push to Google

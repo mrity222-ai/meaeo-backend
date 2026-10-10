@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Literal
 from pydantic import BaseModel, Field
 
 
@@ -36,7 +37,7 @@ class SendReviewReplyRequest(BaseModel):
 
 class GooglePostCreateRequest(BaseModel):
     location_name: str | None = None
-    post_type: str = Field(default="OFFER", description="OFFER, STANDARD, or EVENT")
+    post_type: Literal["OFFER", "STANDARD", "EVENT"] = "OFFER"
     summary: str = Field(..., description="Post copy / description")
     offer_title: str | None = None
     coupon_code: str | None = None
@@ -98,4 +99,4 @@ class OptimizeLocalSeoResponse(BaseModel):
 
 class UpdateGbpDescriptionRequest(BaseModel):
     location_name: str
-    description: str
+    description: str = Field(min_length=1, max_length=750)

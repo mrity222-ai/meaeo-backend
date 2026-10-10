@@ -1,4 +1,5 @@
 from datetime import date, datetime, timezone
+import hashlib
 from pathlib import Path
 
 from app.analytics.schemas import CampaignAnalytics
@@ -8,6 +9,19 @@ from app.storage.factory import StorageFactory
 
 class AnalyticsRepository:
     ROOT = Path("data/analytics")
+
+    def _save_snapshot(self, path: Path, data: dict) -> None:
+        from app.storage.json_storage import JsonStorage
+        if isinstance(self.storage, JsonStorage):
+            import uuid
+            temporary = path.with_name(path.name + f".{uuid.uuid4().hex}.tmp")
+            try:
+                self.storage.save(temporary, data)
+                temporary.replace(path)
+            finally:
+                temporary.unlink(missing_ok=True)
+        else:
+            self.storage.save(path, data)
 
     def __init__(
         self,
@@ -608,4 +622,48 @@ class AnalyticsRepository:
                     )
                 )
 
+        return results
+
+    def _verified_dir(self, tenant_id: str, campaign_id: int) -> Path:
+        if campaign_id <= 0 or not tenant_id:
+            raise ValueError("Validated campaign identity is required.")
+        tenant_key = hashlib.sha256(tenant_id.encode()).hexdigest()
+        return self.ROOT / "verified" / tenant_key / str(campaign_id)
+
+    def save_profile_performance(self, tenant_id: str, business_id: int, result: dict) -> Path:
+        if not tenant_id or business_id <= 0 or result.get("business_account_id") != business_id:
+            raise ValueError("Validated business identity is required.")
+        tenant_key = hashlib.sha256(tenant_id.encode()).hexdigest()
+        channel_id = result.get("channel_id")
+        if channel_id is not None and (not isinstance(channel_id, int) or channel_id <= 0):
+            raise ValueError("Invalid channel identity")
+        start = date.fromisoformat(result["start_date"])
+        end = date.fromisoformat(result["end_date"])
+        suffix = "" if result.get("data_source") == "platform_api" and result.get("last_updated") else ".status"
+        path = self.ROOT / "profiles" / tenant_key / str(business_id) / str(channel_id or "unconnected") / f"{start}_{end}{suffix}.json"
+        self._save_snapshot(path, result)
+        return path
+
+    def save_verified(self, tenant_id: str, campaign_id: int, analytics: CampaignAnalytics) -> Path:
+        if analytics.data_source != "platform_api" or analytics.last_updated is None:
+            raise ValueError("Only verified platform analytics may be saved here.")
+        for post in analytics.posts:
+            if post.data_source not in {"platform_api", "unavailable"}:
+                raise ValueError("Unverified post metrics cannot enter platform history.")
+        analytics = analytics.model_copy(update={"campaign_id": campaign_id})
+        path = self._verified_dir(tenant_id, campaign_id) / f"{analytics.last_updated.date().isoformat()}.json"
+        self._save_snapshot(path, analytics.model_dump(mode="json"))
+        return path
+
+    def load_verified_range(self, tenant_id: str, campaign_id: int, start_date: date, end_date: date) -> list[CampaignAnalytics]:
+        results = []
+        for path in sorted(self.storage.list(self._verified_dir(tenant_id, campaign_id))):
+            try:
+                if not start_date <= date.fromisoformat(path.stem) <= end_date:
+                    continue
+                item = CampaignAnalytics.model_validate(self.storage.load(path))
+                if item.campaign_id == campaign_id and item.data_source == "platform_api" and item.last_updated is not None:
+                    results.append(item)
+            except (ValueError, OSError):
+                continue
         return results

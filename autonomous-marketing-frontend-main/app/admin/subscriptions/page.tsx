@@ -358,7 +358,7 @@ export default function AdminSubscriptionsPage() {
           <button
             onClick={() => loadAllData(true)}
             disabled={refreshing}
-            className="inline-flex items-center gap-2 rounded-xl border border-border bg-background px-3.5 py-2 text-sm font-medium hover:bg-muted/50 transition"
+            className="ui-button-secondary inline-flex items-center gap-2 border border-border px-3.5 py-2 text-sm font-medium transition"
           >
             <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
             {refreshing ? "Refreshing..." : "Refresh"}
@@ -366,7 +366,7 @@ export default function AdminSubscriptionsPage() {
 
           <button
             onClick={() => setShowCreateModal(true)}
-            className="inline-flex items-center gap-2 rounded-xl bg-foreground px-4 py-2 text-sm font-medium text-background hover:opacity-90 transition shadow-sm"
+            className="ui-button-primary inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 transition"
           >
             <Plus className="h-4 w-4" />
             Create Plan
@@ -539,7 +539,7 @@ export default function AdminSubscriptionsPage() {
                             className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${
                               plan.is_active
                                 ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                                : "bg-neutral-500/10 text-neutral-500"
+                                : "bg-neutral-500/10 text-muted-foreground"
                             }`}
                           >
                             <span
@@ -611,7 +611,7 @@ export default function AdminSubscriptionsPage() {
                   onClick={() => setStatusFilter(status)}
                   className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
                     statusFilter === status
-                      ? "bg-foreground text-background"
+                      ? "bg-foreground text-primary-foreground"
                       : "bg-muted text-muted-foreground hover:text-foreground"
                   }`}
                 >
@@ -861,14 +861,14 @@ export default function AdminSubscriptionsPage() {
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
-                  className="rounded-xl border border-border px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-muted transition"
+                  className="ui-button-secondary border border-border px-4 py-2 text-sm font-medium text-muted-foreground transition"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submittingPlan}
-                  className="inline-flex items-center gap-2 rounded-xl bg-foreground px-5 py-2 text-sm font-medium text-background hover:opacity-90 transition"
+                  className="ui-button-primary inline-flex items-center gap-2 px-5 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 transition"
                 >
                   {submittingPlan ? (
                     <>
@@ -1049,14 +1049,14 @@ export default function AdminSubscriptionsPage() {
                 <button
                   type="button"
                   onClick={() => setEditingPlan(null)}
-                  className="rounded-xl border border-border px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-muted transition"
+                  className="ui-button-secondary border border-border px-4 py-2 text-sm font-medium text-muted-foreground transition"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submittingEdit}
-                  className="inline-flex items-center gap-2 rounded-xl bg-foreground px-5 py-2 text-sm font-medium text-background hover:opacity-90 transition"
+                  className="ui-button-primary inline-flex items-center gap-2 px-5 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 transition"
                 >
                   {submittingEdit ? (
                     <>
@@ -1100,7 +1100,7 @@ export default function AdminSubscriptionsPage() {
                 type="button"
                 onClick={() => setPlanToDelete(null)}
                 disabled={deletingPlan}
-                className="rounded-xl border border-border px-4 py-2 text-xs font-semibold text-muted-foreground hover:bg-muted transition"
+                className="ui-button-secondary border border-border px-4 py-2 text-xs font-semibold text-muted-foreground transition"
               >
                 Cancel
               </button>

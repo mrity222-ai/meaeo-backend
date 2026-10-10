@@ -320,7 +320,7 @@ export default function AdminSupportTicketPage() {
                   <button
                     type="button"
                     onClick={() => handleUpdateStatus("open")}
-                    className="inline-flex h-9 items-center gap-2 rounded-lg border border-border px-3.5 text-sm font-medium transition hover:bg-muted"
+                    className="ui-button-secondary inline-flex h-9 items-center gap-2 border border-border px-3.5 text-sm font-medium transition"
                   >
                     Reopen
                   </button>
@@ -330,7 +330,7 @@ export default function AdminSupportTicketPage() {
                   <button
                     type="button"
                     onClick={() => handleUpdateStatus("closed")}
-                    className="inline-flex h-9 items-center gap-2 rounded-lg border border-border px-3.5 text-sm font-medium transition hover:bg-muted"
+                    className="ui-button-secondary inline-flex h-9 items-center gap-2 border border-border px-3.5 text-sm font-medium transition"
                   >
                     <XCircle className="h-4 w-4" />
                     Close
@@ -339,7 +339,7 @@ export default function AdminSupportTicketPage() {
 
                 <button
                   type="button"
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                  className="ui-button-secondary inline-flex h-9 w-9 items-center justify-center border border-border text-muted-foreground transition hover:text-foreground"
                   aria-label="More ticket actions"
                 >
                   <MoreHorizontal className="h-4 w-4" />
@@ -521,7 +521,7 @@ export default function AdminSupportTicketPage() {
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <button
                       type="button"
-                      className="inline-flex h-9 items-center gap-2 self-start rounded-lg border border-border px-3 text-sm font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                      className="ui-button-secondary inline-flex h-9 items-center gap-2 self-start border border-border px-3 text-sm font-medium text-muted-foreground transition hover:text-foreground"
                     >
                       <Paperclip className="h-4 w-4" />
                       Attach
@@ -583,7 +583,7 @@ export default function AdminSupportTicketPage() {
 
                 <button
                   type="button"
-                  className="w-full rounded-lg border border-border px-3 py-2 text-sm font-medium transition hover:bg-muted"
+                  className="ui-button-secondary w-full border border-border px-3 py-2 text-sm font-medium transition"
                 >
                   View Customer
                 </button>

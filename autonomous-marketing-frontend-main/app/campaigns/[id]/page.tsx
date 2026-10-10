@@ -32,6 +32,7 @@ import {
   Zap,
 } from "lucide-react";
 
+import { DashboardTopHeader } from "@/components/navigation/dashboard-top-header";
 import { DashboardSidebar } from "@/components/navigation/dashboard-sidebar";
 
 import {
@@ -110,14 +111,16 @@ function formatDateTime(value: string | null): string {
   }).format(date);
 }
 
-function formatNumber(value: number): string {
+function formatNumber(value: number | null): string {
+  if (value == null) return "Data unavailable";
   return new Intl.NumberFormat("en-US", {
     notation: "compact",
     maximumFractionDigits: 1,
   }).format(value);
 }
 
-function formatPercentage(value: number): string {
+function formatPercentage(value: number | null): string {
+  if (value == null) return "Data unavailable";
   return `${value.toFixed(1)}%`;
 }
 
@@ -577,7 +580,7 @@ export default function CampaignDetailPage({
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white text-neutral-950">
+      <div className="min-h-screen bg-card text-foreground">
         <DashboardSidebar
           open={sidebarOpen}
           onClose={() => setSidebarOpen(false)}
@@ -606,7 +609,7 @@ export default function CampaignDetailPage({
 
   if (!campaign) {
     return (
-      <div className="min-h-screen bg-white text-neutral-950">
+      <div className="min-h-screen bg-card text-foreground">
         <DashboardSidebar
           open={sidebarOpen}
           onClose={() => setSidebarOpen(false)}
@@ -627,14 +630,14 @@ export default function CampaignDetailPage({
               Campaign unavailable
             </h1>
 
-            <p className="mt-2 text-sm text-neutral-500">
+            <p className="mt-2 text-sm text-muted-foreground">
               {error ||
                 "The requested campaign could not be found."}
             </p>
 
             <Link
               href="/campaigns"
-              className="mt-6 inline-flex h-10 items-center gap-2 rounded-xl bg-neutral-950 px-4 text-sm font-semibold text-white hover:bg-neutral-800"
+              className="ui-button-primary mt-6 inline-flex h-10 items-center gap-2 px-4 text-sm font-semibold"
             >
               <ArrowLeft size={15} />
               Back to Campaigns
@@ -667,45 +670,20 @@ export default function CampaignDetailPage({
     campaign.status !== "cancelled";
 
   return (
-    <div className="min-h-screen bg-white text-neutral-950">
+    <div className="min-h-screen bg-card text-foreground">
       <DashboardSidebar
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
       />
 
       <main className="min-h-screen md:pl-[230px]">
-        <MobileHeader
-          onOpenMenu={() => setSidebarOpen(true)}
-        />
-
-        {/* Desktop Header */}
-        <div className="hidden h-16 items-center justify-between border-b border-neutral-200 px-7 md:flex">
-          <div className="flex items-center gap-3">
-            <Link
-              href="/campaigns"
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-neutral-200 text-neutral-600 transition hover:bg-neutral-50"
-              aria-label="Back to campaigns"
-            >
-              <ArrowLeft size={16} />
-            </Link>
-
-            <div>
-              <p className="text-xs text-neutral-500">
-                Campaigns / Detail
-              </p>
-
-              <p className="text-sm font-medium">
-                {campaign.campaign_name}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
+        <DashboardTopHeader title={campaign.campaign_name} subtitle="Campaign details"
+          onMenuClick={() => setSidebarOpen(true)} actions={
             <button
               type="button"
               disabled={executingAi || actionLoading}
               onClick={() => void handleExecuteAi()}
-              className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-3.5 text-xs font-medium text-neutral-800 transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50 shadow-sm"
+              className="ui-button-secondary inline-flex min-h-11 items-center gap-1.5 border border-border px-3.5 text-xs font-medium transition disabled:cursor-not-allowed disabled:opacity-50"
             >
               {executingAi ? (
                 <Loader2 size={14} className="animate-spin text-neutral-600" />
@@ -714,13 +692,12 @@ export default function CampaignDetailPage({
               )}
               {executingAi ? "Running AI Agents..." : "Regenerate Content"}
             </button>
-          </div>
-        </div>
+          } />
 
         {/* Main Content */}
-        <div className="mx-auto max-w-[1450px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+        <div className="mx-auto max-w-[1450px] px-4 py-6 pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-8 sm:px-6 lg:px-8 lg:py-8">
           {/* Mobile Back */}
-          <div className="mb-4 md:hidden">
+          <div className="mb-4">
             <Link
               href="/campaigns"
               className="inline-flex items-center gap-1.5 text-xs font-medium text-neutral-600"
@@ -776,11 +753,11 @@ export default function CampaignDetailPage({
           )}
 
           {/* Campaign Header */}
-          <section className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
+          <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
             <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
               <div>
                 <div className="flex flex-wrap items-center gap-3">
-                  <h1 className="text-2xl font-bold tracking-tight text-neutral-950 sm:text-3xl">
+                  <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
                     {campaign.campaign_name}
                   </h1>
 
@@ -796,21 +773,21 @@ export default function CampaignDetailPage({
                             : campaign.status ===
                                 "cancelled"
                               ? "border-red-200 bg-red-50 text-red-700"
-                              : "border-neutral-200 bg-neutral-100 text-neutral-600"
+                              : "border-border bg-neutral-100 text-neutral-600"
                     }`}
                   >
                     {campaignStatus}
                   </span>
                 </div>
 
-                <p className="mt-2 max-w-3xl text-sm text-neutral-500">
+                <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
                   {campaign.execution_mode ===
                   "autonomous"
                     ? "Autonomous campaign execution"
                     : "Human intervention campaign execution"}
                 </p>
 
-                <div className="mt-4 flex flex-wrap items-center gap-4 text-xs text-neutral-500">
+                <div className="mt-4 flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
                   <span>
                     Created{" "}
                     {formatDate(campaign.created_at)}
@@ -843,7 +820,7 @@ export default function CampaignDetailPage({
                     type="button"
                     disabled={executingAi || actionLoading}
                     onClick={() => void handleExecuteAi()}
-                    className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-neutral-900 px-4 text-sm font-semibold text-white shadow-sm hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50 transition"
+                    className="ui-button-primary inline-flex h-10 items-center justify-center gap-2 px-4 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50 transition"
                   >
                     {executingAi ? (
                       <Loader2 size={16} className="animate-spin text-amber-300" />
@@ -865,7 +842,7 @@ export default function CampaignDetailPage({
                           ),
                       )
                     }
-                    className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-neutral-950 px-4 text-sm font-semibold text-white hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="ui-button-primary inline-flex h-10 items-center justify-center gap-2 px-4 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {actionLoading ? (
                       <Loader2
@@ -891,7 +868,7 @@ export default function CampaignDetailPage({
                           ),
                       )
                     }
-                    className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 text-sm font-semibold text-neutral-800 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="ui-button-secondary inline-flex h-10 items-center justify-center gap-2 border border-border px-4 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {actionLoading ? (
                       <Loader2
@@ -917,7 +894,7 @@ export default function CampaignDetailPage({
                           ),
                       )
                     }
-                    className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-neutral-950 px-4 text-sm font-semibold text-white hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="ui-button-primary inline-flex h-10 items-center justify-center gap-2 px-4 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {actionLoading ? (
                       <Loader2
@@ -951,7 +928,7 @@ export default function CampaignDetailPage({
                           ),
                       );
                     }}
-                    className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 text-sm font-semibold text-neutral-800 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="ui-button-secondary inline-flex h-10 items-center justify-center gap-2 border border-border px-4 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <CheckCircle2 size={16} />
                     Complete
@@ -978,7 +955,7 @@ export default function CampaignDetailPage({
                           ),
                       );
                     }}
-                    className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-4 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-red-200 bg-card px-4 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <XCircle size={16} />
                     Cancel
@@ -989,7 +966,7 @@ export default function CampaignDetailPage({
 
             {/* Lifecycle */}
             <div className="mt-8 border-t border-neutral-100 pt-6">
-              <p className="mb-3 text-xs font-medium text-neutral-500">
+              <p className="mb-3 text-xs font-medium text-muted-foreground">
                 Campaign Execution Pipeline
               </p>
 
@@ -1002,7 +979,7 @@ export default function CampaignDetailPage({
                         ? "border-emerald-200 bg-emerald-50/50 text-emerald-800"
                         : step.status === "active"
                           ? "border-neutral-950 bg-neutral-950 font-semibold text-white"
-                          : "border-neutral-200 bg-neutral-50 text-neutral-400"
+                          : "border-border bg-neutral-50 text-neutral-400"
                     }`}
                   >
                     {step.status === "completed" ? (
@@ -1119,14 +1096,14 @@ export default function CampaignDetailPage({
           <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-3">
             {/* Posts */}
             <div className="space-y-6 lg:col-span-2">
-              <section className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
+              <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
-                    <h2 className="text-base font-semibold text-neutral-950">
+                    <h2 className="text-base font-semibold text-foreground">
                       Campaign Posts & Content
                     </h2>
 
-                    <p className="text-xs text-neutral-500">
+                    <p className="text-xs text-muted-foreground">
                       Content generated for this campaign
                     </p>
                   </div>
@@ -1149,7 +1126,7 @@ export default function CampaignDetailPage({
                 </div>
 
                 {posts.length === 0 ? (
-                  <div className="mt-6 rounded-xl border border-dashed border-neutral-200 bg-neutral-50 px-6 py-10 text-center">
+                  <div className="mt-6 rounded-xl border border-dashed border-border bg-neutral-50 px-6 py-10 text-center">
                     <Sparkles
                       size={24}
                       className="mx-auto text-neutral-400"
@@ -1159,7 +1136,7 @@ export default function CampaignDetailPage({
                       No campaign posts yet
                     </p>
 
-                    <p className="mt-1 text-xs text-neutral-500">
+                    <p className="mt-1 text-xs text-muted-foreground">
                       Posts will appear here once content
                       has been generated for this campaign.
                     </p>
@@ -1169,7 +1146,7 @@ export default function CampaignDetailPage({
                         type="button"
                         disabled={executingAi || actionLoading}
                         onClick={() => void handleExecuteAi()}
-                        className="inline-flex items-center gap-2 rounded-xl bg-neutral-950 px-4 py-2.5 text-xs font-semibold text-white shadow-sm hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50 transition"
+                        className="ui-button-primary inline-flex items-center gap-2 px-4 py-2.5 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50 transition"
                       >
                         {executingAi ? (
                           <Loader2 size={15} className="animate-spin text-amber-300" />
@@ -1216,19 +1193,19 @@ export default function CampaignDetailPage({
             {/* Right Column */}
             <div className="space-y-6">
               {/* Analytics Summary */}
-              <section className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
+              <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
                 <div className="flex items-center gap-2">
                   <TrendingUp
                     size={18}
-                    className="text-neutral-950"
+                    className="text-foreground"
                   />
 
-                  <h2 className="text-base font-semibold text-neutral-950">
+                  <h2 className="text-base font-semibold text-foreground">
                     Performance
                   </h2>
                 </div>
 
-                <p className="mt-1 text-xs text-neutral-500">
+                <p className="mt-1 text-xs text-muted-foreground">
                   Campaign analytics from connected platforms
                 </p>
 
@@ -1268,7 +1245,7 @@ export default function CampaignDetailPage({
                       Analytics are not available yet.
                     </p>
 
-                    <p className="mt-1 text-[11px] leading-4 text-neutral-500">
+                    <p className="mt-1 text-[11px] leading-4 text-muted-foreground">
                       Metrics will appear after analytics data
                       is recorded for this campaign.
                     </p>
@@ -1277,17 +1254,17 @@ export default function CampaignDetailPage({
               </section>
 
               {/* Campaign Channels */}
-              <section className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
-                <h2 className="text-base font-semibold text-neutral-950">
+              <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+                <h2 className="text-base font-semibold text-foreground">
                   Campaign Channels
                 </h2>
 
-                <p className="text-xs text-neutral-500">
+                <p className="text-xs text-muted-foreground">
                   Platforms represented by campaign posts
                 </p>
 
                 {platforms.length === 0 ? (
-                  <div className="mt-4 rounded-xl bg-neutral-50 p-4 text-xs text-neutral-500">
+                  <div className="mt-4 rounded-xl bg-neutral-50 p-4 text-xs text-muted-foreground">
                     No platforms available yet.
                   </div>
                 ) : (
@@ -1303,14 +1280,14 @@ export default function CampaignDetailPage({
               </section>
 
               {/* Campaign Dates */}
-              <section className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
+              <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
                 <div className="flex items-center gap-2">
                   <CalendarDays
                     size={17}
                     className="text-neutral-800"
                   />
 
-                  <h2 className="text-base font-semibold text-neutral-950">
+                  <h2 className="text-base font-semibold text-foreground">
                     Campaign Timeline
                   </h2>
                 </div>
@@ -1460,14 +1437,14 @@ export default function CampaignDetailPage({
                   download="ai_campaign_image.png"
                   target="_blank"
                   rel="noreferrer"
-                  className="flex h-9 items-center gap-1.5 px-4 rounded-full bg-white/20 hover:bg-white/30 text-white text-xs font-bold backdrop-blur-md transition shadow-md"
+                  className="flex h-9 items-center gap-1.5 px-4 rounded-full bg-card/20 hover:bg-card/30 text-white text-xs font-bold backdrop-blur-md transition shadow-md"
                 >
                   Download HD Image
                 </a>
                 <button
                   type="button"
                   onClick={() => setPreviewImageUrl(null)}
-                  className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 hover:bg-white/30 text-white backdrop-blur-md transition shadow-md"
+                  className="flex h-9 w-9 items-center justify-center rounded-full bg-card/20 hover:bg-card/30 text-white backdrop-blur-md transition shadow-md"
                 >
                   <XCircle size={20} />
                 </button>
@@ -1491,13 +1468,13 @@ function MobileHeader({
   onOpenMenu: () => void;
 }) {
   return (
-    <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-neutral-200 bg-white px-4 md:hidden">
+    <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-border bg-card px-4 md:hidden">
       <div className="flex items-center gap-3">
         <button
           type="button"
           onClick={onOpenMenu}
           aria-label="Open menu"
-          className="flex h-9 w-9 items-center justify-center rounded-lg border border-neutral-200 text-neutral-700 hover:bg-neutral-50"
+          className="ui-button-secondary flex h-9 w-9 items-center justify-center border border-border"
         >
           <Menu size={19} />
         </button>
@@ -1542,7 +1519,7 @@ function CampaignPostCard({
     post.review_status.toLowerCase() === "pending";
 
   return (
-    <article className="rounded-xl border border-neutral-200 bg-white p-4 transition hover:border-neutral-400">
+    <article className="rounded-xl border border-border bg-card p-4 transition hover:border-neutral-400">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 space-y-1">
           <div className="flex flex-wrap items-center gap-2">
@@ -1550,7 +1527,7 @@ function CampaignPostCard({
               {platforms}
             </span>
 
-            <span className="text-xs text-neutral-500">
+            <span className="text-xs text-muted-foreground">
               Day {post.day}
             </span>
 
@@ -1565,20 +1542,20 @@ function CampaignPostCard({
             </span>
           </div>
 
-          <h3 className="mt-1 text-sm font-semibold text-neutral-950">
+          <h3 className="mt-1 text-sm font-semibold text-foreground">
             {post.title}
           </h3>
         </div>
 
         <details className="relative shrink-0">
           <summary
-            className="flex h-8 w-8 cursor-pointer list-none items-center justify-center rounded-lg text-neutral-500 hover:bg-neutral-100 hover:text-neutral-950 [&::-webkit-details-marker]:hidden"
+            className="flex h-8 w-8 cursor-pointer list-none items-center justify-center rounded-lg text-muted-foreground hover:bg-neutral-100 hover:text-foreground [&::-webkit-details-marker]:hidden"
             aria-label={`Post actions for ${post.title}`}
           >
             <MoreHorizontal size={17} />
           </summary>
 
-          <div className="absolute right-0 top-9 z-20 w-44 overflow-hidden rounded-xl border border-neutral-200 bg-white p-1.5 shadow-xl">
+          <div className="absolute right-0 top-9 z-20 w-44 overflow-hidden rounded-xl border border-border bg-card p-1.5 shadow-xl">
             <button
               type="button"
               onClick={() => onEdit(post)}
@@ -1625,7 +1602,7 @@ function CampaignPostCard({
       {post.image_url && (
         <div
           onClick={() => onPreviewImage?.(post.image_url!)}
-          className="group relative mt-3 cursor-pointer overflow-hidden rounded-xl border border-neutral-200 bg-neutral-950/5 shadow-xs transition hover:border-purple-300 hover:shadow-md"
+          className="group relative mt-3 cursor-pointer overflow-hidden rounded-xl border border-border bg-neutral-950/5 shadow-xs transition hover:border-purple-300 hover:shadow-md"
         >
           <img
             src={post.image_url}
@@ -1633,7 +1610,7 @@ function CampaignPostCard({
             className="w-full max-h-80 object-cover transition-transform duration-300 group-hover:scale-[1.02]"
           />
           <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-colors group-hover:bg-black/25">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1.5 text-xs font-bold text-neutral-900 shadow-lg opacity-0 transition-opacity backdrop-blur-xs group-hover:opacity-100">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-card/90 px-3 py-1.5 text-xs font-bold text-neutral-900 shadow-lg opacity-0 transition-opacity backdrop-blur-xs group-hover:opacity-100">
               <Eye size={13} /> Click to View Full Image
             </span>
           </div>
@@ -1649,7 +1626,7 @@ function CampaignPostCard({
           {post.hashtags.slice(0, 8).map((hashtag) => (
             <span
               key={hashtag}
-              className="rounded-md bg-neutral-50 px-2 py-1 text-[10px] text-neutral-500"
+              className="rounded-md bg-neutral-50 px-2 py-1 text-[10px] text-muted-foreground"
             >
               {hashtag.startsWith("#")
                 ? hashtag
@@ -1660,7 +1637,7 @@ function CampaignPostCard({
       )}
 
       <div className="mt-4 flex flex-col gap-3 border-t border-neutral-100 pt-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-wrap items-center gap-3 text-xs text-neutral-500">
+        <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
           <span>
             Objective: {post.objective}
           </span>
@@ -1685,7 +1662,7 @@ function CampaignPostCard({
               href={post.image_url}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-neutral-700 hover:text-neutral-950"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-neutral-700 hover:text-foreground"
             >
               View asset
               <ArrowUpRight size={13} />
@@ -1720,15 +1697,15 @@ function ModalShell({
         }
       }}
     >
-      <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-neutral-200 bg-white shadow-2xl">
+      <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-border bg-card shadow-2xl">
         <div className="flex items-start justify-between gap-4 border-b border-neutral-100 p-5 sm:p-6">
           <div>
-            <h2 className="text-base font-bold text-neutral-950">
+            <h2 className="text-base font-bold text-foreground">
               {title}
             </h2>
 
             {description && (
-              <p className="mt-1 text-xs leading-5 text-neutral-500">
+              <p className="mt-1 text-xs leading-5 text-muted-foreground">
                 {description}
               </p>
             )}
@@ -1813,7 +1790,7 @@ function EditPostModal({
             onChange={(event) =>
               setTitle(event.target.value)
             }
-            className="mt-2 h-10 w-full rounded-xl border border-neutral-200 px-3 text-sm outline-none focus:border-neutral-950"
+            className="mt-2 h-10 w-full rounded-xl border border-border px-3 text-sm outline-none focus:border-neutral-950"
             required
           />
         </div>
@@ -1832,7 +1809,7 @@ function EditPostModal({
               setCaption(event.target.value)
             }
             rows={6}
-            className="mt-2 w-full resize-y rounded-xl border border-neutral-200 px-3 py-2.5 text-sm leading-5 outline-none focus:border-neutral-950"
+            className="mt-2 w-full resize-y rounded-xl border border-border px-3 py-2.5 text-sm leading-5 outline-none focus:border-neutral-950"
             required
           />
         </div>
@@ -1851,7 +1828,7 @@ function EditPostModal({
               setHashtags(event.target.value)
             }
             placeholder="#marketing, #growth"
-            className="mt-2 h-10 w-full rounded-xl border border-neutral-200 px-3 text-sm outline-none focus:border-neutral-950"
+            className="mt-2 h-10 w-full rounded-xl border border-border px-3 text-sm outline-none focus:border-neutral-950"
           />
           <p className="mt-1.5 text-[11px] text-neutral-400">
             Separate hashtags with commas.
@@ -1872,7 +1849,7 @@ function EditPostModal({
               onChange={(event) =>
                 setCallToAction(event.target.value)
               }
-              className="mt-2 h-10 w-full rounded-xl border border-neutral-200 px-3 text-sm outline-none focus:border-neutral-950"
+              className="mt-2 h-10 w-full rounded-xl border border-border px-3 text-sm outline-none focus:border-neutral-950"
             />
           </div>
 
@@ -1889,7 +1866,7 @@ function EditPostModal({
               onChange={(event) =>
                 setVisualTheme(event.target.value)
               }
-              className="mt-2 h-10 w-full rounded-xl border border-neutral-200 px-3 text-sm outline-none focus:border-neutral-950"
+              className="mt-2 h-10 w-full rounded-xl border border-border px-3 text-sm outline-none focus:border-neutral-950"
             />
           </div>
         </div>
@@ -1899,7 +1876,7 @@ function EditPostModal({
             type="button"
             onClick={onClose}
             disabled={loading}
-            className="h-10 rounded-xl border border-neutral-200 px-4 text-xs font-semibold text-neutral-700 hover:bg-neutral-50 disabled:opacity-50"
+            className="ui-button-secondary h-10 border border-border px-4 text-xs font-semibold disabled:opacity-50"
           >
             Cancel
           </button>
@@ -1907,7 +1884,7 @@ function EditPostModal({
           <button
             type="submit"
             disabled={loading}
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-neutral-950 px-4 text-xs font-semibold text-white hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50"
+            className="ui-button-primary inline-flex h-10 items-center justify-center gap-2 px-4 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50"
           >
             {loading && (
               <Loader2
@@ -1962,7 +1939,7 @@ function RejectPostModal({
             rows={5}
             maxLength={5000}
             placeholder="Explain what should be changed..."
-            className="mt-2 w-full resize-y rounded-xl border border-neutral-200 px-3 py-2.5 text-sm leading-5 outline-none focus:border-neutral-950"
+            className="mt-2 w-full resize-y rounded-xl border border-border px-3 py-2.5 text-sm leading-5 outline-none focus:border-neutral-950"
           />
 
           <p className="mt-1.5 text-right text-[11px] text-neutral-400">
@@ -1975,7 +1952,7 @@ function RejectPostModal({
             type="button"
             onClick={onClose}
             disabled={loading}
-            className="h-10 rounded-xl border border-neutral-200 px-4 text-xs font-semibold text-neutral-700 hover:bg-neutral-50 disabled:opacity-50"
+            className="ui-button-secondary h-10 border border-border px-4 text-xs font-semibold disabled:opacity-50"
           >
             Keep post
           </button>
@@ -2043,7 +2020,7 @@ function SchedulePostModal({
             className={`rounded-xl border p-4 text-left transition ${
               scheduleType === "delay"
                 ? "border-neutral-950 bg-neutral-950 text-white"
-                : "border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50"
+                : "border-border bg-card text-neutral-700 hover:bg-neutral-50"
             }`}
           >
             <p className="text-xs font-bold">
@@ -2053,7 +2030,7 @@ function SchedulePostModal({
               className={`mt-1 text-[11px] ${
                 scheduleType === "delay"
                   ? "text-neutral-300"
-                  : "text-neutral-500"
+                  : "text-muted-foreground"
               }`}
             >
               Schedule relative to now.
@@ -2068,7 +2045,7 @@ function SchedulePostModal({
             className={`rounded-xl border p-4 text-left transition ${
               scheduleType === "specific_time"
                 ? "border-neutral-950 bg-neutral-950 text-white"
-                : "border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50"
+                : "border-border bg-card text-neutral-700 hover:bg-neutral-50"
             }`}
           >
             <p className="text-xs font-bold">
@@ -2078,7 +2055,7 @@ function SchedulePostModal({
               className={`mt-1 text-[11px] ${
                 scheduleType === "specific_time"
                   ? "text-neutral-300"
-                  : "text-neutral-500"
+                  : "text-muted-foreground"
               }`}
             >
               Select the exact scheduled time.
@@ -2106,7 +2083,7 @@ function SchedulePostModal({
                   event.target.value,
                 )
               }
-              className="mt-2 h-10 w-full rounded-xl border border-neutral-200 px-3 text-sm outline-none focus:border-neutral-950"
+              className="mt-2 h-10 w-full rounded-xl border border-border px-3 text-sm outline-none focus:border-neutral-950"
             />
 
             <p className="mt-1.5 text-[11px] text-neutral-400">
@@ -2131,7 +2108,7 @@ function SchedulePostModal({
                   event.target.value,
                 )
               }
-              className="mt-2 h-10 w-full rounded-xl border border-neutral-200 px-3 text-sm outline-none focus:border-neutral-950"
+              className="mt-2 h-10 w-full rounded-xl border border-border px-3 text-sm outline-none focus:border-neutral-950"
             />
 
             <p className="mt-1.5 text-[11px] text-neutral-400">
@@ -2145,7 +2122,7 @@ function SchedulePostModal({
             type="button"
             onClick={onClose}
             disabled={loading}
-            className="h-10 rounded-xl border border-neutral-200 px-4 text-xs font-semibold text-neutral-700 hover:bg-neutral-50 disabled:opacity-50"
+            className="ui-button-secondary h-10 border border-border px-4 text-xs font-semibold disabled:opacity-50"
           >
             Cancel
           </button>
@@ -2156,7 +2133,7 @@ function SchedulePostModal({
               void onSchedule();
             }}
             disabled={loading}
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-neutral-950 px-4 text-xs font-semibold text-white hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50"
+            className="ui-button-primary inline-flex h-10 items-center justify-center gap-2 px-4 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50"
           >
             {loading && (
               <Loader2
@@ -2212,7 +2189,7 @@ function PlatformRow({
         </span>
       </div>
 
-      <span className="text-[10px] font-semibold text-neutral-500">
+      <span className="text-[10px] font-semibold text-muted-foreground">
         Campaign
       </span>
     </div>
@@ -2228,7 +2205,7 @@ function TimelineRow({
 }) {
   return (
     <div className="flex items-start justify-between gap-4">
-      <span className="text-xs text-neutral-500">
+      <span className="text-xs text-muted-foreground">
         {label}
       </span>
 
@@ -2248,7 +2225,7 @@ function ProgressMetric({
 }) {
   return (
     <div className="flex items-center justify-between gap-4">
-      <span className="text-xs text-neutral-500">
+      <span className="text-xs text-muted-foreground">
         {label}
       </span>
 
@@ -2267,12 +2244,12 @@ function MetricCard({
   value: string;
 }) {
   return (
-    <div className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm">
-      <p className="text-[11px] text-neutral-500">
+    <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+      <p className="text-[11px] text-muted-foreground">
         {label}
       </p>
 
-      <p className="mt-2 text-lg font-bold tracking-tight text-neutral-950">
+      <p className="mt-2 text-lg font-bold tracking-tight text-foreground">
         {value}
       </p>
     </div>
@@ -2289,9 +2266,9 @@ function StatCard({
   icon: ElementType;
 }) {
   return (
-    <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+    <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
       <div className="flex items-center justify-between">
-        <p className="text-xs text-neutral-500">
+        <p className="text-xs text-muted-foreground">
           {label}
         </p>
 
@@ -2300,7 +2277,7 @@ function StatCard({
         </div>
       </div>
 
-      <p className="mt-3 text-xl font-bold tracking-tight text-neutral-950 sm:text-2xl">
+      <p className="mt-3 text-xl font-bold tracking-tight text-foreground sm:text-2xl">
         {value}
       </p>
     </div>

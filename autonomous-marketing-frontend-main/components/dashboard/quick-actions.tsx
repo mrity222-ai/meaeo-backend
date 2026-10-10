@@ -43,7 +43,7 @@ export function QuickActions() {
             <Link
               key={action.title}
               href={action.href}
-              className="flex items-center gap-3 rounded-xl border border-transparent p-3 transition hover:border-border hover:bg-muted/50"
+              className="ui-button-secondary flex items-center gap-3 border border-transparent p-3 transition hover:border-border"
             >
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border">
                 <Icon className="h-4 w-4" />

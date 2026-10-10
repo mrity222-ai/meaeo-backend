@@ -61,55 +61,20 @@ class BrandProfileAdapter:
                 brand.logo_asset_id
             )
 
-            return CampaignBrandProfile(
-                name=brand.brand_name,
-
-                primary_color=(
-                    brand.primary_color
-                    or ""
-                ),
-
-                secondary_color=(
-                    brand.secondary_color
-                    or ""
-                ),
-
-                fonts={},
-
-                voice=voice,
-
-                hashtags=[],
-
-                products=[],
-
-                logos=(
-                    {
-                        "primary": brand.logo_asset_id
-                    }
-                    if brand.logo_asset_id
-                    else {}
-                ),
-
-                templates={},
-
-                visual={},
-
-                website=(
-                    brand.website
-                    or ""
-                ),
-
+        return CampaignBrandProfile(
+            name=brand.brand_name,
+            primary_color=brand.primary_color or "",
+            secondary_color=brand.secondary_color or "",
+            fonts={},
+            voice=voice,
+            hashtags=[],
+            products=[],
+            logos={"primary": brand.logo_asset_id} if brand.logo_asset_id else {},
+            templates={},
+            visual={},
+            website=brand.website or "",
             contact_details=contact_details,
-
-            logo_position=(
-                brand.logo_position
-                or "upper_right"
-            ),
-
-            contact_position=(
-                brand.contact_position
-                or "lower_right"
-            ),
-
+            logo_position=brand.logo_position or "upper_right",
+            contact_position=brand.contact_position or "lower_right",
             metadata=metadata,
         )

@@ -1,4 +1,17 @@
 import { apiRequest } from "./client";
+import { getBusinessAccountId, getTenantId } from "../auth";
+
+function googleRequest<T>(path: string, options?: Parameters<typeof apiRequest>[1]): Promise<T> {
+  const businessId = getBusinessAccountId();
+  const tenantId = getTenantId();
+  if (!businessId) return Promise.reject(new Error("Select a business first."));
+  const separator = path.includes("?") ? "&" : "?";
+  return apiRequest<T>(`${path}${separator}business_account_id=${businessId}`, options).then(result => {
+    if (getBusinessAccountId() !== businessId || getTenantId() !== tenantId)
+      throw new Error("Business selection changed. Reload this business view.");
+    return result;
+  });
+}
 
 export type GoogleReview = {
   id: number;
@@ -9,7 +22,7 @@ export type GoogleReview = {
   star_rating: number;
   comment?: string | null;
   review_create_time?: string | null;
-  reply_status: "unanswered" | "generated" | "replied";
+  reply_status: "unanswered" | "generated" | "replied" | "reconciliation_required";
   reply_text?: string | null;
   replied_at?: string | null;
   sentiment?: "positive" | "neutral" | "negative" | null;
@@ -31,7 +44,7 @@ export type GooglePost = {
   call_to_action_type?: string | null;
   call_to_action_url?: string | null;
   media_url?: string | null;
-  status: "draft" | "published" | "failed";
+  status: "draft" | "published" | "failed" | "processing" | "reconciliation_required";
   google_post_id?: string | null;
   error_message?: string | null;
   created_at: string;
@@ -58,7 +71,7 @@ export type OptimizeLocalSeoResponse = {
 
 export async function getGoogleReviews(locationName?: string): Promise<GoogleReview[]> {
   const query = locationName ? `?location_name=${encodeURIComponent(locationName)}` : "";
-  return apiRequest<GoogleReview[]>(`/google-business/reviews${query}`);
+  return googleRequest<GoogleReview[]>(`/google-business/reviews${query}`);
 }
 
 export type GoogleBusinessStatus = {
@@ -71,7 +84,7 @@ export type GoogleBusinessStatus = {
 };
 
 export async function getGoogleBusinessStatus(): Promise<GoogleBusinessStatus> {
-  return apiRequest<GoogleBusinessStatus>("/google-business/status");
+  return googleRequest<GoogleBusinessStatus>("/google-business/status");
 }
 
 export async function generateReviewReply(payload: {
@@ -81,7 +94,7 @@ export async function generateReviewReply(payload: {
   services?: string[];
   tone?: string;
 }): Promise<GoogleReview> {
-  return apiRequest<GoogleReview>("/google-business/reviews/generate-reply", {
+  return googleRequest<GoogleReview>("/google-business/reviews/generate-reply", {
     method: "POST",
     body: JSON.stringify(payload),
   });
@@ -91,7 +104,7 @@ export async function sendReviewReply(payload: {
   review_id: number;
   reply_text: string;
 }): Promise<GoogleReview> {
-  return apiRequest<GoogleReview>("/google-business/reviews/send-reply", {
+  return googleRequest<GoogleReview>("/google-business/reviews/send-reply", {
     method: "POST",
     body: JSON.stringify(payload),
   });
@@ -104,7 +117,7 @@ export async function generateDailyOffer(payload: {
   theme?: string;
   discount_target?: string;
 }): Promise<GeneratedOffer> {
-  return apiRequest<GeneratedOffer>("/google-business/offers/generate", {
+  return googleRequest<GeneratedOffer>("/google-business/offers/generate", {
     method: "POST",
     body: JSON.stringify(payload),
   });
@@ -122,14 +135,14 @@ export async function publishLocalPost(payload: {
   call_to_action_url?: string;
   media_url?: string;
 }): Promise<GooglePost> {
-  return apiRequest<GooglePost>("/google-business/offers/publish", {
+  return googleRequest<GooglePost>("/google-business/offers/publish", {
     method: "POST",
     body: JSON.stringify(payload),
   });
 }
 
 export async function getLocalPosts(): Promise<GooglePost[]> {
-  return apiRequest<GooglePost[]>("/google-business/offers");
+  return googleRequest<GooglePost[]>("/google-business/offers");
 }
 
 export async function optimizeLocalSeo(payload: {
@@ -139,7 +152,7 @@ export async function optimizeLocalSeo(payload: {
   current_description?: string;
   current_services?: string[];
 }): Promise<OptimizeLocalSeoResponse> {
-  return apiRequest<OptimizeLocalSeoResponse>("/google-business/seo/optimize", {
+  return googleRequest<OptimizeLocalSeoResponse>("/google-business/seo/optimize", {
     method: "POST",
     body: JSON.stringify(payload),
   });
@@ -148,8 +161,8 @@ export async function optimizeLocalSeo(payload: {
 export async function updateGbpDescription(payload: {
   location_name: string;
   description: string;
-}): Promise<{ success: boolean; location_name: string; description: string }> {
-  return apiRequest<{ success: boolean; location_name: string; description: string }>(
+}): Promise<{ success: boolean; location_name: string; description?: string; error?: string }> {
+  return googleRequest<{ success: boolean; location_name: string; description?: string; error?: string }>(
     "/google-business/profile/update-description",
     {
       method: "POST",

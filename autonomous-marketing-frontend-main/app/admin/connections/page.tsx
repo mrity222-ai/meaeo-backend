@@ -604,7 +604,7 @@ export default function AdminConnectionsPage() {
                                   : connection.id,
                               )
                             }
-                            className="flex h-8 w-8 items-center justify-center rounded-lg border border-border hover:bg-muted"
+                            className="ui-button-secondary flex h-8 w-8 items-center justify-center border border-border"
                             aria-label={
                               expanded
                                 ? "Hide connection details"
@@ -736,7 +736,7 @@ export default function AdminConnectionsPage() {
                         expanded ? null : connection.id,
                       )
                     }
-                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border"
+                    className="ui-button-secondary flex h-8 w-8 shrink-0 items-center justify-center border border-border"
                   >
                     {expanded ? (
                       <ChevronUp className="h-4 w-4" />
@@ -815,7 +815,7 @@ export default function AdminConnectionsPage() {
 
                   <button
                     type="button"
-                    className="mt-4 inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium hover:bg-muted"
+                    className="ui-button-secondary mt-4 inline-flex items-center gap-1.5 border border-border px-3 py-2 text-xs font-medium"
                   >
                     Inspect connection
                     <ExternalLink className="h-3.5 w-3.5" />
@@ -922,18 +922,18 @@ export default function AdminConnectionsPage() {
           <button
             type="button"
             disabled
-            className="rounded-lg border border-border px-3 py-2 text-sm opacity-50"
+            className="ui-button-secondary border border-border px-3 py-2 text-sm opacity-50"
           >
             Previous
           </button>
 
-          <span className="rounded-lg bg-foreground px-3 py-2 text-sm text-background">
+          <span className="rounded-lg bg-foreground px-3 py-2 text-sm text-primary-foreground">
             1
           </span>
 
           <button
             type="button"
-            className="rounded-lg border border-border px-3 py-2 text-sm hover:bg-muted"
+            className="ui-button-secondary border border-border px-3 py-2 text-sm"
           >
             Next
           </button>

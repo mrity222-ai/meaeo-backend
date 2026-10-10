@@ -130,7 +130,7 @@ export default function AdminAIPage() {
             </p>
           </div>
 
-          <button className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-border px-4 text-sm font-medium hover:bg-muted">
+          <button className="ui-button-secondary inline-flex h-10 items-center justify-center gap-2 border border-border px-4 text-sm font-medium">
             <RefreshCw className="h-4 w-4" />
             Refresh
           </button>
@@ -354,7 +354,7 @@ export default function AdminAIPage() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Link
             href="/admin/settings"
-            className="rounded-xl border border-purple-200 bg-purple-50/50 p-5 transition-colors hover:bg-purple-100/50"
+            className="ui-button-secondary border border-purple-200 p-5 transition-colors"
           >
             <Key className="h-5 w-5 text-purple-600" />
             <h3 className="mt-4 font-semibold text-purple-950">AI Keys & Models</h3>
@@ -366,7 +366,7 @@ export default function AdminAIPage() {
 
           <Link
             href="/admin/ai/runs"
-            className="rounded-xl border border-border bg-card p-5 transition-colors hover:bg-muted/40"
+            className="ui-button-secondary border border-border p-5 transition-colors"
           >
             <Activity className="h-5 w-5" />
             <h3 className="mt-4 font-semibold">AI Runs</h3>
@@ -378,7 +378,7 @@ export default function AdminAIPage() {
 
           <Link
             href="/admin/ai/errors"
-            className="rounded-xl border border-border bg-card p-5 transition-colors hover:bg-muted/40"
+            className="ui-button-secondary border border-border p-5 transition-colors"
           >
             <AlertCircle className="h-5 w-5" />
             <h3 className="mt-4 font-semibold">AI Errors</h3>
@@ -390,7 +390,7 @@ export default function AdminAIPage() {
 
           <Link
             href="/admin/system"
-            className="rounded-xl border border-border bg-card p-5 transition-colors hover:bg-muted/40"
+            className="ui-button-secondary border border-border p-5 transition-colors"
           >
             <Activity className="h-5 w-5" />
             <h3 className="mt-4 font-semibold">System Monitoring</h3>

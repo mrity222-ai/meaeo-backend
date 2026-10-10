@@ -230,7 +230,7 @@ export default function AdminAIRunsPage() {
             <button
               onClick={() => void loadRuns()}
               disabled={refreshing}
-              className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-border px-4 text-sm font-medium hover:bg-muted disabled:opacity-50 transition"
+              className="ui-button-secondary inline-flex h-10 items-center justify-center gap-2 border border-border px-4 text-sm font-medium disabled:opacity-50 transition"
             >
               <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
               {refreshing ? "Refreshing..." : "Refresh"}

@@ -23,16 +23,16 @@ export function FeaturesSection() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         
         {/* SECTION HEADER */}
-        <div className="mx-auto max-w-3xl text-center">
-          <div className="inline-flex items-center gap-2 rounded-full bg-purple-100/80 px-4 py-1.5 text-xs font-bold text-purple-700 uppercase tracking-widest mb-3">
+        <div className="marketing-section-intro">
+          <div className="marketing-eyebrow">
             <Sparkles className="h-3.5 w-3.5" />
             <span>Autonomous AI Workforce</span>
           </div>
-          <h2 className="text-3xl font-extrabold tracking-tight text-zinc-950 sm:text-4xl lg:text-5xl">
+          <h2 className="marketing-section-title">
             Everything your business needs to grow online.
           </h2>
           <p className="mt-4 text-base text-zinc-600 sm:text-lg">
-            Replaces expensive social media managers & SEO agencies. One autonomous AI team that creates, designs, posts, and boosts your local SEO 24/7.
+            Plan campaigns, create branded content, schedule approved posts and manage your connected Google Business Profile from one workspace.
           </p>
         </div>
 
@@ -97,6 +97,8 @@ export function FeaturesSection() {
 
             <div className="mt-6 relative aspect-video overflow-hidden rounded-2xl bg-zinc-900 shadow-md">
               <img
+                  loading="lazy"
+                  decoding="async"
                 src="https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=800&q=80"
                 alt="AI Shoot"
                 className="h-full w-full object-cover"
@@ -119,26 +121,26 @@ export function FeaturesSection() {
                 </h3>
               </div>
               <p className="mt-3 text-sm text-zinc-600 leading-relaxed">
-                Replaces manual SEO agencies. Keeps your Google Business Profile tuned, posts daily local offers, and ranks your business #1 on Google Search and Maps.
+                Publish local updates and offers to your connected Google Business Profile and track available Search and Maps metrics. Rankings depend on many factors and are not guaranteed.
               </p>
             </div>
 
             <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-emerald-950">
-                  Google Maps Ranking
+                  Google Business updates
                 </span>
                 <span className="rounded-full bg-emerald-600 px-2.5 py-0.5 text-[10px] font-bold text-white">
-                  Rank #1 Local
+                  Profile activity
                 </span>
               </div>
               <p className="mt-1.5 text-[11px] text-emerald-800">
-                ⭐ 4.9 (210+ Reviews) • Always Open • Auto-Updated Daily
+                Illustrative profile preview · Actual activity appears after connection and sync
               </p>
             </div>
           </div>
 
-          {/* Bento Card 4: It makes Reels. (Spans 7 cols) */}
+          {/* Bento Card 4: It designs branded posts. (Spans 7 cols) */}
           <div className="md:col-span-7 flex flex-col justify-between overflow-hidden rounded-3xl border border-purple-100 bg-white p-6 sm:p-8 shadow-sm transition-all hover:shadow-md hover:border-purple-200">
             <div>
               <div className="flex items-center gap-3">
@@ -146,11 +148,11 @@ export function FeaturesSection() {
                   <Video className="h-5 w-5" />
                 </div>
                 <h3 className="text-2xl font-black tracking-tight text-zinc-950">
-                  It makes Reels.
+                  It designs branded posts.
                 </h3>
               </div>
               <p className="mt-3 text-sm text-zinc-600 leading-relaxed">
-                Ultra-realistic 9:16 vertical video reels in Hindi, English, and regional Indian languages with AI voiceovers, trending captions & music.
+                Create branded image posts with your catalogue photos, logo, captions and contact details. Review your content before scheduling it across connected channels.
               </p>
             </div>
 
@@ -160,10 +162,10 @@ export function FeaturesSection() {
               </div>
               <div>
                 <p className="text-xs font-bold text-indigo-950">
-                  Auto-Generated Viral Video Reel
+                  Branded image content
                 </p>
                 <p className="text-[11px] text-indigo-700 mt-0.5">
-                  Voiceover, Captions & Subtitles Included
+                  Catalogue, logo and captions
                 </p>
               </div>
             </div>
@@ -183,7 +185,7 @@ export function FeaturesSection() {
                   </h3>
                 </div>
                 <p className="mt-3 text-sm text-zinc-600 leading-relaxed">
-                  Reviews monitored and replied to across Google, Instagram, and Facebook 24/7. Responds in seconds in your brand tone with accurate business prices.
+                  Manage reviews and AI-assisted replies for your connected Google Business Profile. Review settings and permissions control how replies are handled.
                 </p>
               </div>
 
@@ -207,8 +209,8 @@ export function FeaturesSection() {
                 </p>
 
                 <div className="mt-3 border-t border-amber-200/80 pt-2 text-[11px] text-amber-900 font-semibold flex items-center justify-between">
-                  <span>⚡ Responded in 2 seconds by maeaco AI:</span>
-                  <span className="text-emerald-700 font-bold">Auto-Posted</span>
+                  <span>Sample Google review reply:</span>
+                  <span className="text-emerald-700 font-bold">Sample reply</span>
                 </div>
               </div>
 
@@ -221,10 +223,10 @@ export function FeaturesSection() {
         <div className="mt-14 overflow-hidden rounded-3xl border border-purple-200 bg-gradient-to-r from-purple-900 via-indigo-950 to-zinc-950 p-8 text-white shadow-xl">
           <div className="mx-auto max-w-4xl text-center">
             <h3 className="text-2xl font-black sm:text-3xl text-white tracking-tight">
-              Why pay ₹40,000/month to freelancers & agencies?
+              Keep your marketing in one workspace.
             </h3>
             <p className="mt-2 text-sm text-purple-200">
-              maeaco AI does 10x more work at a fraction of the cost, 24 hours a day.
+              Plan, create, review and schedule content with one connected workflow.
             </p>
 
             <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2 text-left">
@@ -235,10 +237,10 @@ export function FeaturesSection() {
                   <span>Traditional Agency / Freelancer</span>
                 </div>
                 <ul className="mt-3 space-y-2 text-xs text-zinc-300">
-                  <li>• Costs ₹30,000 – ₹50,000 / month</li>
-                  <li>• Slow turnaround (takes days to post)</li>
-                  <li>• Missed post deadlines & manual errors</li>
-                  <li>• No 24/7 Google Review Auto-Responder</li>
+                  <li>• Pricing varies by service and scope</li>
+                  <li>• Separate tools for planning and design</li>
+                  <li>• Manual publishing and reporting</li>
+                  <li>• Review management depends on the service</li>
                 </ul>
               </div>
 
@@ -249,9 +251,9 @@ export function FeaturesSection() {
                   <span>maeaco Autonomous AI Team</span>
                 </div>
                 <ul className="mt-3 space-y-2 text-xs text-purple-200">
-                  <li>• Starts at ₹499 / month</li>
-                  <li>• Instant execution in 5 seconds</li>
-                  <li>• 100% on-brand auto-scheduling & posting</li>
+                  <li>• Premium starts at ₹999 / month</li>
+                  <li>• AI-assisted content generation</li>
+                  <li>• Branded content with review and scheduling</li>
                   <li>• 24/7 Google Review & Local SEO Auto-Engine</li>
                 </ul>
               </div>
@@ -262,7 +264,7 @@ export function FeaturesSection() {
                 href="/signup"
                 className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 px-8 py-3.5 text-sm font-bold text-white shadow-lg transition-all hover:scale-105"
               >
-                <span>Replace My Marketing Agency Now</span>
+                <span>Start my marketing workspace</span>
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </div>

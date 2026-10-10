@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  disconnectPlatformChannel,
   getBusinessChannels,
   getGoogleBusinessSelection,
   getLinkedInSelection,
@@ -36,6 +37,7 @@ import {
   Unplug,
 } from "lucide-react";
 
+import { DashboardTopHeader } from "@/components/navigation/dashboard-top-header";
 import { DashboardSidebar } from "@/components/navigation/dashboard-sidebar";
 import { UserAccountMenu } from "@/components/navigation/user-account-menu";
 import { SocialLogo } from "@/components/ui/social-logo";
@@ -172,6 +174,8 @@ export default function ConnectionsPage() {
   const [loadingLinkedInSelection, setLoadingLinkedInSelection] = useState(false);
   const [selectingLinkedInAccount, setSelectingLinkedInAccount] = useState<string | null>(null);
   const [linkedinSelectionOpen, setLinkedinSelectionOpen] = useState(false);
+
+  const [disconnectingPlatform, setDisconnectingPlatform] = useState<string | null>(null);
 
   const oauthHandledRef = useRef(false);
 
@@ -537,6 +541,23 @@ export default function ConnectionsPage() {
       );
     };
 
+  const handleDisconnect = async (platformName: string) => {
+    try {
+      setDisconnectingPlatform(platformName);
+      setError(null);
+      await disconnectPlatformChannel(platformName);
+      await loadChannels(false);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : `Failed to disconnect ${platformName}.`,
+      );
+    } finally {
+      setDisconnectingPlatform(null);
+    }
+  };
+
   // -------------------------------------------------------
   // Complete Meta account selection
   // -------------------------------------------------------
@@ -774,7 +795,7 @@ export default function ConnectionsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white text-neutral-950">
+    <div className="min-h-screen bg-card text-foreground">
       <DashboardSidebar
         open={sidebarOpen}
         onClose={() =>
@@ -783,74 +804,15 @@ export default function ConnectionsPage() {
       />
 
       <main className="min-h-screen md:pl-[230px]">
-        {/* Mobile Header */}
-        <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-neutral-200 bg-white px-4 md:hidden">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() =>
-                setSidebarOpen(true)
-              }
-              aria-label="Open menu"
-              className="flex h-9 w-9 items-center justify-center rounded-lg border border-neutral-200 text-neutral-700 hover:bg-neutral-50"
-            >
-              <Menu size={19} />
-            </button>
-
-            <div className="flex items-center gap-2">
-              <img
-                src="/logo/app logo.png"
-                alt="maeaco logo"
-                className="h-7 w-7 rounded-lg object-contain"
-              />
-
-              <span className="text-base font-bold tracking-tight text-neutral-950">
-                maeaco
-              </span>
-            </div>
-          </div>
-
-          <UserAccountMenu />
-        </header>
-
-        {/* Desktop Header */}
-        <div className="hidden h-16 items-center justify-between border-b border-neutral-200 px-7 md:flex">
-          <div>
-            <p className="text-xs text-neutral-500">
-              Workspace
-            </p>
-
-            <p className="text-sm font-medium">
-              Your business workspace
-            </p>
-          </div>
-
-          <div className="flex items-center gap-4 text-xs">
-            <div className="flex items-center gap-2">
-              <span
-                className={`h-2 w-2 rounded-full ${
-                  connectedCount > 0
-                    ? "bg-emerald-500"
-                    : "bg-neutral-300"
-                }`}
-              />
-
-              <span className="font-medium text-neutral-700">
-                {connectedCount} of{" "}
-                {PLATFORM_DEFINITIONS.length}{" "}
-                platforms connected
-              </span>
-            </div>
-
-            <UserAccountMenu />
-          </div>
-        </div>
+        <DashboardTopHeader title="Connections" subtitle="Connect your business accounts" onMenuClick={() => setSidebarOpen(true)}
+          actions={<span className="hidden sm:inline text-xs text-muted-foreground">{connectedCount} of {PLATFORM_DEFINITIONS.length} platforms connected</span>} />
 
         {/* Content */}
-        <div className="mx-auto w-full max-w-[1450px] px-4 py-6 sm:px-6 lg:px-8">
+        <div className="mx-auto w-full max-w-[1450px] px-4 py-6 pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-8 sm:px-6 lg:px-8">
           {/* Page Header */}
           <section className="mb-8 flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <p className="mb-1 text-sm text-neutral-500">
+              <p className="mb-1 text-sm text-muted-foreground">
                 Workspace
               </p>
 
@@ -858,7 +820,7 @@ export default function ConnectionsPage() {
                 Connections
               </h1>
 
-              <p className="mt-1 max-w-2xl text-sm text-neutral-500 sm:text-base">
+              <p className="mt-1 max-w-2xl text-sm text-muted-foreground sm:text-base">
                 Connect your social platforms so maeaco can create, schedule, and
                 publish content automatically.
               </p>
@@ -877,7 +839,7 @@ export default function ConnectionsPage() {
                 connectedCount ===
                   PLATFORM_DEFINITIONS.length
               }
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-neutral-950 px-5 text-sm font-medium text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50"
+              className="ui-button-primary inline-flex h-11 items-center justify-center gap-2 px-5 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50"
             >
               {connectingPlatform ||
               loadingMetaSelection ||
@@ -910,7 +872,7 @@ export default function ConnectionsPage() {
                   onClick={() =>
                     void loadChannels(true)
                   }
-                  className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-lg border border-red-200 bg-white px-3 text-xs font-medium text-red-700 hover:bg-red-50"
+                  className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-lg border border-red-200 bg-card px-3 text-xs font-medium text-red-700 hover:bg-red-50"
                 >
                   <RefreshCw className="h-3.5 w-3.5" />
                   Try again
@@ -920,19 +882,19 @@ export default function ConnectionsPage() {
           )}
 
           {/* Connection status */}
-          <section className="mb-6 rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm sm:p-6">
+          <section className="mb-6 rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-6">
             <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
               <div className="flex gap-4">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-neutral-200">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border">
                   <ShieldCheck className="h-5 w-5" />
                 </div>
 
                 <div>
-                  <h2 className="font-semibold text-neutral-950">
+                  <h2 className="font-semibold text-foreground">
                     Your accounts are secure
                   </h2>
 
-                  <p className="mt-1 text-sm text-neutral-500">
+                  <p className="mt-1 text-sm text-muted-foreground">
                     Connections use secure authorization.
                     Your passwords are never stored by maeaco.
                   </p>
@@ -976,9 +938,18 @@ export default function ConnectionsPage() {
                       connectingPlatform ===
                       platform.name
                     }
+                    disconnecting={
+                      disconnectingPlatform ===
+                      platform.name
+                    }
                     onConnect={() =>
                       void handleConnect(
                         platform,
+                      )
+                    }
+                    onDisconnect={() =>
+                      void handleDisconnect(
+                        platform.name,
                       )
                     }
                   />
@@ -988,19 +959,19 @@ export default function ConnectionsPage() {
           </section>
 
           {/* Autonomous publishing */}
-          <section className="mt-6 rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm sm:p-6">
+          <section className="mt-6 rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-6">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
               <div className="flex gap-4">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-neutral-200 bg-neutral-950 text-white">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border bg-neutral-950 text-white">
                   <Sparkles className="h-5 w-5" />
                 </div>
 
                 <div>
-                  <h2 className="font-semibold text-neutral-950">
+                  <h2 className="font-semibold text-foreground">
                     Autonomous publishing
                   </h2>
 
-                  <p className="mt-1 max-w-2xl text-sm leading-6 text-neutral-500">
+                  <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
                     Once your platforms are connected,
                     the system can use your campaign
                     strategy to generate content, schedule
@@ -1015,7 +986,7 @@ export default function ConnectionsPage() {
                 disabled={
                   connectedCount === 0
                 }
-                className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-neutral-200 px-4 text-sm font-medium transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50"
+                className="ui-button-secondary inline-flex h-10 shrink-0 items-center justify-center gap-2 border border-border px-4 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Publishing settings
                 <Settings2 className="h-4 w-4" />
@@ -1035,10 +1006,10 @@ export default function ConnectionsPage() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="meta-selection-title"
-            className="w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl"
+            className="w-full max-w-lg overflow-hidden rounded-2xl bg-card shadow-2xl"
           >
             {/* Modal Header */}
-            <div className="border-b border-neutral-200 px-5 py-5 sm:px-6">
+            <div className="border-b border-border px-5 py-5 sm:px-6">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-neutral-950 text-white">
@@ -1047,12 +1018,12 @@ export default function ConnectionsPage() {
 
                   <h2
                     id="meta-selection-title"
-                    className="text-lg font-semibold text-neutral-950"
+                    className="text-lg font-semibold text-foreground"
                   >
                     Select an account
                   </h2>
 
-                  <p className="mt-1 text-sm leading-5 text-neutral-500">
+                  <p className="mt-1 text-sm leading-5 text-muted-foreground">
                     Meta found the following accounts.
                     Select the account you want to connect
                     to your business workspace.
@@ -1069,7 +1040,7 @@ export default function ConnectionsPage() {
                     null
                   }
                   aria-label="Close"
-                  className="rounded-lg p-2 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 disabled:opacity-50"
+                  className="rounded-lg p-2 text-muted-foreground hover:bg-neutral-100 hover:text-neutral-900 disabled:opacity-50"
                 >
                   ×
                 </button>
@@ -1080,7 +1051,7 @@ export default function ConnectionsPage() {
             <div className="max-h-[60vh] overflow-y-auto p-5 sm:p-6">
               {metaAccounts.length === 0 ? (
                 <div className="flex items-center justify-center py-10">
-                  <Loader2 className="h-6 w-6 animate-spin text-neutral-500" />
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -1107,9 +1078,9 @@ export default function ConnectionsPage() {
                             selectingMetaAccount !==
                             null
                           }
-                          className="group flex w-full items-center gap-4 rounded-xl border border-neutral-200 bg-white p-4 text-left transition hover:border-neutral-400 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60"
+                          className="ui-button-secondary group flex w-full items-center gap-4 border border-border p-4 text-left transition hover:border-neutral-400 disabled:cursor-not-allowed disabled:opacity-60"
                         >
-                          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-neutral-200 bg-white">
+                          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border bg-card">
                             {isInstagram ? (
                               <Instagram className="h-5 w-5" />
                             ) : (
@@ -1124,11 +1095,11 @@ export default function ConnectionsPage() {
                                 : "Facebook"}
                             </p>
 
-                            <p className="mt-0.5 truncate text-sm font-semibold text-neutral-950">
+                            <p className="mt-0.5 truncate text-sm font-semibold text-foreground">
                               {account.account_name}
                             </p>
 
-                            <p className="mt-1 truncate text-xs text-neutral-500">
+                            <p className="mt-1 truncate text-xs text-muted-foreground">
                               {
                                 account.external_account_id
                               }
@@ -1149,8 +1120,8 @@ export default function ConnectionsPage() {
             </div>
 
             {/* Modal Footer */}
-            <div className="border-t border-neutral-200 bg-neutral-50 px-5 py-4 sm:px-6">
-              <p className="text-xs leading-5 text-neutral-500">
+            <div className="border-t border-border bg-neutral-50 px-5 py-4 sm:px-6">
+              <p className="text-xs leading-5 text-muted-foreground">
                 You can connect another Meta account later
                 from this Connections page.
               </p>
@@ -1169,24 +1140,24 @@ export default function ConnectionsPage() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="google-business-selection-title"
-            className="w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl"
+            className="w-full max-w-lg overflow-hidden rounded-2xl bg-card shadow-2xl"
           >
             {/* Modal Header */}
-            <div className="border-b border-neutral-200 px-5 py-5 sm:px-6">
+            <div className="border-b border-border px-5 py-5 sm:px-6">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl border border-neutral-200 bg-white">
+                  <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-card">
                     <Store className="h-5 w-5 text-neutral-900" />
                   </div>
 
                   <h2
                     id="google-business-selection-title"
-                    className="text-lg font-semibold text-neutral-950"
+                    className="text-lg font-semibold text-foreground"
                   >
                     Select your business location
                   </h2>
 
-                  <p className="mt-1 text-sm leading-5 text-neutral-500">
+                  <p className="mt-1 text-sm leading-5 text-muted-foreground">
                     Google found the following Business Profile
                     locations. Select the location you want to
                     connect to your workspace.
@@ -1203,7 +1174,7 @@ export default function ConnectionsPage() {
                     null
                   }
                   aria-label="Close"
-                  className="rounded-lg p-2 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 disabled:opacity-50"
+                  className="rounded-lg p-2 text-muted-foreground hover:bg-neutral-100 hover:text-neutral-900 disabled:opacity-50"
                 >
                   ×
                 </button>
@@ -1215,7 +1186,7 @@ export default function ConnectionsPage() {
               {googleBusinessLocations.length ===
               0 ? (
                 <div className="flex items-center justify-center py-10">
-                  <Loader2 className="h-6 w-6 animate-spin text-neutral-500" />
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -1241,9 +1212,9 @@ export default function ConnectionsPage() {
                             selectingGoogleBusinessLocation !==
                             null
                           }
-                          className="group flex w-full items-start gap-4 rounded-xl border border-neutral-200 bg-white p-4 text-left transition hover:border-neutral-400 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60"
+                          className="ui-button-secondary group flex w-full items-start gap-4 border border-border p-4 text-left transition hover:border-neutral-400 disabled:cursor-not-allowed disabled:opacity-60"
                         >
-                          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-neutral-200 bg-white">
+                          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border bg-card">
                             <Store className="h-5 w-5 text-neutral-800" />
                           </div>
 
@@ -1252,12 +1223,12 @@ export default function ConnectionsPage() {
                               Google Business Profile
                             </p>
 
-                            <p className="mt-0.5 truncate text-sm font-semibold text-neutral-950">
+                            <p className="mt-0.5 truncate text-sm font-semibold text-foreground">
                               {location.title}
                             </p>
 
                             {address && (
-                              <p className="mt-1 text-xs leading-5 text-neutral-500">
+                              <p className="mt-1 text-xs leading-5 text-muted-foreground">
                                 {formatGoogleAddress(
                                   address,
                                 )}
@@ -1283,8 +1254,8 @@ export default function ConnectionsPage() {
             </div>
 
             {/* Modal Footer */}
-            <div className="border-t border-neutral-200 bg-neutral-50 px-5 py-4 sm:px-6">
-              <p className="text-xs leading-5 text-neutral-500">
+            <div className="border-t border-border bg-neutral-50 px-5 py-4 sm:px-6">
+              <p className="text-xs leading-5 text-muted-foreground">
                 You can connect another Google Business Profile
                 later from this Connections page.
               </p>
@@ -1303,24 +1274,24 @@ export default function ConnectionsPage() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="linkedin-selection-title"
-            className="w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl"
+            className="w-full max-w-lg overflow-hidden rounded-2xl bg-card shadow-2xl"
           >
             {/* Modal Header */}
-            <div className="border-b border-neutral-200 px-5 py-5 sm:px-6">
+            <div className="border-b border-border px-5 py-5 sm:px-6">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl border border-neutral-200 bg-white">
+                  <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-card">
                     <Linkedin className="h-5 w-5 text-[#0A66C2]" />
                   </div>
 
                   <h2
                     id="linkedin-selection-title"
-                    className="text-lg font-semibold text-neutral-950"
+                    className="text-lg font-semibold text-foreground"
                   >
                     Select your LinkedIn account
                   </h2>
 
-                  <p className="mt-1 text-sm leading-5 text-neutral-500">
+                  <p className="mt-1 text-sm leading-5 text-muted-foreground">
                     LinkedIn found the following profile or company pages. Select the account you want to connect to your workspace.
                   </p>
                 </div>
@@ -1330,7 +1301,7 @@ export default function ConnectionsPage() {
                   onClick={handleCloseLinkedInSelection}
                   disabled={selectingLinkedInAccount !== null}
                   aria-label="Close"
-                  className="rounded-lg p-2 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 disabled:opacity-50"
+                  className="rounded-lg p-2 text-muted-foreground hover:bg-neutral-100 hover:text-neutral-900 disabled:opacity-50"
                 >
                   ×
                 </button>
@@ -1341,7 +1312,7 @@ export default function ConnectionsPage() {
             <div className="max-h-[60vh] overflow-y-auto p-5 sm:p-6">
               {linkedinAccounts.length === 0 ? (
                 <div className="flex items-center justify-center py-10">
-                  <Loader2 className="h-6 w-6 animate-spin text-neutral-500" />
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -1355,9 +1326,9 @@ export default function ConnectionsPage() {
                         type="button"
                         onClick={() => void handleSelectLinkedInAccount(account)}
                         disabled={selectingLinkedInAccount !== null}
-                        className="group flex w-full items-center gap-4 rounded-xl border border-neutral-200 bg-white p-4 text-left transition hover:border-neutral-400 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60"
+                        className="ui-button-secondary group flex w-full items-center gap-4 border border-border p-4 text-left transition hover:border-neutral-400 disabled:cursor-not-allowed disabled:opacity-60"
                       >
-                        <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-neutral-200 bg-white">
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-card">
                           {account.picture ? (
                             <img
                               src={account.picture}
@@ -1374,12 +1345,12 @@ export default function ConnectionsPage() {
                             {isOrg ? "Company Page" : "Personal Profile"}
                           </p>
 
-                          <p className="mt-0.5 truncate text-sm font-semibold text-neutral-950">
+                          <p className="mt-0.5 truncate text-sm font-semibold text-foreground">
                             {account.account_name}
                           </p>
 
                           {account.email && (
-                            <p className="mt-1 truncate text-xs text-neutral-500">
+                            <p className="mt-1 truncate text-xs text-muted-foreground">
                               {account.email}
                             </p>
                           )}
@@ -1398,8 +1369,8 @@ export default function ConnectionsPage() {
             </div>
 
             {/* Modal Footer */}
-            <div className="border-t border-neutral-200 bg-neutral-50 px-5 py-4 sm:px-6">
-              <p className="text-xs leading-5 text-neutral-500">
+            <div className="border-t border-border bg-neutral-50 px-5 py-4 sm:px-6">
+              <p className="text-xs leading-5 text-muted-foreground">
                 You can connect another LinkedIn channel or page later from this Connections page.
               </p>
             </div>
@@ -1415,18 +1386,22 @@ function PlatformCard({
   channel,
   loading,
   connecting,
+  disconnecting = false,
   onConnect,
+  onDisconnect,
 }: {
   platform: PlatformDefinition;
   channel?: BusinessChannel;
   loading: boolean;
   connecting: boolean;
+  disconnecting?: boolean;
   onConnect: () => void;
+  onDisconnect?: () => void;
 }) {
   const connected = Boolean(channel);
 
   return (
-    <article className="card-3d card-3d-hover p-5 sm:p-6">
+    <article className="ui-card ui-card-hover p-5 sm:p-6">
       {/* Card header */}
       <div className="flex items-start justify-between gap-4">
         <div className="flex min-w-0 gap-4">
@@ -1434,7 +1409,7 @@ function PlatformCard({
 
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <h2 className="font-semibold text-slate-900">
+              <h2 className="font-semibold text-foreground">
                 {platform.name}
               </h2>
 
@@ -1449,7 +1424,7 @@ function PlatformCard({
                   Connected
                 </span>
               ) : (
-                <span className="rounded-full border border-purple-200 bg-purple-50/60 px-2.5 py-0.5 text-xs text-purple-700 font-medium">
+                <span className="ui-badge-neutral">
                   Not connected
                 </span>
               )}
@@ -1472,19 +1447,19 @@ function PlatformCard({
 
       {/* Connected account */}
       {connected && channel ? (
-        <div className="mt-6 rounded-xl border border-purple-100 bg-purple-50/40 p-4">
+        <div className="mt-6 rounded-xl border border-border bg-purple-50/40 p-4">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0">
               <p className="text-xs text-purple-600 font-medium">
                 Connected account
               </p>
 
-              <p className="mt-1 truncate text-sm font-semibold text-slate-900">
+              <p className="mt-1 truncate text-sm font-semibold text-foreground">
                 {channel.account_name}
               </p>
 
               {channel.external_account_id && (
-                <p className="mt-1 truncate text-xs text-slate-500">
+                <p className="mt-1 truncate text-xs text-muted-foreground">
                   {channel.external_account_id}
                 </p>
               )}
@@ -1496,7 +1471,7 @@ function PlatformCard({
                 onClick={() => {
                   window.location.reload();
                 }}
-                className="inline-flex h-9 items-center gap-2 rounded-lg border border-purple-200 bg-white px-3 text-xs font-medium text-slate-700 hover:bg-purple-50 shadow-sm"
+                className="ui-button-secondary inline-flex h-9 items-center gap-2 border border-purple-200 px-3 text-xs font-medium"
               >
                 <RefreshCw className="h-3.5 w-3.5 text-purple-600" />
                 Refresh
@@ -1504,11 +1479,16 @@ function PlatformCard({
 
               <button
                 type="button"
-                disabled
-                title="Disconnect will be enabled after the connection lifecycle is implemented."
-                className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-400 disabled:cursor-not-allowed"
+                onClick={onDisconnect}
+                disabled={disconnecting}
+                title={`Disconnect ${platform.name}`}
+                className="inline-flex h-9 items-center gap-2 rounded-lg border border-red-200 bg-card px-3 text-xs font-medium text-red-600 hover:bg-red-50 shadow-sm transition disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <Unplug className="h-3.5 w-3.5" />
+                {disconnecting ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin text-red-600" />
+                ) : (
+                  <Unplug className="h-3.5 w-3.5 text-red-600" />
+                )}
                 Disconnect
               </button>
             </div>
@@ -1522,7 +1502,7 @@ function PlatformCard({
             disabled={
               loading || connecting
             }
-            className="btn-purple-gradient inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl px-5 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+            className="ui-button-primary inline-flex h-10 w-full items-center justify-center gap-2 px-5 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
           >
             {connecting ? (
               <>
@@ -1557,7 +1537,7 @@ function Capability({
   label: string;
 }) {
   return (
-    <span className="rounded-md border border-neutral-200 px-2.5 py-1 text-xs text-neutral-500">
+    <span className="rounded-md border border-border px-2.5 py-1 text-xs text-muted-foreground">
       {label}
     </span>
   );

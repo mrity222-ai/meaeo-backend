@@ -51,20 +51,20 @@ export function AIPreviewSection() {
   const activeSample = samples.find((s) => s.id === selectedId) || samples[0];
 
   return (
-    <section className="bg-white py-20 lg:py-28 text-zinc-900 border-t border-purple-100/70">
+    <section id="demo" className="bg-white py-20 lg:py-28 text-zinc-900 border-t border-purple-100/70">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         
         {/* Section Header */}
-        <div className="mx-auto max-w-3xl text-center mb-12">
-          <div className="inline-flex items-center gap-2 rounded-full bg-purple-100/80 px-4 py-1.5 text-xs font-bold text-purple-700 uppercase tracking-widest mb-3">
+        <div className="marketing-section-intro marketing-section-spaced">
+          <div className="marketing-eyebrow">
             <Sparkles className="h-3.5 w-3.5" />
-            <span>Interactive Live Demo</span>
+            <span>Interactive Sample Preview</span>
           </div>
-          <h2 className="text-3xl font-extrabold tracking-tight text-zinc-950 sm:text-4xl lg:text-5xl">
+          <h2 className="marketing-section-title">
             See how maeaco creates AI posts for your business
           </h2>
           <p className="mt-3 text-base text-zinc-500 font-normal">
-            Select a business category below to preview live AI-generated captions, branded overlays, and auto-scheduling.
+            Explore illustrative captions, branding and schedules. These are static samples with stock images; no live generation or publishing occurs here.
           </p>
         </div>
 
@@ -73,6 +73,8 @@ export function AIPreviewSection() {
           {samples.map((s) => (
             <button
               key={s.id}
+              type="button"
+              aria-pressed={selectedId === s.id}
               onClick={() => setSelectedId(s.id)}
               className={`rounded-full px-5 py-2.5 text-sm font-semibold transition-all ${
                 selectedId === s.id
@@ -86,7 +88,7 @@ export function AIPreviewSection() {
         </div>
 
         {/* Live Card Showcase Grid */}
-        <div className="mx-auto max-w-4xl overflow-hidden rounded-3xl border border-purple-100 bg-[#FAF9FF] p-6 sm:p-10 shadow-xl lg:grid lg:grid-cols-12 lg:gap-10 lg:items-center">
+        <div key={selectedId} className="marketing-crossfade mx-auto max-w-4xl overflow-hidden rounded-3xl border border-purple-100 bg-[#FAF9FF] p-6 sm:p-10 shadow-xl lg:grid lg:grid-cols-12 lg:gap-10 lg:items-center">
           
           {/* Left Column: Instagram Preview Mockup */}
           <div className="lg:col-span-6 mb-8 lg:mb-0">
@@ -101,7 +103,7 @@ export function AIPreviewSection() {
                     <p className="text-xs font-bold text-zinc-900 leading-none">
                       {activeSample.brandName}
                     </p>
-                    <p className="text-[10px] text-zinc-400 mt-0.5">Sponsored • Auto-AI</p>
+                    <p className="text-[10px] text-zinc-400 mt-0.5">Sample post • Stock image</p>
                   </div>
                 </div>
                 <Instagram className="h-4 w-4 text-zinc-400" />
@@ -110,6 +112,8 @@ export function AIPreviewSection() {
               {/* Image Container with Brand Overlay */}
               <div className="relative aspect-square w-full overflow-hidden bg-zinc-100">
                 <img
+                  loading="lazy"
+                  decoding="async"
                   src={activeSample.image}
                   alt={activeSample.brandName}
                   className="h-full w-full object-cover"
@@ -139,7 +143,7 @@ export function AIPreviewSection() {
                   <Share2 className="h-5 w-5" />
                 </div>
                 <span className="text-[11px] font-semibold text-purple-600">
-                  Auto-Published
+                  Publishing preview
                 </span>
               </div>
 
@@ -160,11 +164,11 @@ export function AIPreviewSection() {
           <div className="lg:col-span-6 space-y-5">
             <div className="inline-flex items-center gap-2 rounded-lg bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800">
               <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-              <span>AI Multi-Agent Automated</span>
+              <span>Illustrative content sample</span>
             </div>
 
             <h3 className="text-2xl font-bold tracking-tight text-zinc-950 sm:text-3xl">
-              Generated in 5 seconds by maeaco AI
+              A preview of your branded content
             </h3>
 
             <div className="space-y-3.5 text-sm text-zinc-600">
@@ -191,7 +195,7 @@ export function AIPreviewSection() {
                   3
                 </div>
                 <p>
-                  <strong className="text-zinc-900">Smart Peak Hour Time:</strong> Scheduled for <span className="font-bold text-purple-700">{activeSample.time}</span>.
+                  <strong className="text-zinc-900">Smart Peak Hour Time:</strong> Example schedule: <span className="font-bold text-purple-700">{activeSample.time}</span>.
                 </p>
               </div>
             </div>

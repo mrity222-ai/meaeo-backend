@@ -319,3 +319,20 @@ export async function selectLinkedInAccount(
     },
   );
 }
+
+/**
+ * Disconnect a social channel for a Business Account.
+ */
+export async function disconnectPlatformChannel(
+  platform: string,
+  businessAccountId = requireBusinessAccountId(),
+): Promise<{ success: boolean; message: string }> {
+  const normalizedPlatform = platform.trim().toLowerCase();
+  return apiRequest<{ success: boolean; message: string }>(
+    `/business-accounts/${businessAccountId}/channels/${normalizedPlatform}/disconnect`,
+    {
+      method: "POST",
+      headers: tenantHeaders(),
+    },
+  );
+}

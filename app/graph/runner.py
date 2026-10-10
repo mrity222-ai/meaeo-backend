@@ -21,6 +21,12 @@ class GraphRunner:
         self.campaign_manager = CampaignManager()
 
     def run(self, state):
+        from app.services.campaign_asset_service import CampaignAssetService
+        with SessionLocal() as db:
+            with CampaignAssetService(db).bind_inputs(state):
+                return self._run(state)
+
+    def _run(self, state):
 
         # -------------------------------------------------
         # Validate tenant context

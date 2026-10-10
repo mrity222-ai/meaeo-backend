@@ -5,17 +5,14 @@ from huggingface_hub import (
 
 from app.models.base import BaseProvider
 from app.models.config import settings
+from app.services.admin_settings_service import provider_api_key
 
 
 class HuggingFaceProvider(BaseProvider):
 
     def __init__(self, model: str):
 
-        hf_token = (
-            settings.HF_TOKEN.get_secret_value()
-            if hasattr(settings.HF_TOKEN, "get_secret_value")
-            else str(settings.HF_TOKEN)
-        )
+        hf_token = provider_api_key("text", "huggingface")
 
         self.client = InferenceClient(
             api_key=hf_token

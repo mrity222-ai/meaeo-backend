@@ -32,6 +32,7 @@ import {
   Zap,
 } from "lucide-react";
 
+import { DashboardTopHeader } from "@/components/navigation/dashboard-top-header";
 import { DashboardSidebar } from "@/components/navigation/dashboard-sidebar";
 import { UserAccountMenu } from "@/components/navigation/user-account-menu";
 import { SocialLogo } from "@/components/ui/social-logo";
@@ -262,57 +263,19 @@ export default function ContentReviewPage() {
     <div className="min-h-screen bg-background text-foreground">
       <DashboardSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      <div className="lg:pl-72">
-        {/* Mobile Header */}
-        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-background/95 px-4 backdrop-blur lg:hidden">
-          <button
-            onClick={() => setSidebarOpen(true)}
-            aria-label="Open menu"
-            className="rounded-lg p-2 hover:bg-muted"
-          >
-            <Menu className="h-5 w-5" />
-          </button>
-          <div className="flex items-center gap-2">
-            <FileCheck className="h-5 w-5 text-purple-600" />
-            <span className="font-semibold text-foreground">Content Review</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <button
-              type="button"
-              onClick={() => void loadContentQueue()}
-              className="rounded-lg p-2 hover:bg-muted"
-            >
-              <RefreshCw className={`h-5 w-5 ${refreshing ? "animate-spin" : ""}`} />
+      <div className="md:pl-[230px]">
+        <DashboardTopHeader title="Content Review" subtitle="Review and approve your campaign posts"
+          onMenuClick={() => setSidebarOpen(true)} actions={<>
+            <span className="hidden lg:inline text-xs text-muted-foreground">{pendingCount} pending approvals</span>
+            <button type="button" onClick={() => void loadContentQueue()} disabled={refreshing}
+              aria-label="Refresh content review" className="ui-button-secondary inline-flex min-h-11 items-center gap-2 border border-border px-3 text-sm disabled:opacity-50">
+              <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
+              <span className="hidden sm:inline">Refresh</span>
             </button>
-            <UserAccountMenu />
-          </div>
-        </header>
-
-        {/* Desktop Header */}
-        <div className="hidden h-16 items-center justify-between border-b px-8 lg:flex">
-          <div>
-            <p className="text-xs text-muted-foreground">Quality Control & Approvals</p>
-            <p className="text-sm font-semibold text-foreground">Content Review Queue</p>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => void loadContentQueue()}
-              disabled={refreshing}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3.5 py-1.5 text-xs font-semibold text-foreground hover:bg-muted transition"
-            >
-              <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
-              Refresh Queue
-            </button>
-            <span className="rounded-xl border border-border bg-muted/60 px-3 py-1.5 text-xs font-bold text-foreground">
-              {pendingCount} Pending Approvals
-            </span>
-            <UserAccountMenu />
-          </div>
-        </div>
+          </>} />
 
         {/* Main Content Area */}
-        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl px-4 py-8 pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-8 sm:px-6 lg:px-8">
           {/* Header Title */}
           <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
@@ -329,7 +292,7 @@ export default function ContentReviewPage() {
 
             <Link
               href="/campaigns"
-              className="inline-flex items-center gap-2 rounded-xl bg-purple-600 px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-purple-200 hover:bg-purple-700 transition"
+              className="ui-button-primary inline-flex items-center gap-2 px-5 py-2.5 text-xs font-bold transition"
             >
               <Sparkles className="h-4 w-4" />
               Generate Campaign Posts
@@ -350,16 +313,16 @@ export default function ContentReviewPage() {
           )}
 
           {/* Filter & Bulk Actions Bar */}
-          <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 rounded-2xl card-3d p-4">
+          <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 rounded-2xl ui-card p-4">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs font-bold text-slate-500 mr-1">Status:</span>
+              <span className="text-xs font-bold text-muted-foreground mr-1">Status:</span>
               {["All", "Pending", "Approved", "Scheduled"].map((filter) => (
                 <button
                   key={filter}
                   onClick={() => setActiveFilter(filter)}
                   className={`rounded-xl px-4 py-2 text-xs font-bold transition ${
                     activeFilter === filter
-                      ? "active-purple-slider"
+                      ? "ui-nav-active"
                       : "bg-purple-50/60 text-purple-700 hover:bg-purple-100/70"
                   }`}
                 >
@@ -370,7 +333,7 @@ export default function ContentReviewPage() {
 
             {selectedIds.length > 0 && (
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-slate-500">
+                <span className="text-xs font-bold text-muted-foreground">
                   {selectedIds.length} selected
                 </span>
                 <button
@@ -395,20 +358,20 @@ export default function ContentReviewPage() {
 
           {/* Queue Feed */}
           {loading ? (
-            <div className="flex h-64 flex-col items-center justify-center rounded-2xl card-3d p-12 text-center">
+            <div className="flex h-64 flex-col items-center justify-center rounded-2xl ui-card p-12 text-center">
               <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
-              <p className="mt-3 text-sm font-semibold text-slate-900">Loading Review Queue...</p>
-              <p className="text-xs text-slate-500">Checking database for campaign posts</p>
+              <p className="mt-3 text-sm font-semibold text-foreground">Loading Review Queue...</p>
+              <p className="text-xs text-muted-foreground">Checking database for campaign posts</p>
             </div>
           ) : filteredPosts.length === 0 ? (
-            <div className="rounded-2xl card-3d p-12 text-center">
+            <div className="rounded-2xl ui-card p-12 text-center">
               <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-purple-100 text-purple-600">
                 <FileCheck className="h-6 w-6" />
               </div>
-              <h3 className="text-base font-bold text-slate-900">
+              <h3 className="text-base font-bold text-foreground">
                 {posts.length === 0 ? "Review Queue is Clear" : `No posts match filter "${activeFilter}"`}
               </h3>
-              <p className="mt-1 text-xs text-slate-500 max-w-md mx-auto">
+              <p className="mt-1 text-xs text-muted-foreground max-w-md mx-auto">
                 {posts.length === 0
                   ? "No campaign posts are currently pending review. When you launch a campaign in review mode, generated posts will appear here for your one-click approval."
                   : "Try switching filters above to view other posts in your queue."}
@@ -416,7 +379,7 @@ export default function ContentReviewPage() {
               {posts.length === 0 && (
                 <Link
                   href="/campaigns"
-                  className="mt-4 btn-purple-gradient inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs font-bold text-white shadow-md transition"
+                  className="ui-button-primary mt-4 inline-flex items-center gap-2 px-5 py-2.5 text-xs font-bold transition"
                 >
                   <Plus className="h-4 w-4" />
                   Create Autonomous Campaign
@@ -432,7 +395,7 @@ export default function ContentReviewPage() {
                 return (
                   <div
                     key={post.id}
-                    className={`card-3d card-3d-hover p-6 ${
+                    className={`ui-card ui-card-hover p-6 ${
                       isSelected ? "ring-2 ring-purple-500 border-purple-300" : ""
                     }`}
                   >
@@ -447,7 +410,7 @@ export default function ContentReviewPage() {
                         <SocialLogo platform={post.platform} className="h-10 w-10" />
                         <div>
                           <div className="flex flex-wrap items-center gap-2">
-                            <h2 className="text-base font-bold text-slate-900">
+                            <h2 className="text-base font-bold text-foreground">
                               {post.title}
                             </h2>
                             <span
@@ -464,7 +427,7 @@ export default function ContentReviewPage() {
                               {post.status}
                             </span>
                           </div>
-                          <div className="flex items-center gap-2 mt-1 text-xs text-slate-500">
+                          <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
                             <span className="font-semibold text-purple-600">{post.platform}</span>
                             <span>•</span>
                             <span>{post.campaign}</span>
@@ -499,7 +462,7 @@ export default function ContentReviewPage() {
                     {post.imageUrl && (
                       <div
                         onClick={() => setPreviewImageUrl(post.imageUrl!)}
-                        className="group relative mt-4 cursor-pointer overflow-hidden rounded-xl border border-purple-100 bg-black/5 shadow-xs transition hover:border-purple-300 hover:shadow-md"
+                        className="group relative mt-4 cursor-pointer overflow-hidden rounded-xl border border-border bg-black/5 shadow-xs transition hover:border-purple-300 hover:shadow-md"
                       >
                         <img
                           src={post.imageUrl}
@@ -512,7 +475,7 @@ export default function ContentReviewPage() {
                           }}
                         />
                         <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-colors group-hover:bg-black/25">
-                          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1.5 text-xs font-bold text-neutral-900 shadow-lg opacity-0 transition-opacity backdrop-blur-xs group-hover:opacity-100">
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-card/90 px-3 py-1.5 text-xs font-bold text-neutral-900 shadow-lg opacity-0 transition-opacity backdrop-blur-xs group-hover:opacity-100">
                             <Eye size={13} /> Click to View Full Image
                           </span>
                         </div>
@@ -530,7 +493,7 @@ export default function ContentReviewPage() {
                         {post.hashtags.map((tag, idx) => (
                           <span
                             key={idx}
-                            className="rounded-lg bg-purple-50 px-2.5 py-0.5 text-[11px] font-semibold text-purple-700 border border-purple-100"
+                            className="rounded-lg bg-purple-50 px-2.5 py-0.5 text-[11px] font-semibold text-purple-700 border border-border"
                           >
                             {tag}
                           </span>
@@ -561,14 +524,14 @@ export default function ContentReviewPage() {
                 download="ai_campaign_image.png"
                 target="_blank"
                 rel="noreferrer"
-                className="flex h-9 items-center gap-1.5 px-4 rounded-full bg-white/20 hover:bg-white/30 text-white text-xs font-bold backdrop-blur-md transition shadow-md"
+                className="flex h-9 items-center gap-1.5 px-4 rounded-full bg-card/20 hover:bg-card/30 text-white text-xs font-bold backdrop-blur-md transition shadow-md"
               >
                 Download HD Image
               </a>
               <button
                 type="button"
                 onClick={() => setPreviewImageUrl(null)}
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 hover:bg-white/30 text-white backdrop-blur-md transition shadow-md text-xs font-bold"
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-card/20 hover:bg-card/30 text-white backdrop-blur-md transition shadow-md text-xs font-bold"
               >
                 ✕
               </button>

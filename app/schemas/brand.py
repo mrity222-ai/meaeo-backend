@@ -1,6 +1,7 @@
 from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
+from app.schemas.phone import normalize_phone
 
 
 OverlayPosition = Literal[
@@ -71,6 +72,8 @@ class BrandProfileBase(BaseModel):
         max_length=32,
     )
 
+    accent_color: str | None = Field(default=None, max_length=32)
+
     logo_asset_id: str | None = None
 
     website: str | None = Field(
@@ -111,12 +114,18 @@ class BrandProfileCreate(
     BrandProfileBase
 ):
 
+    phone: str = Field(min_length=1, max_length=64)
+
+    _phone_validation = field_validator("phone")(normalize_phone)
+
     business_account_id: int = Field(
         gt=0,
     )
 
 
 class BrandProfileUpdate(BaseModel):
+
+    _phone_validation = field_validator("phone", check_fields=False)(normalize_phone)
 
     brand_name: str | None = Field(
         default=None,
@@ -155,6 +164,8 @@ class BrandProfileUpdate(BaseModel):
         default=None,
         max_length=32,
     )
+
+    accent_color: str | None = Field(default=None, max_length=32)
 
     logo_asset_id: str | None = None
 

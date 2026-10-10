@@ -1,196 +1,60 @@
 "use client";
 
 import Link from "next/link";
-import { Instagram, Facebook, Linkedin, Youtube, ArrowRight } from "lucide-react";
-import { usePathname, useRouter } from "next/navigation";
+import { useState } from "react";
+import { submitPublicForm } from "@/lib/api/public-marketing";
+import { ArrowRight, Mail } from "lucide-react";
+
 
 export function Footer() {
-  const pathname = usePathname();
-  const router = useRouter();
-
-  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, targetId: string) => {
-    e.preventDefault();
-
-    if (pathname === "/") {
-      const element = document.getElementById(targetId);
-      if (element) {
-        element.scrollIntoView({ behavior: "smooth" });
-        window.history.replaceState(null, "", "/");
-      }
-    } else {
-      sessionStorage.setItem("targetSection", targetId);
-      router.push("/");
-    }
+  const [email, setEmail] = useState("");
+  const [consent, setConsent] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [feedback, setFeedback] = useState("");
+  const [failed, setFailed] = useState(false);
+  const [website, setWebsite] = useState("");
+  const subscribe = async (event: React.FormEvent) => {
+    event.preventDefault(); if (saving) return;
+    setSaving(true); setFeedback(""); setFailed(false);
+    try { await submitPublicForm("newsletter", { email, consent, website }); setFeedback("Your interest in product updates has been registered."); setEmail(""); }
+    catch (error) { setFailed(true); setFeedback(error instanceof Error ? error.message : "Could not save your request."); }
+    finally { setSaving(false); }
   };
 
+  const groups = [
+    { title: "Explore", links: [["Features & AI Core", "/features"], ["Examples & Showcase", "/examples"], ["Plans & Pricing", "/#pricing"], ["How It Works", "/#how-it-works"], ["About maeaco", "/#about"]] },
+    { title: "Support", links: [["Contact Support", "/contact"], ["Getting Started", "/#how-it-works"], ["Sign In", "/login"]] },
+    { title: "Legal", links: [["Privacy Policy", "/privacy"], ["Terms of Service", "/terms"], ["Data Deletion", "/data-deletion"], ["Refund Policy", "/refund-policy"]] },
+  ];
   return (
-    <footer className="bg-[#FAF8FF] border-t border-purple-100 text-zinc-600">
-      <div className="mx-auto max-w-7xl px-6 py-16 lg:px-8">
-        
-        {/* Main Footer Grid */}
-        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-12">
-          
-          {/* Brand Info Column */}
-          <div className="lg:col-span-4">
-            <Link href="/" className="flex items-center gap-3 font-bold text-zinc-900">
-              <img
-                src="/logo/app logo.png"
-                alt="maeaco logo"
-                className="h-8 w-8 object-contain"
-              />
-              <span className="text-lg tracking-tight font-black">maeaco</span>
-            </Link>
-
-            <p className="mt-3 text-sm text-zinc-500 max-w-sm">
-              Your autonomous AI marketing team.
-            </p>
-
-            {/* Social Icons */}
-            <div className="mt-6 flex items-center gap-3 text-zinc-500">
-              <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="rounded-lg p-2 hover:bg-purple-100/70 hover:text-purple-600 transition-colors">
-                <Instagram className="h-4 w-4" />
-              </a>
-              <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="rounded-lg p-2 hover:bg-purple-100/70 hover:text-purple-600 transition-colors">
-                <Facebook className="h-4 w-4" />
-              </a>
-              <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" className="rounded-lg p-2 hover:bg-purple-100/70 hover:text-purple-600 transition-colors">
-                <Linkedin className="h-4 w-4" />
-              </a>
-              <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" aria-label="YouTube" className="rounded-lg p-2 hover:bg-purple-100/70 hover:text-purple-600 transition-colors">
-                <Youtube className="h-4 w-4" />
-              </a>
-            </div>
+    <footer className="marketing-footer">
+      <div className="marketing-footer-inner">
+        <div className="marketing-footer-top">
+          <div className="marketing-footer-brand">
+            <Link href="/" aria-label="maeaco home"><img src="/logo/website logo.png" alt="maeaco logo" width={2170} height={725} className="h-auto w-[180px] object-contain" /></Link>
+            <p>One connected workspace for your business, your brand and your marketing.</p>
+            <a href="mailto:support@avedatechnologies.com" className="marketing-footer-email"><Mail className="h-4 w-4 shrink-0" /><span>support@avedatechnologies.com</span></a>
           </div>
-
-          {/* Product Links */}
-          <div className="lg:col-span-2">
-            <div className="text-xs font-bold uppercase tracking-wider text-zinc-900">Product</div>
-            <ul className="mt-4 space-y-2.5 text-sm">
-              <li>
-                <Link href="/examples" className="hover:text-purple-600 font-semibold text-purple-700 transition-colors">
-                  Examples & Showcase
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/features"
-                  className="hover:text-purple-600 transition-colors"
-                >
-                  Features & AI Core
-                </Link>
-              </li>
-              <li>
-                <a
-                  href="#pricing"
-                  onClick={(e) => handleNavClick(e, "pricing")}
-                  className="hover:text-purple-600 transition-colors cursor-pointer"
-                >
-                  Pricing
-                </a>
-              </li>
-              <li>
-                <a
-                  href="#how-it-works"
-                  onClick={(e) => handleNavClick(e, "how-it-works")}
-                  className="hover:text-purple-600 transition-colors cursor-pointer"
-                >
-                  How It Works
-                </a>
-              </li>
-              <li>
-                <a
-                  href="#about"
-                  onClick={(e) => handleNavClick(e, "about")}
-                  className="hover:text-purple-600 transition-colors cursor-pointer"
-                >
-                  About Platform
-                </a>
-              </li>
-            </ul>
-          </div>
-
-          {/* Resources Links */}
-          <div className="lg:col-span-2">
-            <div className="text-xs font-bold uppercase tracking-wider text-zinc-900">Resources</div>
-            <ul className="mt-4 space-y-2.5 text-sm">
-              <li>
-                <Link href="/contact" className="hover:text-purple-600 transition-colors">
-                  Help Center
-                </Link>
-              </li>
-              <li>
-                <Link href="/contact" className="hover:text-purple-600 transition-colors">
-                  Guides & Support
-                </Link>
-              </li>
-              <li>
-                <a
-                  href="#features"
-                  onClick={(e) => handleNavClick(e, "features")}
-                  className="hover:text-purple-600 transition-colors cursor-pointer"
-                >
-                  AI Features
-                </a>
-              </li>
-            </ul>
-          </div>
-
-          {/* Legal & Support Links */}
-          <div className="lg:col-span-2">
-            <div className="text-xs font-bold uppercase tracking-wider text-zinc-900">Legal & Support</div>
-            <ul className="mt-4 space-y-2.5 text-sm">
-              <li><Link href="/privacy" className="hover:text-purple-600 transition-colors">Privacy Policy</Link></li>
-              <li><Link href="/terms" className="hover:text-purple-600 transition-colors">Terms of Service</Link></li>
-              <li><Link href="/data-deletion" className="hover:text-purple-600 transition-colors">Data Deletion</Link></li>
-              <li><Link href="/refund-policy" className="hover:text-purple-600 transition-colors">Refund Policy</Link></li>
-              <li><Link href="/contact" className="hover:text-purple-600 transition-colors">Contact Support</Link></li>
-            </ul>
-          </div>
-
-          {/* Newsletter Subscribe */}
-          <div className="lg:col-span-2">
-            <div className="text-xs font-bold uppercase tracking-wider text-zinc-900">Stay updated</div>
-            <p className="mt-2 text-xs text-zinc-500">
-              Get the latest product updates and marketing tips.
-            </p>
-
-            <form onSubmit={(e) => e.preventDefault()} className="mt-4 flex items-center gap-2">
-              <input
-                type="email"
-                placeholder="Enter your email"
-                className="w-full rounded-lg border border-purple-200 bg-white px-3 py-2 text-xs text-zinc-900 placeholder:text-zinc-400 focus:border-purple-500 focus:outline-none"
-              />
-              <button
-                type="submit"
-                aria-label="Subscribe"
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-purple-600 text-white hover:bg-purple-700 transition-colors"
-              >
-                <ArrowRight className="h-4 w-4" />
-              </button>
+          <div className="marketing-footer-newsletter">
+            <p className="marketing-eyebrow">Stay in the loop</p>
+            <h2>Fresh ideas. Product updates.</h2>
+            <p className="mt-2 text-sm text-zinc-600">Register your interest in marketing tips and maeaco updates.</p>
+            <form onSubmit={subscribe} className="mt-5 space-y-3">
+              <div className="marketing-newsletter-input-row">
+                <input type="email" required maxLength={254} aria-label="Email for product updates" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Your email address" />
+                <button type="submit" disabled={saving} className="marketing-action-primary" aria-label={saving ? "Saving subscription" : "Subscribe"}>{saving ? "Saving…" : "Subscribe"}<ArrowRight className="h-4 w-4" /></button>
+              </div>
+              <label className="flex items-start gap-2 text-xs leading-relaxed text-zinc-600"><input type="checkbox" required checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-0.5" /><span>I agree to product updates. Read the <Link href="/privacy" className="underline">Privacy Policy</Link>.</span></label>
+              <div hidden aria-hidden="true"><input aria-label="Website" tabIndex={-1} autoComplete="off" value={website} onChange={(e) => setWebsite(e.target.value)} /></div>
             </form>
+            {feedback && <p role={failed ? "alert" : "status"} className={`mt-3 text-sm ${failed ? "text-red-700" : "text-emerald-700"}`}>{feedback}</p>}
           </div>
-
         </div>
-
-        {/* Bottom Copyright Bar */}
-        <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-purple-100 pt-8 text-xs text-zinc-500 sm:flex-row">
-          <p>
-            © {new Date().getFullYear()} <strong>maeaco</strong>. A product of{" "}
-            <a
-              href="https://www.avedatechnologies.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-bold text-purple-700 hover:underline"
-            >
-              Aveda Technologies
-            </a>
-            . All rights reserved.
-          </p>
-          <p className="flex items-center gap-1">
-            Built with <span className="text-purple-600">💜</span> for global businesses
-          </p>
-        </div>
-
+        <nav aria-label="Footer" className="marketing-footer-links">
+          {groups.map((group) => <div key={group.title}><h3>{group.title}</h3><ul>{group.links.map(([label, href]) => <li key={label}><Link href={href}>{label}</Link></li>)}</ul></div>)}
+          <div className="marketing-footer-note"><span className="marketing-eyebrow">Your next campaign</span><p>Bring your catalogue.<br />Make it your brand.</p><Link href="/signup" className="marketing-footer-start">Get Started <ArrowRight className="h-4 w-4" /></Link></div>
+        </nav>
+        <div className="marketing-footer-bottom"><p>© {new Date().getFullYear()} maeaco. All rights reserved.</p><p>A product of <a href="https://www.avedatechnologies.com" target="_blank" rel="noopener noreferrer">Aveda Technologies</a></p></div>
       </div>
     </footer>
   );

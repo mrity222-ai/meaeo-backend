@@ -1,4 +1,11 @@
 from pathlib import Path
+import json
+import os
+import tempfile
+import time
+
+from app.models.config import settings
+from app.storage.json_storage import JsonStorage
 
 from app.repositories.credential_repository import (
     CredentialRepository,
@@ -12,6 +19,40 @@ from app.security.encryption import (
 from app.storage.base import BaseStorage
 from app.storage.factory import StorageFactory
 
+class _CredentialJsonStorage(JsonStorage):
+    """Private atomic files shared safely by API and worker."""
+
+    def load(self, path: Path):
+        for attempt in range(6):
+            try:
+                return super().load(path)
+            except PermissionError:
+                if os.name != "nt" or attempt == 5:
+                    raise
+                time.sleep(0.01 * (attempt + 1))
+
+    def save(self, path: Path, data) -> None:
+        path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+        fd, temporary = tempfile.mkstemp(prefix=".credential-", dir=path.parent)
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as stream:
+                json.dump(data, stream, ensure_ascii=False)
+                stream.flush()
+                os.fsync(stream.fileno())
+            # Windows briefly locks files while another process reads them.
+            for attempt in range(6):
+                try:
+                    os.replace(temporary, path)
+                    break
+                except PermissionError:
+                    if os.name != "nt" or attempt == 5:
+                        raise
+                    time.sleep(0.01 * (attempt + 1))
+        finally:
+            if os.path.exists(temporary):
+                os.unlink(temporary)
+
+
 class LocalCredentialRepository(
     CredentialRepository
 ):
@@ -24,21 +65,21 @@ class LocalCredentialRepository(
         self,
         encryption: EncryptionService,
         storage: BaseStorage | None = None,
+        root: Path | str | None = None,
     ):
-        self.ROOT = Path(
-            "data/credentials"
-        )
+        self.ROOT = Path(root if root is not None else settings.CREDENTIAL_STORAGE_ROOT)
         self.ROOT.mkdir(
             parents=True,
             exist_ok=True,
+            mode=0o700,
         )
+        if os.name == "posix":
+            self.ROOT.chmod(0o700)
         self.encryption = encryption
 
-        self.storage = (
-            storage
-            if storage is not None
-            else StorageFactory.create()
-        )
+        self.storage = storage if storage is not None else StorageFactory.create()
+        if type(self.storage) is JsonStorage:
+            self.storage = _CredentialJsonStorage()
 
     def _path(
         self,
@@ -99,6 +140,7 @@ class LocalCredentialRepository(
         path.parent.mkdir(
             parents=True,
             exist_ok=True,
+            mode=0o700,
         )
 
         data = credential.model_dump(
@@ -147,6 +189,7 @@ class LocalCredentialRepository(
         path.parent.mkdir(
             parents=True,
             exist_ok=True,
+            mode=0o700,
         )
 
         data = credential.model_copy(

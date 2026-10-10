@@ -1,4 +1,5 @@
 "use client";
+import { BusinessAvatar } from "@/components/profile/business-avatar";
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
@@ -71,17 +72,17 @@ export function UserAccountMenu() {
         type="button"
         onClick={handleButtonClick}
         aria-label="Open User Account"
-        className="flex items-center gap-2 rounded-xl border border-neutral-200/90 bg-white p-1 pl-1.5 pr-2.5 shadow-xs transition hover:border-neutral-300 hover:bg-neutral-50 active:scale-95 focus:outline-none"
+        className="ui-button-secondary flex items-center gap-2 border border-border/90 p-1 pl-1.5 pr-2.5 transition hover:border-neutral-300 active:scale-95 focus:outline-none"
       >
         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-neutral-950 text-xs font-bold text-white shadow-xs">
-          {initials}
+          <BusinessAvatar initials={initials} className="h-full w-full" />
         </div>
 
         <div className="hidden text-left sm:block">
           <p className="truncate text-xs font-semibold text-neutral-900 leading-tight max-w-[120px]">
             {displayName}
           </p>
-          <p className="truncate text-[10px] text-neutral-500 max-w-[120px]">
+          <p className="truncate text-[10px] text-muted-foreground max-w-[120px]">
             {displayEmail}
           </p>
         </div>
@@ -96,25 +97,25 @@ export function UserAccountMenu() {
 
       {/* DESKTOP VIEW: Sleek Floating Dropdown Menu (Hidden on mobile) */}
       {open && (
-        <div className="hidden md:block absolute right-0 z-50 mt-2 w-64 origin-top-right rounded-2xl border border-neutral-200 bg-white p-2 shadow-xl animate-in fade-in zoom-in-95">
+        <div className="hidden md:block absolute right-0 z-50 mt-2 w-64 origin-top-right rounded-2xl border border-border bg-card p-2 shadow-xl animate-in fade-in zoom-in-95">
           {/* User Details Header */}
           <div className="border-b border-neutral-100 p-3">
             <div className="flex items-center gap-2.5">
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-neutral-950 text-xs font-bold text-white">
-                {initials}
+                <BusinessAvatar initials={initials} className="h-full w-full" />
               </div>
               <div className="min-w-0">
                 <p className="truncate text-xs font-bold text-neutral-900">
                   {displayName}
                 </p>
-                <p className="truncate text-[11px] text-neutral-500">
+                <p className="truncate text-[11px] text-muted-foreground">
                   {displayEmail}
                 </p>
               </div>
             </div>
 
             <div className="mt-2.5 flex items-center justify-between rounded-lg bg-neutral-50 px-2 py-1 text-[10px] text-neutral-600">
-              <span className="font-medium text-neutral-500">Workspace:</span>
+              <span className="font-medium text-muted-foreground">Workspace:</span>
               <span className="font-semibold text-neutral-800 truncate max-w-[130px]">
                 {tenantId}
               </span>
@@ -126,36 +127,36 @@ export function UserAccountMenu() {
             <Link
               href="/profile?tab=profile"
               onClick={() => setOpen(false)}
-              className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium text-neutral-700 transition hover:bg-neutral-100 hover:text-neutral-950"
+              className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium text-neutral-700 transition hover:bg-neutral-100 hover:text-foreground"
             >
-              <User size={15} className="text-neutral-500" />
+              <User size={15} className="text-muted-foreground" />
               <span>My Profile</span>
             </Link>
 
             <Link
               href="/profile?tab=settings"
               onClick={() => setOpen(false)}
-              className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium text-neutral-700 transition hover:bg-neutral-100 hover:text-neutral-950"
+              className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium text-neutral-700 transition hover:bg-neutral-100 hover:text-foreground"
             >
-              <Settings size={15} className="text-neutral-500" />
+              <Settings size={15} className="text-muted-foreground" />
               <span>Settings</span>
             </Link>
 
             <Link
               href="/profile?tab=subscription"
               onClick={() => setOpen(false)}
-              className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium text-neutral-700 transition hover:bg-neutral-100 hover:text-neutral-950"
+              className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium text-neutral-700 transition hover:bg-neutral-100 hover:text-foreground"
             >
-              <CreditCard size={15} className="text-neutral-500" />
+              <CreditCard size={15} className="text-muted-foreground" />
               <span>Subscription & Billing</span>
             </Link>
 
             <Link
               href="/profile?tab=support"
               onClick={() => setOpen(false)}
-              className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium text-neutral-700 transition hover:bg-neutral-100 hover:text-neutral-950"
+              className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium text-neutral-700 transition hover:bg-neutral-100 hover:text-foreground"
             >
-              <Headphones size={15} className="text-neutral-500" />
+              <Headphones size={15} className="text-muted-foreground" />
               <span>Help & Support</span>
             </Link>
           </div>

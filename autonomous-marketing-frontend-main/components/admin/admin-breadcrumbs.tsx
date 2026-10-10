@@ -12,7 +12,7 @@ export function AdminBreadcrumbs() {
 
   if (segments.length <= 1) {
     return (
-      <div className="flex items-center gap-1.5 text-xs text-neutral-500">
+      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
         <Home size={14} />
         <span>Admin Dashboard</span>
       </div>
@@ -28,7 +28,7 @@ export function AdminBreadcrumbs() {
   });
 
   return (
-    <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-neutral-500">
+    <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-muted-foreground">
       <Link href="/admin/dashboard" className="hover:text-neutral-900 transition flex items-center gap-1">
         <Home size={13} />
         <span>Admin</span>

@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { adminGetAllTickets } from "@/lib/api/support";
+import { PublicEnquiries } from "@/components/admin/public-enquiries";
 
 type TicketStatus =
   | "open"
@@ -272,7 +273,7 @@ export default function AdminSupportPage() {
               type="button"
               onClick={() => fetchTickets()}
               disabled={refreshing}
-              className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-border bg-card px-3.5 text-sm font-medium text-foreground shadow-sm transition hover:bg-muted disabled:opacity-50"
+              className="ui-button-secondary inline-flex h-10 items-center justify-center gap-2 border border-border px-3.5 text-sm font-medium transition disabled:opacity-50"
             >
               <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
               Refresh
@@ -301,6 +302,7 @@ export default function AdminSupportPage() {
           </div>
         </div>
 
+        <PublicEnquiries />
         {/* KPI cards */}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
           <StatCard
@@ -511,7 +513,7 @@ export default function AdminSupportPage() {
                         <Link
                           href={`/admin/support/${ticket.id}`}
                           aria-label={`View ${ticket.id}`}
-                          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                          className="ui-button-secondary inline-flex h-8 w-8 items-center justify-center border border-border text-muted-foreground transition hover:text-foreground"
                           title="Open ticket conversation"
                         >
                           <Eye className="h-4 w-4" />
@@ -586,7 +588,7 @@ export default function AdminSupportPage() {
 
                     <Link
                       href={`/admin/support/${ticket.id}`}
-                      className="inline-flex h-9 items-center gap-2 rounded-lg border border-border px-3 text-sm font-medium transition hover:bg-muted"
+                      className="ui-button-secondary inline-flex h-9 items-center gap-2 border border-border px-3 text-sm font-medium transition"
                     >
                       <Eye className="h-4 w-4" />
                       View
@@ -634,7 +636,7 @@ export default function AdminSupportPage() {
               <button
                 type="button"
                 disabled
-                className="inline-flex h-8 items-center gap-1 rounded-md border border-border px-3 text-xs font-medium text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                className="ui-button-secondary inline-flex h-8 items-center gap-1 border border-border px-3 text-xs font-medium text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <ChevronLeft className="h-3.5 w-3.5" />
                 Previous
@@ -642,7 +644,7 @@ export default function AdminSupportPage() {
 
               <button
                 type="button"
-                className="inline-flex h-8 items-center gap-1 rounded-md border border-border px-3 text-xs font-medium transition hover:bg-muted"
+                className="ui-button-secondary inline-flex h-8 items-center gap-1 border border-border px-3 text-xs font-medium transition"
               >
                 Next
                 <ChevronRight className="h-3.5 w-3.5" />

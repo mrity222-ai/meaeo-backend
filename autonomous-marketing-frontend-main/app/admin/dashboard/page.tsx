@@ -145,7 +145,7 @@ function StatCard({
   icon: React.ElementType;
 }) {
   return (
-    <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+    <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
       <div className="flex items-start justify-between">
         <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-purple-50">
           <Icon className="h-5 w-5 text-purple-700" />
@@ -161,10 +161,10 @@ function StatCard({
       </div>
 
       <div className="mt-5">
-        <p className="text-sm font-medium text-neutral-500">{title}</p>
+        <p className="text-sm font-medium text-muted-foreground">{title}</p>
 
         <div className="mt-1 flex items-end gap-3">
-          <p className="text-2xl font-semibold tracking-tight text-neutral-950">
+          <p className="text-2xl font-semibold tracking-tight text-foreground">
             {value}
           </p>
 
@@ -178,7 +178,7 @@ function StatCard({
           </span>
         </div>
 
-        <p className="mt-1 text-xs text-neutral-500">{description}</p>
+        <p className="mt-1 text-xs text-muted-foreground">{description}</p>
       </div>
     </div>
   );
@@ -196,10 +196,10 @@ function SectionHeader({
   return (
     <div className="mb-5 flex items-start justify-between gap-4">
       <div>
-        <h2 className="text-base font-semibold text-neutral-950">{title}</h2>
+        <h2 className="text-base font-semibold text-foreground">{title}</h2>
 
         {description && (
-          <p className="mt-1 text-sm text-neutral-500">{description}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{description}</p>
         )}
       </div>
 
@@ -296,17 +296,17 @@ export default function AdminDashboardPage() {
         {/* Page Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <div className="flex items-center gap-2 text-sm text-neutral-500">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <span>Admin</span>
               <span>/</span>
-              <span className="font-medium text-neutral-950">Dashboard</span>
+              <span className="font-medium text-foreground">Dashboard</span>
             </div>
 
-            <h1 className="mt-2 text-2xl font-semibold tracking-tight text-neutral-950 sm:text-3xl">
+            <h1 className="mt-2 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
               Platform Dashboard
             </h1>
 
-            <p className="mt-1 text-sm text-neutral-500">
+            <p className="mt-1 text-sm text-muted-foreground">
               Monitor your marketing platform, real-time users, campaigns and AI activity.
             </p>
           </div>
@@ -342,7 +342,7 @@ export default function AdminDashboardPage() {
         {/* Charts */}
         <section className="grid gap-6 xl:grid-cols-[1.7fr_1fr]">
           {/* User Growth */}
-          <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+          <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
             <SectionHeader
               title="User Growth"
               description="New user registrations over the last 6 months"
@@ -356,7 +356,7 @@ export default function AdminDashboardPage() {
                     key={item.month}
                     className="flex h-full flex-1 flex-col justify-end"
                   >
-                    <div className="mb-2 text-center text-xs font-medium text-neutral-500">
+                    <div className="mb-2 text-center text-xs font-medium text-muted-foreground">
                       {item.value}k
                     </div>
 
@@ -365,7 +365,7 @@ export default function AdminDashboardPage() {
                       style={{ height: `${item.value * 2.2}px` }}
                     />
 
-                    <div className="mt-3 text-center text-xs text-neutral-500">
+                    <div className="mt-3 text-center text-xs text-muted-foreground">
                       {item.month}
                     </div>
                   </div>
@@ -375,7 +375,7 @@ export default function AdminDashboardPage() {
           </div>
 
           {/* Campaign Overview */}
-          <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+          <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
             <SectionHeader
               title="Campaign Overview"
               description="Current campaign distribution"
@@ -385,7 +385,7 @@ export default function AdminDashboardPage() {
               {campaignStats.map((item) => (
                 <div key={item.label}>
                   <div className="mb-2 flex items-center justify-between text-sm">
-                    <span className="text-neutral-500">{item.label}</span>
+                    <span className="text-muted-foreground">{item.label}</span>
                     <span className="font-medium text-neutral-900">
                       {item.value}
                     </span>
@@ -403,15 +403,15 @@ export default function AdminDashboardPage() {
 
             <div className="mt-7 grid grid-cols-2 gap-3 border-t border-neutral-100 pt-5">
               <div>
-                <p className="text-xs text-neutral-500">Total Campaigns</p>
-                <p className="mt-1 text-lg font-semibold text-neutral-950">
+                <p className="text-xs text-muted-foreground">Total Campaigns</p>
+                <p className="mt-1 text-lg font-semibold text-foreground">
                   2,210
                 </p>
               </div>
 
               <div>
-                <p className="text-xs text-neutral-500">Success Rate</p>
-                <p className="mt-1 text-lg font-semibold text-neutral-950">
+                <p className="text-xs text-muted-foreground">Success Rate</p>
+                <p className="mt-1 text-lg font-semibold text-foreground">
                   96.2%
                 </p>
               </div>
@@ -420,7 +420,7 @@ export default function AdminDashboardPage() {
         </section>
 
         {/* AI Metrics */}
-        <section className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+        <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
           <SectionHeader
             title="AI Activity"
             description="Autonomous marketing agent activity today"
@@ -436,15 +436,15 @@ export default function AdminDashboardPage() {
                   key={metric.label}
                   className="flex items-center gap-4 rounded-xl border border-neutral-100 bg-neutral-50/50 p-4"
                 >
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-neutral-200 bg-white">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-border bg-card">
                     <Icon className="h-5 w-5 text-purple-600" />
                   </div>
 
                   <div>
-                    <p className="text-xs text-neutral-500">
+                    <p className="text-xs text-muted-foreground">
                       {metric.label}
                     </p>
-                    <p className="mt-1 text-lg font-semibold text-neutral-950">
+                    <p className="mt-1 text-lg font-semibold text-foreground">
                       {metric.value}
                     </p>
                   </div>
@@ -457,7 +457,7 @@ export default function AdminDashboardPage() {
         {/* Activity + System */}
         <section className="grid gap-6 xl:grid-cols-[1.25fr_1fr]">
           {/* Recent Activity */}
-          <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+          <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
             <SectionHeader
               title="Recent Activity"
               description="Latest events across the platform"
@@ -473,7 +473,7 @@ export default function AdminDashboardPage() {
                     key={`act-${idx}-${activity.title}-${activity.time}`}
                     className="flex items-start gap-4 py-4 first:pt-0 last:pb-0"
                   >
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-purple-100 bg-purple-50">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-purple-50">
                       <Icon className="h-4 w-4 text-purple-700" />
                     </div>
 
@@ -481,7 +481,7 @@ export default function AdminDashboardPage() {
                       <p className="text-sm font-medium text-neutral-900">
                         {activity.title}
                       </p>
-                      <p className="mt-0.5 text-xs text-neutral-500">
+                      <p className="mt-0.5 text-xs text-muted-foreground">
                         {activity.description}
                       </p>
                     </div>
@@ -496,7 +496,7 @@ export default function AdminDashboardPage() {
           </div>
 
           {/* System Health */}
-          <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+          <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
             <SectionHeader
               title="System Health"
               description="Current platform service status"
@@ -517,7 +517,7 @@ export default function AdminDashboardPage() {
                     <p className="text-sm font-medium text-neutral-900">
                       {service.name}
                     </p>
-                    <p className="text-xs text-neutral-500">
+                    <p className="text-xs text-muted-foreground">
                       {service.latency !== "—"
                         ? `Latency ${service.latency}`
                         : "Background service"}
@@ -535,7 +535,7 @@ export default function AdminDashboardPage() {
         </section>
 
         {/* Quick Actions */}
-        <section className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+        <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
           <SectionHeader
             title="Quick Actions"
             description="Frequently used administration tools"
@@ -551,7 +551,7 @@ export default function AdminDashboardPage() {
                 <Users className="mr-3 h-5 w-5 text-purple-600" />
                 <span className="text-left">
                   <span className="block font-medium">Manage Users</span>
-                  <span className="mt-0.5 block text-xs text-neutral-500">
+                  <span className="mt-0.5 block text-xs text-muted-foreground">
                     View and manage accounts
                   </span>
                 </span>
@@ -567,7 +567,7 @@ export default function AdminDashboardPage() {
                 <Megaphone className="mr-3 h-5 w-5 text-purple-600" />
                 <span className="text-left">
                   <span className="block font-medium">Campaigns</span>
-                  <span className="mt-0.5 block text-xs text-neutral-500">
+                  <span className="mt-0.5 block text-xs text-muted-foreground">
                     Monitor campaigns
                   </span>
                 </span>
@@ -583,7 +583,7 @@ export default function AdminDashboardPage() {
                 <Zap className="mr-3 h-5 w-5 text-purple-600" />
                 <span className="text-left">
                   <span className="block font-medium">.env System Settings</span>
-                  <span className="mt-0.5 block text-xs text-neutral-500">
+                  <span className="mt-0.5 block text-xs text-muted-foreground">
                     API Keys & OAuth config
                   </span>
                 </span>
@@ -599,7 +599,7 @@ export default function AdminDashboardPage() {
                 <Activity className="mr-3 h-5 w-5 text-purple-600" />
                 <span className="text-left">
                   <span className="block font-medium">Support Tickets</span>
-                  <span className="mt-0.5 block text-xs text-neutral-500">
+                  <span className="mt-0.5 block text-xs text-muted-foreground">
                     Client help requests
                   </span>
                 </span>
@@ -631,7 +631,7 @@ export default function AdminDashboardPage() {
             <Button
               variant="outline"
               size="sm"
-              className="shrink-0 bg-white"
+              className="shrink-0 bg-card"
             >
               View AI Reports
             </Button>

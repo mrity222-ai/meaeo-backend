@@ -33,7 +33,9 @@ alembic
 psycopg2-binary>=2.9.9
 grandalf
 google-auth
+google-genai
 celery
 redis
 email-validator
 ollama
+filelock

@@ -1,13 +1,20 @@
 from datetime import datetime, timedelta, timezone
+import hashlib
+import hmac
+import json
+import re
+from decimal import Decimal, InvalidOperation
+
+import httpx
 from typing import Any
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
-from app.api.dependencies import get_authenticated_user, get_tenant_context
+from app.api.dependencies import get_authenticated_user, get_current_admin, get_tenant_context
 from app.database.models import (
     PaymentTransaction,
     SubscriptionPlan,
@@ -22,6 +29,19 @@ router = APIRouter(
     prefix="/payments",
     tags=["payments"],
 )
+
+
+def verify_razorpay_signature(order_id: str, payment_id: str, signature: str, secret: str) -> bool:
+    if not signature or not secret or not re.fullmatch(r"[a-fA-F0-9]{64}", signature):
+        return False
+    msg = f"{order_id}|{payment_id}".encode("utf-8")
+    generated_signature = hmac.new(
+        secret.encode("utf-8"),
+        msg,
+        hashlib.sha256
+    ).hexdigest()
+    return hmac.compare_digest(generated_signature, signature)
+
 
 
 class CreatePlanRequest(BaseModel):
@@ -158,6 +178,7 @@ def list_subscription_plans(
 @router.post("/plans", status_code=status.HTTP_201_CREATED)
 def create_subscription_plan(
     body: CreatePlanRequest,
+    admin: AuthenticatedUser = Depends(get_current_admin),
     db: Session = Depends(get_db),
 ) -> dict[str, Any]:
     existing = db.scalar(
@@ -222,6 +243,7 @@ def create_subscription_plan(
 def update_subscription_plan(
     plan_id: int,
     body: UpdatePlanRequest,
+    admin: AuthenticatedUser = Depends(get_current_admin),
     db: Session = Depends(get_db),
 ) -> dict[str, Any]:
     plan = db.scalar(select(SubscriptionPlan).where(SubscriptionPlan.id == plan_id))
@@ -290,6 +312,7 @@ def update_subscription_plan(
 @router.delete("/plans/{plan_id}")
 def delete_subscription_plan(
     plan_id: int,
+    admin: AuthenticatedUser = Depends(get_current_admin),
     db: Session = Depends(get_db),
 ) -> dict[str, Any]:
     plan = db.scalar(select(SubscriptionPlan).where(SubscriptionPlan.id == plan_id))
@@ -378,6 +401,124 @@ def get_current_subscription(
     }
 
 
+def _payment_secret(name: str) -> str:
+    from app.models.config import settings
+    value = getattr(settings, name, None)
+    value = value.get_secret_value() if hasattr(value, "get_secret_value") else value
+    if not value or not str(value).strip():
+        raise HTTPException(503, "Payment service is not configured.")
+    return str(value).strip()
+
+
+def _razorpay_credentials() -> tuple[str, str]:
+    from app.models.config import settings
+    key = _payment_secret("RAZORPAY_KEY_ID")
+    secret = _payment_secret("RAZORPAY_KEY_SECRET")
+    if settings.APP_ENV.lower() == "production" and not key.startswith("rzp_live_"):
+        raise HTTPException(503, "Live payment credentials are required in production.")
+    return key, secret
+
+
+def _minor_amount(amount: float, currency: str) -> int:
+    # These supported currencies all use two decimal minor units.
+    if currency not in {"INR", "USD", "EUR", "GBP"}:
+        raise HTTPException(400, "Unsupported payment currency.")
+    try:
+        value = Decimal(str(amount)) * 100
+        if not value.is_finite() or value <= 0 or value != value.to_integral_value():
+            raise ValueError
+        return int(value)
+    except (InvalidOperation, ValueError):
+        raise HTTPException(400, "Invalid payment amount.") from None
+
+
+def _razorpay_request(method: str, path: str, **kwargs: Any) -> dict[str, Any]:
+    credentials = _razorpay_credentials()
+    try:
+        response = httpx.request(method, f"https://api.razorpay.com/v1/{path}",
+                                 auth=credentials, timeout=10.0, **kwargs)
+        response.raise_for_status()
+        data = response.json()
+        if not isinstance(data, dict):
+            raise ValueError
+        return data
+    except (httpx.HTTPError, ValueError):
+        raise HTTPException(502, "Unable to confirm payment with Razorpay. Please retry.") from None
+
+
+def _validate_payment(tx: PaymentTransaction, payment: dict, order: dict, payment_id: str) -> None:
+    expected = (tx.raw_response or {}).get("amount_minor")
+    if expected is None:
+        expected = _minor_amount(tx.amount, tx.currency)
+    if (tx.provider != "razorpay" or payment.get("id") != payment_id
+            or payment.get("order_id") != tx.order_id or order.get("id") != tx.order_id
+            or payment.get("amount") != expected or order.get("amount") != expected
+            or payment.get("currency") != tx.currency or order.get("currency") != tx.currency
+            or payment.get("status") != "captured" or payment.get("captured") is not True
+            or order.get("status") != "paid" or order.get("amount_paid") != expected
+            or order.get("amount_due") != 0):
+        raise HTTPException(400, "Payment does not match the order or is not captured.")
+
+
+def _activate_payment(db: Session, tx: PaymentTransaction, payment_id: str) -> dict[str, Any]:
+    metadata = tx.raw_response or {}
+    plan_code = metadata.get("plan_code")
+    plan = db.scalar(select(SubscriptionPlan).where(SubscriptionPlan.plan_code == plan_code))
+    if plan is None:
+        raise HTTPException(409, "The purchased subscription plan is unavailable.")
+    interval = metadata.get("billing_interval", plan.billing_interval)
+    if interval not in {"monthly", "yearly", "annual"}:
+        raise HTTPException(409, "Unsupported subscription billing interval.")
+    try:
+        # Serialize subscription updates for this tenant on PostgreSQL.
+        tenant = db.scalar(select(Tenant).where(Tenant.tenant_id == tx.tenant_id).with_for_update())
+        if tenant is None:
+            raise HTTPException(409, "Payment tenant is unavailable.")
+        now = datetime.now(timezone.utc)
+        result = db.execute(update(PaymentTransaction).where(
+            PaymentTransaction.id == tx.id,
+            PaymentTransaction.status == "created",
+        ).values(status="paid", payment_id=payment_id, raw_response={
+            **metadata, "payment_id": payment_id, "verified_at": now.isoformat(),
+        }).execution_options(synchronize_session=False))
+        if result.rowcount == 0:
+            db.refresh(tx)
+            if tx.status != "paid" or tx.payment_id != payment_id:
+                raise HTTPException(409, "Payment transaction cannot be activated.")
+            db.commit()
+            return {"status": "success", "message": "Payment already processed.", "already_processed": True}
+        sub = db.scalar(select(TenantSubscription).where(
+            TenantSubscription.tenant_id == tx.tenant_id
+        ).order_by(TenantSubscription.id.desc()).with_for_update())
+        end = now + timedelta(days=30 if interval == "monthly" else 365)
+        if sub is None:
+            sub = TenantSubscription(tenant_id=tx.tenant_id, plan_id=plan.id,
+                                     provider="razorpay", status="active",
+                                     current_period_start=now, current_period_end=end)
+            db.add(sub)
+        else:
+            sub.plan_id = plan.id
+            sub.provider = "razorpay"
+            sub.status = "active"
+            sub.current_period_start = now
+            sub.current_period_end = end
+        db.commit()
+        return {"status": "success", "message": "Payment verified and subscription activated successfully!",
+                "plan_name": plan.name, "expires_at": end.isoformat()}
+    except Exception:
+        db.rollback()
+        raise
+
+
+def _confirm_payment(db: Session, tx: PaymentTransaction, payment_id: str) -> dict[str, Any]:
+    if not re.fullmatch(r"pay_[A-Za-z0-9]+", payment_id) or not re.fullmatch(r"order_[A-Za-z0-9]+", tx.order_id):
+        raise HTTPException(400, "Invalid payment identifiers.")
+    payment = _razorpay_request("GET", f"payments/{payment_id}")
+    order = _razorpay_request("GET", f"orders/{tx.order_id}")
+    _validate_payment(tx, payment, order, payment_id)
+    return _activate_payment(db, tx, payment_id)
+
+
 @router.post("/create-order")
 def create_payment_order(
     body: CreateOrderRequest,
@@ -385,126 +526,88 @@ def create_payment_order(
     context: TenantContext = Depends(get_tenant_context),
     db: Session = Depends(get_db),
 ) -> dict[str, Any]:
-    plan = db.scalar(
-        select(SubscriptionPlan).where(
-            SubscriptionPlan.plan_code == body.plan_code,
-            SubscriptionPlan.is_active.is_(True),
-        )
-    )
-
-    if not plan:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Subscription plan not found.",
-        )
-
-    order_id = f"order_{body.provider}_{uuid.uuid4().hex[:12]}"
-
-    tx = PaymentTransaction(
-        tenant_id=context.tenant_id,
-        user_id=authenticated_user.user_id,
-        order_id=order_id,
-        amount=plan.price,
-        currency=plan.currency,
-        status="created",
-        provider=body.provider,
-        raw_response={"plan_code": plan.plan_code},
-    )
-
-    db.add(tx)
-    db.commit()
-    db.refresh(tx)
-
-    return {
-        "status": "ok",
-        "order_id": order_id,
-        "amount": plan.price,
-        "currency": plan.currency,
-        "provider": body.provider,
-        "plan_name": plan.name,
-        "checkout_key": "rzp_test_sample_key_12345", # Frontend integration key
-    }
+    if body.provider != "razorpay":
+        raise HTTPException(400, "Unsupported payment provider.")
+    key, _ = _razorpay_credentials()
+    plan = db.scalar(select(SubscriptionPlan).where(
+        SubscriptionPlan.plan_code == body.plan_code, SubscriptionPlan.is_active.is_(True)))
+    if plan is None:
+        raise HTTPException(404, "Subscription plan not found.")
+    currency = plan.currency
+    amount = _minor_amount(plan.price, currency)
+    if plan.billing_interval not in {"monthly", "yearly", "annual"}:
+        raise HTTPException(400, "Unsupported subscription billing interval.")
+    receipt = f"rcpt_{uuid.uuid4().hex}"
+    order = _razorpay_request("POST", "orders", json={
+        "amount": amount, "currency": currency, "receipt": receipt,
+        "notes": {"tenant_id": context.tenant_id, "plan_code": plan.plan_code}})
+    order_id = order.get("id")
+    if (not isinstance(order_id, str) or not re.fullmatch(r"order_[A-Za-z0-9]+", order_id)
+            or order.get("amount") != amount or order.get("currency") != currency
+            or order.get("receipt") != receipt or order.get("status") != "created"):
+        raise HTTPException(502, "Razorpay returned an invalid order.")
+    tx = PaymentTransaction(tenant_id=context.tenant_id, user_id=authenticated_user.user_id,
+        order_id=order_id, amount=plan.price, currency=currency, status="created", provider="razorpay",
+        raw_response={"plan_code": plan.plan_code, "amount_minor": amount,
+                      "billing_interval": plan.billing_interval, "receipt": receipt})
+    try:
+        db.add(tx)
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+    return {"status": "ok", "order_id": order_id, "amount": plan.price, "amount_minor": amount, "currency": currency,
+            "provider": "razorpay", "plan_name": plan.name, "checkout_key": key}
 
 
 @router.post("/verify-payment")
-def verify_payment(
-    body: VerifyPaymentRequest,
-    context: TenantContext = Depends(get_tenant_context),
-    db: Session = Depends(get_db),
-) -> dict[str, Any]:
-    tx = db.scalar(
-        select(PaymentTransaction).where(
-            PaymentTransaction.order_id == body.order_id,
-            PaymentTransaction.tenant_id == context.tenant_id,
-        )
-    )
-
-    if not tx:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Payment transaction not found.",
-        )
-
-    plan_code = (tx.raw_response or {}).get("plan_code", "pro_monthly")
-    plan = db.scalar(
-        select(SubscriptionPlan).where(SubscriptionPlan.plan_code == plan_code)
-    )
-
-    if not plan:
-        plan = db.scalar(select(SubscriptionPlan).limit(1))
-
-    # Mark transaction paid
-    tx.status = "paid"
-    tx.payment_id = body.payment_id
-    tx.raw_response = {
-        **(tx.raw_response or {}),
-        "payment_id": body.payment_id,
-        "signature": body.signature,
-        "verified_at": datetime.now(timezone.utc).isoformat(),
-    }
-
-    # Activate Tenant Subscription
-    period_start = datetime.now(timezone.utc)
-    period_end = period_start + timedelta(days=30 if plan.billing_interval == "monthly" else 365)
-
-    sub = db.scalar(
-        select(TenantSubscription).where(
-            TenantSubscription.tenant_id == context.tenant_id
-        )
-    )
-
-    if not sub:
-        sub = TenantSubscription(
-            tenant_id=context.tenant_id,
-            plan_id=plan.id,
-            provider=body.provider,
-            status="active",
-            current_period_start=period_start,
-            current_period_end=period_end,
-        )
-        db.add(sub)
-    else:
-        sub.plan_id = plan.id
-        sub.provider = body.provider
-        sub.status = "active"
-        sub.current_period_start = period_start
-        sub.current_period_end = period_end
-
-    db.commit()
-
-    return {
-        "status": "success",
-        "message": "Payment verified and subscription activated successfully!",
-        "plan_name": plan.name,
-        "expires_at": period_end.isoformat(),
-    }
+def verify_payment(body: VerifyPaymentRequest,
+                   context: TenantContext = Depends(get_tenant_context),
+                   db: Session = Depends(get_db)) -> dict[str, Any]:
+    if body.provider != "razorpay" or not body.signature:
+        raise HTTPException(400, "A Razorpay payment signature is required.")
+    _, secret = _razorpay_credentials()
+    tx = db.scalar(select(PaymentTransaction).where(
+        PaymentTransaction.order_id == body.order_id,
+        PaymentTransaction.tenant_id == context.tenant_id))
+    if tx is None:
+        raise HTTPException(404, "Payment transaction not found.")
+    if not verify_razorpay_signature(tx.order_id, body.payment_id, body.signature, secret):
+        raise HTTPException(400, "Invalid payment signature.")
+    return _confirm_payment(db, tx, body.payment_id)
 
 
 @router.post("/webhook")
 async def payment_webhook(request: Request, db: Session = Depends(get_db)):
-    payload = await request.json()
-    # Process Razorpay/Stripe webhook events
-    return {"status": "event_received"}
+    secret = _payment_secret("RAZORPAY_WEBHOOK_SECRET")
+    signature = request.headers.get("X-Razorpay-Signature")
+    if not signature or not re.fullmatch(r"[a-fA-F0-9]{64}", signature):
+        raise HTTPException(400, "A valid webhook signature is required.")
+    raw_body = await request.body()
+    expected = hmac.new(secret.encode(), raw_body, hashlib.sha256).hexdigest()
+    if not hmac.compare_digest(expected, signature):
+        raise HTTPException(400, "Invalid webhook signature.")
+    try:
+        payload = json.loads(raw_body)
+        if not isinstance(payload, dict):
+            raise ValueError
+    except (ValueError, UnicodeDecodeError):
+        raise HTTPException(400, "Invalid webhook payload.") from None
+    event = payload.get("event")
+    if event not in {"payment.captured", "order.paid"}:
+        return {"status": "ignored", "event": event}
+    try:
+        entity = payload["payload"]["payment"]["entity"]
+        order_id, payment_id = entity["order_id"], entity["id"]
+        if not isinstance(order_id, str) or not isinstance(payment_id, str):
+            raise ValueError
+    except (KeyError, TypeError, ValueError):
+        raise HTTPException(400, "Webhook payment details are missing.") from None
+    tx = db.scalar(select(PaymentTransaction).where(PaymentTransaction.order_id == order_id))
+    if tx is None:
+        return {"status": "ignored", "event": event}
+    result = _confirm_payment(db, tx, payment_id)
+    return {**result, "event": event}
 
 
 @router.get("/transactions")
@@ -539,6 +642,7 @@ def get_user_transactions(
 
 @router.get("/admin/subscriptions")
 def get_admin_subscriptions(
+    admin: AuthenticatedUser = Depends(get_current_admin),
     db: Session = Depends(get_db),
 ) -> dict[str, Any]:
     """
@@ -596,6 +700,7 @@ def get_admin_subscriptions(
 
 @router.get("/admin/transactions")
 def get_admin_all_transactions(
+    admin: AuthenticatedUser = Depends(get_current_admin),
     db: Session = Depends(get_db),
 ) -> list[dict[str, Any]]:
     """

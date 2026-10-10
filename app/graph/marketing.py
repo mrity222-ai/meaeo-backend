@@ -107,9 +107,23 @@ class MarketingGraph(BaseGraph):
                 agent_name
             )
 
+            if agent_name in {"planner", "image_generator"}:
+                from app.services.campaign_asset_service import CampaignAssetService
+                if async_mode:
+                    async def invoke_with_assets(state):
+                        if agent_name == "image_generator":
+                            state = CampaignAssetService.apply_image_strategy(state)
+                        result = await agent.ainvoke(state)
+                        return CampaignAssetService.apply_image_strategy(result)
+                    return invoke_with_assets
+                def invoke_with_assets(state):
+                    if agent_name == "image_generator":
+                        state = CampaignAssetService.apply_image_strategy(state)
+                    result = agent.invoke(state)
+                    return CampaignAssetService.apply_image_strategy(result)
+                return invoke_with_assets
             if async_mode:
                 return agent.ainvoke
-
             return agent.invoke
 
         self.graph.add_node(

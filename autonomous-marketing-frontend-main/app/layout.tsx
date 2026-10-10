@@ -8,11 +8,11 @@ export const metadata: Metadata = {
     "Autonomous AI-powered marketing for businesses that want to grow.",
   icons: {
     icon: [
+      { url: "/logo/favicon.png", type: "image/png" },
       { url: "/favicon.ico" },
-      { url: "/logo/app logo.png", type: "image/png" },
     ],
-    shortcut: "/favicon.ico",
-    apple: "/apple-icon.png",
+    shortcut: "/logo/favicon.png",
+    apple: "/logo/favicon.png",
   },
 };
 

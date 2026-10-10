@@ -53,7 +53,7 @@ class LinkedInOAuthProvider(OAuthProvider):
             "client_id": self._client_id(),
             "redirect_uri": self._redirect_uri(),
             "state": state,
-            "scope": self.DEFAULT_SCOPE,
+            "scope": settings.LINKEDIN_OAUTH_SCOPES,
         }
         return f"{self.LINKEDIN_AUTHORIZATION_URL}?{urlencode(params)}"
 
@@ -96,7 +96,7 @@ class LinkedInOAuthProvider(OAuthProvider):
             access_token = token_data.get("access_token")
             expires_in = token_data.get("expires_in", 5184000)  # default 60 days
             refresh_token = token_data.get("refresh_token")
-            scope = token_data.get("scope", self.DEFAULT_SCOPE)
+            scope = token_data.get("scope", settings.LINKEDIN_OAUTH_SCOPES)
 
             # Fetch user info
             userinfo_resp = await client.get(

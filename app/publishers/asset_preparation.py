@@ -51,16 +51,8 @@ class AssetPreparationService:
                     source_path=Path(
                         post.image_path
                     ),
-                    source=(
-                        post.image_source.value
-                        if hasattr(
-                            post.image_source,
-                            "value",
-                        )
-                        else str(
-                            post.image_source
-                        )
-                    ),
+                    # Campaign outputs must not become future product catalogue inputs.
+                    source="campaign",
                 )
             )
 

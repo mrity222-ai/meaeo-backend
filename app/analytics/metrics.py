@@ -1,132 +1,38 @@
-from app.analytics.schemas import (
-    PostAnalytics,
-)
+from app.analytics.schemas import PostAnalytics
+
+
+def complete_total(posts, *fields):
+    values = [getattr(post, field) for post in posts for field in fields]
+    return sum(values) if values and all(value is not None for value in values) else None
+
+
+def ratio(numerator, denominator):
+    if numerator is None or denominator is None or denominator <= 0:
+        return None
+    return numerator / denominator
 
 
 class AnalyticsMetrics:
+    @staticmethod
+    def engagement_rate(posts):
+        return ratio(complete_total(posts, "likes", "comments", "shares", "saves"), complete_total(posts, "reach"))
 
     @staticmethod
-    def engagement_rate(
-        posts: list[PostAnalytics],
-    ) -> float:
-
-        total_reach = sum(
-            post.reach
-            for post in posts
-        )
-
-        total_engagements = sum(
-            post.likes
-            + post.comments
-            + post.shares
-            + post.saves
-            for post in posts
-        )
-
-        if total_reach <= 0:
-            return 0.0
-
-        return (
-            total_engagements
-            / total_reach
-        )
+    def click_through_rate(posts):
+        return ratio(complete_total(posts, "clicks"), complete_total(posts, "impressions"))
 
     @staticmethod
-    def click_through_rate(
-        posts: list[PostAnalytics],
-    ) -> float:
-
-        total_impressions = sum(
-            post.impressions
-            for post in posts
-        )
-
-        total_clicks = sum(
-            post.clicks
-            for post in posts
-        )
-
-        if total_impressions <= 0:
-            return 0.0
-
-        return (
-            total_clicks
-            / total_impressions
-        )
+    def conversion_rate(posts):
+        return ratio(complete_total(posts, "conversions"), complete_total(posts, "clicks"))
 
     @staticmethod
-    def conversion_rate(
-        posts: list[PostAnalytics],
-    ) -> float:
-
-        total_clicks = sum(
-            post.clicks
-            for post in posts
-        )
-
-        total_conversions = sum(
-            post.conversions
-            for post in posts
-        )
-
-        if total_clicks <= 0:
-            return 0.0
-
-        return (
-            total_conversions
-            / total_clicks
-        )
+    def average_reach_per_post(posts):
+        return ratio(complete_total(posts, "reach"), len(posts))
 
     @staticmethod
-    def average_reach_per_post(
-        posts: list[PostAnalytics],
-    ) -> float:
-
-        if not posts:
-            return 0.0
-
-        total_reach = sum(
-            post.reach
-            for post in posts
-        )
-
-        return total_reach / len(posts)
+    def average_impressions_per_post(posts):
+        return ratio(complete_total(posts, "impressions"), len(posts))
 
     @staticmethod
-    def average_impressions_per_post(
-        posts: list[PostAnalytics],
-    ) -> float:
-
-        if not posts:
-            return 0.0
-
-        total_impressions = sum(
-            post.impressions
-            for post in posts
-        )
-
-        return (
-            total_impressions
-            / len(posts)
-        )
-
-    @staticmethod
-    def average_engagements_per_post(
-        posts: list[PostAnalytics],
-    ) -> float:
-
-        if not posts:
-            return 0.0
-
-        total_engagements = sum(
-            post.likes
-            + post.comments
-            + post.shares
-            + post.saves
-            for post in posts
-        )
-
-        return (
-            total_engagements
-            / len(posts)
-        )
+    def average_engagements_per_post(posts):
+        return ratio(complete_total(posts, "likes", "comments", "shares", "saves"), len(posts))

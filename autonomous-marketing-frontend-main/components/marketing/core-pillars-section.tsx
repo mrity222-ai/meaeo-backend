@@ -18,9 +18,9 @@ const pillars = [
   {
     icon: Swords,
     badge: "AI Competitor Intelligence",
-    title: "Analyzes Competitors to Outperform Them",
+    title: "Research Your Market and Competitors",
     description:
-      "maeaco AI scans top competitors in your local market and industry, identifies what's driving their engagement, and crafts superior, higher-converting posts for your brand.",
+      "Use available research providers and your business context to inform campaign topics and captions.",
     gradient: "from-amber-500 to-red-500",
     bgLight: "bg-amber-50/70 border-amber-200/80 text-amber-900",
     badgeColor: "bg-amber-100 text-amber-800",
@@ -28,7 +28,7 @@ const pillars = [
   {
     icon: Search,
     badge: "Local SEO & GMB Optimization",
-    title: "Ranks You #1 on Google Search & Maps",
+    title: "Keep Your Google Business Profile Active",
     description:
       "Keeps your Google Business Profile updated daily with local offers, targets high-intent keywords, and drives organic foot traffic and calls from nearby customers.",
     gradient: "from-emerald-500 to-teal-600",
@@ -50,7 +50,7 @@ const pillars = [
     badge: "24/7 GMB Review Auto-Responder",
     title: "Instant Smart Replies to Google Reviews",
     description:
-      "Monitors customer reviews on Google Maps and Search 24/7, automatically posting polite, professional replies in 2 seconds using your brand voice.",
+      "Monitors customer reviews on Google Maps and Search 24/7, preparing professional replies using your brand voice and configured review settings.",
     gradient: "from-blue-600 to-indigo-600",
     bgLight: "bg-blue-50/70 border-blue-200/80 text-blue-900",
     badgeColor: "bg-blue-100 text-blue-800",
@@ -58,9 +58,9 @@ const pillars = [
   {
     icon: BarChart3,
     badge: "Analytics-Driven Post Evolution",
-    title: "Learns & Improves Tomorrow's Post",
+    title: "Review Performance for Your Next Campaign",
     description:
-      "Tracks real-time post likes, clicks, and reach. AI analyzes performance metrics to continuously optimize the tone, imagery, and timing of your future campaigns.",
+      "Review available likes, clicks, reach and profile metrics after analytics sync. Use this information to inform your next campaign.",
     gradient: "from-indigo-600 to-purple-600",
     bgLight: "bg-indigo-50/70 border-indigo-200/80 text-indigo-900",
     badgeColor: "bg-indigo-100 text-indigo-800",
@@ -68,9 +68,9 @@ const pillars = [
   {
     icon: TrendingUp,
     badge: "Organic Local Reach Booster",
-    title: "Maximum Reach Without Heavy Ad Spend",
+    title: "Support Your Organic Presence",
     description:
-      "Expands your digital footprint organically so thousands of local customers discover your business on Google, Instagram, and Facebook without burning money on ads.",
+      "Build a consistent presence with useful posts and local offers across your connected channels. Reach depends on your audience and content.",
     gradient: "from-teal-600 to-emerald-600",
     bgLight: "bg-teal-50/70 border-teal-200/80 text-teal-900",
     badgeColor: "bg-teal-100 text-teal-800",
@@ -93,12 +93,12 @@ export function CorePillarsSection() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         
         {/* SECTION HEADER */}
-        <div className="mx-auto max-w-3xl text-center mb-16">
-          <div className="inline-flex items-center gap-2 rounded-full bg-purple-100/80 px-4 py-1.5 text-xs font-bold text-purple-700 uppercase tracking-widest mb-3">
+        <div className="marketing-section-intro marketing-section-spaced">
+          <div className="marketing-eyebrow">
             <Sparkles className="h-3.5 w-3.5" />
             <span>The Core Engines of maeaco AI</span>
           </div>
-          <h2 className="text-3xl font-extrabold tracking-tight text-zinc-950 sm:text-4xl lg:text-5xl">
+          <h2 className="marketing-section-title">
             The 7 Core Pillars of Autonomous Growth
           </h2>
           <p className="mt-4 text-base text-zinc-600 sm:text-lg">
@@ -142,7 +142,7 @@ export function CorePillarsSection() {
                 {/* Footer Checkmark */}
                 <div className="mt-6 flex items-center gap-2 border-t border-zinc-200/60 pt-4 text-xs font-bold text-zinc-800">
                   <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                  <span>100% Automated by AI</span>
+                  <span>AI-assisted workflow</span>
                 </div>
               </div>
             );

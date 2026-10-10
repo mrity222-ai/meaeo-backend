@@ -75,7 +75,7 @@ export default function AdminSystemPage() {
             </p>
           </div>
 
-          <button className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-border px-4 text-sm font-medium hover:bg-muted">
+          <button className="ui-button-secondary inline-flex h-10 items-center justify-center gap-2 border border-border px-4 text-sm font-medium">
             <RefreshCw className="h-4 w-4" />
             Refresh
           </button>
@@ -144,7 +144,7 @@ export default function AdminSystemPage() {
         </section>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Link href="/admin/system/health" className="rounded-xl border border-border bg-card p-5 transition-colors hover:bg-muted/40">
+          <Link href="/admin/system/health" className="ui-button-secondary border border-border p-5 transition-colors">
             <CheckCircle2 className="h-5 w-5" />
             <h3 className="mt-4 font-semibold">Health Checks</h3>
             <p className="mt-1 text-sm text-muted-foreground">
@@ -153,7 +153,7 @@ export default function AdminSystemPage() {
             <ArrowUpRight className="mt-4 h-4 w-4" />
           </Link>
 
-          <Link href="/admin/system/jobs" className="rounded-xl border border-border bg-card p-5 transition-colors hover:bg-muted/40">
+          <Link href="/admin/system/jobs" className="ui-button-secondary border border-border p-5 transition-colors">
             <Workflow className="h-5 w-5" />
             <h3 className="mt-4 font-semibold">Background Jobs</h3>
             <p className="mt-1 text-sm text-muted-foreground">
@@ -162,7 +162,7 @@ export default function AdminSystemPage() {
             <ArrowUpRight className="mt-4 h-4 w-4" />
           </Link>
 
-          <Link href="/admin/system/logs" className="rounded-xl border border-border bg-card p-5 transition-colors hover:bg-muted/40">
+          <Link href="/admin/system/logs" className="ui-button-secondary border border-border p-5 transition-colors">
             <FileText className="h-5 w-5" />
             <h3 className="mt-4 font-semibold">System Logs</h3>
             <p className="mt-1 text-sm text-muted-foreground">
@@ -171,7 +171,7 @@ export default function AdminSystemPage() {
             <ArrowUpRight className="mt-4 h-4 w-4" />
           </Link>
 
-          <Link href="/admin/settings" className="rounded-xl border border-border bg-card p-5 transition-colors hover:bg-muted/40">
+          <Link href="/admin/settings" className="ui-button-secondary border border-border p-5 transition-colors">
             <Settings2 className="h-5 w-5" />
             <h3 className="mt-4 font-semibold">System Settings</h3>
             <p className="mt-1 text-sm text-muted-foreground">

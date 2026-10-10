@@ -159,12 +159,12 @@ export default function AdminReportsPage() {
           </div>
 
           <div className="flex flex-col gap-2 sm:flex-row">
-            <button className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-border bg-background px-4 text-sm font-medium transition-colors hover:bg-muted">
+            <button className="ui-button-secondary inline-flex h-10 items-center justify-center gap-2 border border-border px-4 text-sm font-medium transition-colors">
               <RefreshCw className="h-4 w-4" />
               Refresh
             </button>
 
-            <button className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-foreground px-4 text-sm font-medium text-background transition-opacity hover:opacity-90">
+            <button className="ui-button-primary inline-flex h-10 items-center justify-center gap-2 px-4 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90">
               <ArrowDownToLine className="h-4 w-4" />
               Export Report
             </button>
@@ -497,7 +497,7 @@ export default function AdminReportsPage() {
         <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <Link
             href="/admin/analytics"
-            className="group rounded-xl border border-border bg-card p-5 transition-colors hover:bg-muted/40"
+            className="ui-button-secondary group border border-border p-5 transition-colors"
           >
             <TrendingUp className="h-5 w-5" />
             <h3 className="mt-4 font-semibold">Advanced Analytics</h3>
@@ -510,7 +510,7 @@ export default function AdminReportsPage() {
             </span>
           </Link>
 
-          <button className="group rounded-xl border border-border bg-card p-5 text-left transition-colors hover:bg-muted/40">
+          <button className="ui-button-secondary group border border-border p-5 text-left transition-colors">
             <CalendarDays className="h-5 w-5" />
             <h3 className="mt-4 font-semibold">Scheduled Reports</h3>
             <p className="mt-1 text-sm text-muted-foreground">
@@ -522,7 +522,7 @@ export default function AdminReportsPage() {
             </span>
           </button>
 
-          <button className="group rounded-xl border border-border bg-card p-5 text-left transition-colors hover:bg-muted/40">
+          <button className="ui-button-secondary group border border-border p-5 text-left transition-colors">
             <Clock3 className="h-5 w-5" />
             <h3 className="mt-4 font-semibold">Report History</h3>
             <p className="mt-1 text-sm text-muted-foreground">

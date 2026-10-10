@@ -15,11 +15,13 @@ from sqlalchemy.orm import Session
 from app.assets.storage import (
     AssetStorage,
     AssetStorageFactory,
+    LocalAssetStorage,
 )
 from app.database.models import (
     Asset,
     AssetUsage,
     BusinessAccount,
+    BrandProfile,
 )
 from app.models.config import settings
 
@@ -167,6 +169,18 @@ class AssetService:
 
         return digest.hexdigest()
 
+    @staticmethod
+    def catalogue_statement(tenant_id: str, business_account_id: int):
+        logo_ids = select(BrandProfile.logo_asset_id).where(
+            BrandProfile.tenant_id == tenant_id,
+            BrandProfile.business_account_id == business_account_id,
+            BrandProfile.logo_asset_id.is_not(None),
+        )
+        return select(Asset).where(
+            Asset.tenant_id == tenant_id, Asset.business_account_id == business_account_id,
+            Asset.source == "catalogue", Asset.status != "deleted", Asset.id.not_in(logo_ids),
+        )
+
     # -------------------------------------------------
     # Asset registration
     # -------------------------------------------------
@@ -178,6 +192,7 @@ class AssetService:
         business_account_id: int,
         source_path: str | Path,
         source: str,
+        original_filename: str | None = None,
     ) -> Asset:
 
         tenant_id = self._validate_tenant(
@@ -192,6 +207,12 @@ class AssetService:
         source_path = Path(
             source_path
         )
+        # Agents may retain a catalogue source label after rendering an overlay.
+        # Classify rendered output by the validated campaign output directory.
+        from app.image.catalogue import _campaign_output
+        output_root = _campaign_output.get()
+        if output_root is not None and source_path.resolve().is_relative_to(output_root.resolve()):
+            source = "campaign"
 
         if not source_path.exists():
             raise FileNotFoundError(
@@ -237,6 +258,7 @@ class AssetService:
                 Asset.business_account_id
                 == business_account_id,
                 Asset.sha256 == file_hash,
+                Asset.source == source,
                 Asset.status != "deleted",
             )
         )
@@ -279,7 +301,7 @@ class AssetService:
                 tenant_id=tenant_id,
                 business_account_id=business_account_id,
                 storage_key=storage_key,
-                original_filename=source_path.name,
+                original_filename=original_filename or source_path.name,
                 mime_type=mime_type,
                 sha256=file_hash,
                 source=source,
@@ -341,6 +363,21 @@ class AssetService:
                 Asset.status != "deleted",
             )
         )
+
+    def resolve_owned_image_path(self, *, tenant_id: str, business_account_id: int, asset_id: str) -> Path:
+        asset = self.get_asset(tenant_id=tenant_id, business_account_id=business_account_id, asset_id=asset_id)
+        if asset is None or asset.mime_type not in self.ALLOWED_MIME_TYPES:
+            raise ValueError("Image asset was not found for the selected business.")
+        prefix = f"{asset.tenant_id}/{asset.business_account_id}/"
+        if not asset.storage_key.startswith(prefix):
+            raise ValueError("Image asset storage does not match its business ownership.")
+        if not isinstance(self.storage, LocalAssetStorage):
+            raise ValueError("Campaign input requires a supported local asset storage backend.")
+        path = self.storage._path(asset.storage_key)
+        business_root = self.storage._path(prefix)
+        if not path.is_relative_to(business_root) or not path.is_file():
+            raise ValueError("Image asset file is missing or outside its business storage.")
+        return path
 
     def get_asset_for_signed_url(
         self,

@@ -10,6 +10,7 @@ from app.schemas.brand import (
     BrandProfileUpdate,
 )
 from app.security.tenant import TenantContext
+from app.services.asset_service import AssetService
 
 
 class BrandProfileService:
@@ -73,6 +74,11 @@ class BrandProfileService:
                 "Brand profile already exists."
             )
 
+        if values.get("logo_asset_id"):
+            AssetService(self.db).resolve_owned_image_path(
+                tenant_id=context.tenant_id, business_account_id=business_account_id,
+                asset_id=values["logo_asset_id"])
+
         profile = BrandProfile(
             tenant_id=context.tenant_id,
             **values,
@@ -104,6 +110,12 @@ class BrandProfileService:
         values = data.model_dump(
             exclude_unset=True
         )
+
+        assets = AssetService(self.db)
+        assets.validate_business_account_access(tenant_id=context.tenant_id, business_account_id=business_account_id)
+        if values.get("logo_asset_id"):
+            assets.resolve_owned_image_path(tenant_id=context.tenant_id,
+                business_account_id=business_account_id, asset_id=values["logo_asset_id"])
 
         for field, value in values.items():
             setattr(profile, field, value)

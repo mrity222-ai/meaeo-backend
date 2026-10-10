@@ -1,4 +1,5 @@
 import asyncio
+import re
 from datetime import datetime, timezone
 import httpx
 
@@ -8,6 +9,7 @@ from app.repositories.local_credential_repository import (
 )
 from app.schemas.publishing import (
     PublishedPost,
+    publication_failure_flags,
     PublishingResult,
 )
 from app.schemas.schedule import PublishingSchedule
@@ -83,9 +85,9 @@ class GoogleBusinessPublisherProvider:
                 )
 
                 # Google My Business Local Posts Endpoint
-                # Format: https://mybusinesslocalpost.googleapis.com/v1/{location_name}/localPosts
+                # Format: https://mybusiness.googleapis.com/v4/{location_name}/localPosts
                 # location_name example: accounts/12345/locations/67890 or locations/67890
-                url = f"https://mybusinesslocalpost.googleapis.com/v1/{location_name}/localPosts"
+                url = f"https://mybusiness.googleapis.com/v4/{location_name}/localPosts"
 
                 headers = {
                     "Authorization": f"Bearer {access_token}",
@@ -109,15 +111,18 @@ class GoogleBusinessPublisherProvider:
                     if should_close:
                         await client.aclose()
 
-                if response.status_code not in (200, 201):
-                    raise ValueError(
-                        f"Google Business API returned status {response.status_code}: {response.text}"
-                    )
+                response.raise_for_status()
 
                 res_data = response.json()
                 external_id = res_data.get("name") or res_data.get("searchUrl")
 
-                if not external_id:
+                if res_data.get("state") != "LIVE":
+                    results.append(PublishedPost(platform="google_business", day=post.day, title=post.title,
+                        status="failed", external_id=str(external_id or ""), image_path=post.image_path,
+                        outcome_unknown=res_data.get("state") != "REJECTED",
+                        errors=["Google rejected the post." if res_data.get("state") == "REJECTED" else "Google accepted the post but publication is not confirmed. Check Google before retrying."]))
+                    continue
+                if not external_id or not str(external_id).startswith(f"{location_name}/localPosts/"):
                     raise ValueError(
                         "Google Business API did not return a local post ID."
                     )
@@ -190,6 +195,8 @@ class GoogleBusinessPublisherProvider:
 
     @staticmethod
     def _get_location_name(credential) -> str:
+        if credential is None:
+            raise ValueError("Google Business credentials are unavailable. Reconnect this business.")
         loc = (
             credential.metadata.get("gbp_location_name")
             or credential.metadata.get("location_name")
@@ -199,14 +206,23 @@ class GoogleBusinessPublisherProvider:
             raise ValueError(
                 "Google Business credential is missing gbp_location_name."
             )
+        if re.fullmatch(r"locations/[A-Za-z0-9_-]+", loc):
+            account = credential.metadata.get("google_account_name")
+            if account and re.fullmatch(r"accounts/[A-Za-z0-9_-]+", account):
+                loc = f"{account}/{loc}"
+        if not re.fullmatch(r"accounts/[A-Za-z0-9_-]+/locations/[A-Za-z0-9_-]+", loc):
+            raise ValueError("Verified Google account/location mapping is missing. Reconnect this business.")
         return loc
 
     @staticmethod
     def _get_access_token(credential) -> str:
+        if credential is None:
+            raise ValueError("Google Business credentials are unavailable. Reconnect this business.")
         token = (
             credential.metadata.get("gbp_access_token")
             or credential.metadata.get("google_access_token")
             or credential.metadata.get("access_token")
+            or credential.access_token
         )
         if not token:
             raise ValueError(
@@ -296,4 +312,5 @@ class GoogleBusinessPublisherProvider:
             image_path=post.image_path,
             image_source=post.image_source,
             errors=[str(exc)],
+            **publication_failure_flags(exc),
         )

@@ -165,26 +165,26 @@ export default function AdminRolesPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <div className="mb-2 flex items-center gap-2 text-sm text-neutral-500">
+          <div className="mb-2 flex items-center gap-2 text-sm text-muted-foreground">
             <Link
               href="/admin/dashboard"
-              className="hover:text-neutral-950 transition"
+              className="hover:text-foreground transition"
             >
               Admin
             </Link>
 
             <span>/</span>
 
-            <span className="text-neutral-950 font-medium">
+            <span className="text-foreground font-medium">
               Roles & Permissions
             </span>
           </div>
 
-          <h1 className="text-2xl font-bold tracking-tight text-neutral-950 sm:text-3xl">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
             Roles & Permissions
           </h1>
 
-          <p className="mt-1 text-sm text-neutral-500">
+          <p className="mt-1 text-sm text-muted-foreground">
             Control what administrators can access and manage.
           </p>
         </div>
@@ -229,8 +229,8 @@ export default function AdminRolesPage() {
       {/* Main */}
       <div className="grid gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
         {/* Roles List */}
-        <section className="rounded-2xl border border-neutral-200 bg-white shadow-sm overflow-hidden">
-          <div className="border-b border-neutral-200 p-4">
+        <section className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
+          <div className="border-b border-border p-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
 
@@ -240,7 +240,7 @@ export default function AdminRolesPage() {
                   setSearch(event.target.value)
                 }
                 placeholder="Search roles..."
-                className="h-10 w-full rounded-xl border border-neutral-200 bg-neutral-50 pl-9 pr-4 text-sm outline-none transition focus:border-neutral-400 focus:bg-white"
+                className="h-10 w-full rounded-xl border border-border bg-neutral-50 pl-9 pr-4 text-sm outline-none transition focus:border-neutral-400 focus:bg-card"
               />
             </div>
           </div>
@@ -266,14 +266,14 @@ export default function AdminRolesPage() {
 
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-2">
-                      <p className="font-semibold text-neutral-950">
+                      <p className="font-semibold text-foreground">
                         {role.name}
                       </p>
 
                       <ChevronRight className="h-4 w-4 shrink-0 text-neutral-400" />
                     </div>
 
-                    <p className="mt-1 line-clamp-2 text-xs leading-5 text-neutral-500">
+                    <p className="mt-1 line-clamp-2 text-xs leading-5 text-muted-foreground">
                       {role.description}
                     </p>
 
@@ -294,19 +294,19 @@ export default function AdminRolesPage() {
         </section>
 
         {/* Permissions Matrix */}
-        <section className="rounded-2xl border border-neutral-200 bg-white shadow-sm overflow-hidden">
-          <div className="flex flex-col gap-4 border-b border-neutral-200 p-5 lg:flex-row lg:items-start lg:justify-between">
+        <section className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
+          <div className="flex flex-col gap-4 border-b border-border p-5 lg:flex-row lg:items-start lg:justify-between">
             <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-50 border border-purple-100 text-purple-700">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-50 border border-border text-purple-700">
                 <ShieldCheck className="h-5 w-5" />
               </div>
 
               <div>
-                <h2 className="font-bold text-neutral-950 text-base">
+                <h2 className="font-bold text-foreground text-base">
                   {selected?.name}
                 </h2>
 
-                <p className="mt-1 max-w-xl text-xs text-neutral-500">
+                <p className="mt-1 max-w-xl text-xs text-muted-foreground">
                   {selected?.description}
                 </p>
               </div>
@@ -333,28 +333,28 @@ export default function AdminRolesPage() {
           <div className="overflow-x-auto">
             <table className="w-full min-w-[720px] text-sm">
               <thead>
-                <tr className="border-b border-neutral-200 bg-neutral-50/50">
-                  <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                <tr className="border-b border-border bg-neutral-50/50">
+                  <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     Module
                   </th>
 
-                  <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                  <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     View
                   </th>
 
-                  <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                  <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     Create
                   </th>
 
-                  <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                  <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     Edit
                   </th>
 
-                  <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                  <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     Delete
                   </th>
 
-                  <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                  <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     Other
                   </th>
                 </tr>
@@ -417,8 +417,8 @@ export default function AdminRolesPage() {
           </div>
 
           {/* Footer */}
-          <div className="flex flex-col gap-3 border-t border-neutral-200 bg-neutral-50/50 p-5 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-2 text-xs text-neutral-500">
+          <div className="flex flex-col gap-3 border-t border-border bg-neutral-50/50 p-5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <Lock className="h-4 w-4" />
 
               <span>
@@ -434,13 +434,13 @@ export default function AdminRolesPage() {
       </div>
 
       {/* Mobile Permission Summary */}
-      <section className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm xl:hidden">
+      <section className="rounded-2xl border border-border bg-card p-5 shadow-sm xl:hidden">
         <div className="border-b border-neutral-100 pb-3 mb-3">
-          <h2 className="font-semibold text-neutral-950">
+          <h2 className="font-semibold text-foreground">
             Permission Summary
           </h2>
 
-          <p className="mt-1 text-xs text-neutral-500">
+          <p className="mt-1 text-xs text-muted-foreground">
             Quick overview of permissions for{" "}
             <span className="font-semibold text-neutral-900">{selected?.name}</span>.
           </p>
@@ -456,7 +456,7 @@ export default function AdminRolesPage() {
                 {group.name}
               </span>
 
-              <span className="text-xs font-semibold text-neutral-500">
+              <span className="text-xs font-semibold text-muted-foreground">
                 {group.permissions.length} permissions
               </span>
             </div>
@@ -465,16 +465,16 @@ export default function AdminRolesPage() {
       </section>
 
       {/* Security Notice */}
-      <div className="rounded-2xl border border-dashed border-neutral-300 bg-white p-5">
+      <div className="rounded-2xl border border-dashed border-neutral-300 bg-card p-5">
         <div className="flex gap-3">
           <Lock className="mt-0.5 h-5 w-5 shrink-0 text-purple-600" />
 
           <div>
-            <p className="text-sm font-semibold text-neutral-950">
+            <p className="text-sm font-semibold text-foreground">
               Permission enforcement will be connected later
             </p>
 
-            <p className="mt-1 text-xs leading-5 text-neutral-500">
+            <p className="mt-1 text-xs leading-5 text-muted-foreground">
               This stage builds the RBAC management interface.
               Actual permission enforcement, protected admin APIs,
               role persistence and authentication will be implemented
@@ -520,20 +520,20 @@ function StatCard({
   description: string;
 }) {
   return (
-    <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
-      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-neutral-50 border border-neutral-200">
+    <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-neutral-50 border border-border">
         {icon}
       </div>
 
-      <p className="mt-4 text-xs font-medium text-neutral-500">
+      <p className="mt-4 text-xs font-medium text-muted-foreground">
         {label}
       </p>
 
-      <p className="mt-1 text-2xl font-bold tracking-tight text-neutral-950">
+      <p className="mt-1 text-2xl font-bold tracking-tight text-foreground">
         {value}
       </p>
 
-      <p className="mt-1 text-xs text-neutral-500">
+      <p className="mt-1 text-xs text-muted-foreground">
         {description}
       </p>
     </div>

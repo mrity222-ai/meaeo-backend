@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -155,17 +155,15 @@ class CampaignPostPublicationRepository:
 
         now = datetime.now(timezone.utc)
 
-        publication.status = "processing"
-        publication.attempts += 1
-        publication.started_at = now
-        publication.completed_at = None
-        publication.last_error = None
-        publication.updated_at = now
-
+        claimed = self.db.execute(update(CampaignPostPublication).where(
+            CampaignPostPublication.id == publication.id,
+            CampaignPostPublication.status.in_(["pending", "failed"]),
+        ).values(status="processing", attempts=CampaignPostPublication.attempts + 1,
+                 started_at=now, completed_at=None, last_error=None, updated_at=now)
+          .execution_options(synchronize_session=False))
         self.db.commit()
         self.db.refresh(publication)
-
-        return publication
+        return publication if claimed.rowcount == 1 else None
 
     def mark_provider_reference(
         self,
@@ -253,37 +251,12 @@ class CampaignPostPublicationRepository:
             now - PUBLICATION_STALE_AFTER
         )
 
-        publications = list(
-            self.db.scalars(
-                select(
-                    CampaignPostPublication
-                ).where(
-                    CampaignPostPublication.status
-                    == "processing",
-                    CampaignPostPublication.started_at
-                    .is_not(None),
-                    CampaignPostPublication.started_at
-                    <= cutoff,
-                )
-            ).all()
-        )
-
-        for publication in publications:
-
-            publication.status = (
-                "reconciliation_required"
-            )
-
-            publication.last_error = (
-                "Publication attempt became stale "
-                "before its external outcome was "
-                "recorded. Manual/provider "
-                "reconciliation is required."
-            )
-
-            publication.updated_at = now
-
-        if publications:
-            self.db.commit()
-
-        return len(publications)
+        result = self.db.execute(update(CampaignPostPublication).where(
+            CampaignPostPublication.status == "processing",
+            CampaignPostPublication.started_at.is_not(None),
+            CampaignPostPublication.started_at <= cutoff,
+        ).values(status="reconciliation_required", updated_at=now,
+                 last_error="Publication outcome was not recorded. Provider reconciliation is required.")
+          .execution_options(synchronize_session=False))
+        self.db.commit()
+        return result.rowcount

@@ -100,6 +100,7 @@ export function saveTenantContext(
     BUSINESS_ACCOUNT_ID_KEY,
     String(businessAccountId),
   );
+  window.dispatchEvent(new Event("business-context-changed"));
 }
 
 export function getTenantId(): string | null {

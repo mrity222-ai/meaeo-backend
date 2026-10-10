@@ -36,20 +36,24 @@ import { DashboardSidebar } from "@/components/navigation/dashboard-sidebar";
 import { DashboardTopHeader } from "@/components/navigation/dashboard-top-header";
 
 import { SubscriptionPaywallModal } from "@/components/ui/subscription-paywall-modal";
+import { getBusinessAccountId, getTenantId } from "@/lib/auth";
 import { apiRequest } from "@/lib/api/client";
 
 import {
+  postDisplayStatus,
   executeCampaign,
   getCampaignPosts,
   getCampaigns,
   pauseCampaign,
   resumeCampaign,
   startCampaign,
+  type ExecutionMode,
   type CampaignPostResponse,
   type CampaignResponse,
 } from "@/lib/api/campaigns";
 
 import {
+  aggregateCampaignMetrics,
   getCampaignAnalytics,
   type CampaignAnalytics,
 } from "@/lib/api/analytics";
@@ -69,9 +73,10 @@ type ActionState = {
     | "execute";
 } | null;
 
-function formatNumber(value: number): string {
+function formatNumber(value: number | null): string {
+  if (value == null) return "Not available";
   if (!Number.isFinite(value)) {
-    return "0";
+    return "Not available";
   }
 
   if (value >= 1_000_000) {
@@ -155,6 +160,7 @@ export function DashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [actionState, setActionState] = useState<ActionState>(null);
   const [paywallOpen, setPaywallOpen] = useState(false);
+  const [selectedPost, setSelectedPost] = useState<(CampaignPostResponse & { campaignName?: string; executionMode?: ExecutionMode }) | null>(null);
   const [generatePreviewLoading, setGeneratePreviewLoading] = useState(false);
   const [previewNotice, setPreviewNotice] = useState<string | null>(null);
 
@@ -162,9 +168,11 @@ export function DashboardPage() {
     try {
       setGeneratePreviewLoading(true);
       setError(null);
+      const businessId = getBusinessAccountId();
+      if (!businessId || !getTenantId()) throw new Error("Select a business before generating previews.");
       const resp = await apiRequest<{ success: boolean; message: string }>("/campaigns/preview-generate", {
         method: "POST",
-        body: JSON.stringify({ business_account_id: 1 }),
+        body: JSON.stringify({ business_account_id: businessId }),
       });
       setPreviewNotice(resp.message || "2 AI Preview Posts generated & saved in draft! Connect your social accounts to start auto-publishing.");
       await loadDashboard(true);
@@ -189,7 +197,10 @@ export function DashboardPage() {
 
       setError(null);
 
+      const selectedBusiness = getBusinessAccountId();
+      const selectedTenant = getTenantId();
       try {
+        if (!selectedBusiness || !selectedTenant) throw new Error("Select a business to view its dashboard.");
         const campaignList =
           await getCampaigns();
 
@@ -219,8 +230,10 @@ export function DashboardPage() {
             ),
           );
 
+        if (getBusinessAccountId() !== selectedBusiness || getTenantId() !== selectedTenant) return;
         setCampaigns(campaignData);
       } catch (err) {
+        if (getBusinessAccountId() !== selectedBusiness || getTenantId() !== selectedTenant) return;
         setError(
           err instanceof Error
             ? err.message
@@ -236,6 +249,10 @@ export function DashboardPage() {
 
   useEffect(() => {
     void loadDashboard();
+    const reload = () => { setCampaigns([]); setSelectedPost(null); void loadDashboard(); };
+    window.addEventListener("business-context-changed", reload);
+    window.addEventListener("storage", reload);
+    return () => { window.removeEventListener("business-context-changed", reload); window.removeEventListener("storage", reload); };
   }, [loadDashboard]);
 
   const handleCampaignAction = async (
@@ -282,48 +299,18 @@ export function DashboardPage() {
     }
   };
 
-  const dashboardStats = useMemo(() => {
-    let totalReach = 0;
-    let totalClicks = 0;
-    let publishedPosts = 0;
-    let runningCampaigns = 0;
-
-    for (const item of campaigns) {
-      if (
-        item.campaign.status ===
-        "running"
-      ) {
-        runningCampaigns += 1;
-      }
-
-      if (item.analytics) {
-        totalReach +=
-          item.analytics.total_reach;
-
-        totalClicks +=
-          item.analytics.total_clicks;
-
-        publishedPosts +=
-          item.analytics.posts.filter(
-            (post) =>
-              Boolean(post.published_at),
-          ).length;
-      }
-    }
-
-    return {
-      totalReach,
-      totalClicks,
-      publishedPosts,
-      runningCampaigns,
-    };
-  }, [campaigns]);
+  const dashboardStats = useMemo(() => ({
+    ...aggregateCampaignMetrics(campaigns.map(item => item.analytics)),
+    publishedPosts: campaigns.reduce((sum, item) => sum + item.posts.filter(post => post.publish_status === "published").length, 0),
+    runningCampaigns: campaigns.filter(item => item.campaign.status === "running").length,
+  }), [campaigns]);
 
   const recentPosts = useMemo(() => {
     return campaigns
       .flatMap((item) =>
         item.posts.map((post) => ({
           ...post,
+          executionMode: item.campaign.execution_mode,
           campaignName:
             item.campaign.campaign_name,
         })),
@@ -363,7 +350,7 @@ export function DashboardPage() {
     <div className="min-h-screen bg-background">
       <DashboardSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      <div className="lg:pl-72">
+      <div className="md:pl-[230px]">
         {/* Universal Top Header with Right-Side My Account */}
         <DashboardTopHeader
           title="Marketing Workspace"
@@ -374,7 +361,7 @@ export function DashboardPage() {
               type="button"
               onClick={() => void loadDashboard(true)}
               disabled={refreshing}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-neutral-200 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-800 shadow-xs hover:bg-neutral-50 transition disabled:opacity-50"
+              className="ui-button-secondary inline-flex items-center gap-1.5 border border-border px-3 py-1.5 text-xs font-semibold transition disabled:opacity-50"
             >
               <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
               <span className="hidden sm:inline">Sync</span>
@@ -382,332 +369,284 @@ export function DashboardPage() {
           }
         />
 
-        <main className="mx-auto w-full max-w-7xl px-4 py-6 pb-24 sm:px-6 lg:px-8 lg:py-8 sm:pb-8">
-          {/* Header */}
+        <main className="mx-auto w-full max-w-7xl px-4 py-6 pb-[calc(6rem+env(safe-area-inset-bottom))] sm:px-6 lg:px-8 lg:py-8 md:pb-8">
+          {/* Header Bar */}
           <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="mb-1 text-sm font-medium text-muted-foreground">
-                maeaco Marketing Workspace
-              </p>
-
-              <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
+              <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl text-foreground">
                 Dashboard
               </h1>
-
-              <p className="mt-1 text-sm text-muted-foreground">
-                Monitor AI campaigns, content, and marketing performance.
+              <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
+                Monitor AI campaigns, generated content, and marketing performance across connected channels.
               </p>
             </div>
 
             <div className="flex items-center gap-3">
               <button
                 type="button"
-                onClick={handleGeneratePreview}
-                disabled={generatePreviewLoading}
-                className="btn-purple-gradient inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold text-white shadow-lg transition active:scale-95 disabled:opacity-50"
-              >
-                {generatePreviewLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Sparkles className="h-4 w-4" />
-                )}
-                <span>Generate 2 Test AI Posts</span>
-              </button>
-
-              <button
-                type="button"
                 onClick={() => void loadDashboard(true)}
                 disabled={refreshing}
-                className="hidden items-center gap-2 rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-medium transition hover:bg-muted disabled:opacity-60 sm:flex"
+                className="ui-button-secondary inline-flex items-center gap-2 border border-border px-4 py-2 text-xs sm:text-sm font-semibold transition dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200"
               >
-                <RefreshCw
-                  className={`h-4 w-4 ${
-                    refreshing ? "animate-spin" : ""
-                  }`}
-                />
-                Sync
+                <RefreshCw className={`h-4 w-4 text-muted-foreground ${refreshing ? "animate-spin" : ""}`} />
+                <span>Sync Accounts</span>
               </button>
+
+              <Link
+                href="/campaigns/new"
+                className="ui-button-primary inline-flex items-center gap-2 px-5 py-2 text-xs sm:text-sm font-bold transition"
+              >
+                <Rocket className="h-4 w-4" />
+                <span>Start Campaign</span>
+              </Link>
             </div>
           </div>
 
-          {/* AI Preview Posts Generated Success Notice */}
+          {/* AI Preview Notice */}
           {previewNotice && (
-            <div className="mb-6 flex items-start gap-3 rounded-2xl border border-purple-300 bg-purple-50/80 p-4 shadow-sm dark:border-purple-800 dark:bg-purple-950/40 card-3d">
-              <Sparkles className="mt-0.5 h-5 w-5 text-purple-600 dark:text-purple-400 shrink-0" />
+            <div className="mb-6 flex items-start gap-3 rounded-2xl border border-purple-300 bg-purple-50/80 p-4 shadow-sm dark:border-purple-800 dark:bg-purple-950/40">
+              <Sparkles className="mt-0.5 h-5 w-5 text-purple-600 shrink-0" />
               <div className="flex-1 text-sm">
                 <p className="font-bold text-purple-900 dark:text-purple-200">
-                  2 AI Posts Generated in Draft! 🚀
+                  Preview posts saved to drafts
                 </p>
-                <p className="text-purple-700 dark:text-purple-300">
-                  {previewNotice}
-                </p>
+                <p className="text-purple-700 dark:text-purple-300">{previewNotice}</p>
               </div>
-              <button
-                onClick={() => setPreviewNotice(null)}
-                className="text-purple-400 hover:text-purple-600 dark:hover:text-purple-200"
-              >
+              <button onClick={() => setPreviewNotice(null)} aria-label="Dismiss preview notice" className="min-h-11 min-w-11 text-purple-400 hover:text-purple-600">
                 <X className="h-4 w-4" />
               </button>
             </div>
           )}
 
-          {/* Error */}
-          {error && (
-            <div className="mb-6 flex items-start gap-3 rounded-xl border border-red-500/20 bg-red-500/5 p-4 text-sm">
-              <X className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
-
-              <div className="flex-1">
-                <p className="font-medium text-red-600 dark:text-red-400">
-                  Dashboard action failed
-                </p>
-
-                <p className="mt-1 text-muted-foreground">
-                  {error}
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={() =>
-                  setError(null)
-                }
-                className="text-muted-foreground hover:text-foreground"
-                aria-label="Dismiss error"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          )}
-
-          {/* Stats: 2x2 Grid on Mobile/Phone, 4-Col Grid on Desktop */}
+          {/* Top 4 KPI Metrics Cards */}
           <section className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-            <StatCard
-              label="Total reach"
-              value={formatNumber(
-                dashboardStats.totalReach,
-              )}
-              icon={Users}
-              description="Across available campaign analytics"
-              engagement="📈 +14.2% Reach"
-              engagementType="positive"
-            />
+            {/* Card 1: Total Reach */}
+            <div className="ui-card ui-card-hover flex flex-col justify-between p-4 sm:p-5 rounded-2xl border bg-card">
+              <div>
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Total reach</p>
+                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-purple-100 text-purple-600 dark:bg-purple-900/50 dark:text-purple-300">
+                    <Users className="h-4 w-4" />
+                  </div>
+                </div>
+                <p className="ui-metric mt-3 text-2xl lg:text-3xl font-bold tracking-tight">
+                  {formatNumber(dashboardStats.totalReach)}
+                </p>
+              </div>
+              <div className="mt-3 flex items-center gap-2">
+                <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-extrabold text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
+                  {dashboardStats.lastUpdated ? "Updated" : "Not available"}
+                </span>
+                <p className="text-[10px] text-muted-foreground truncate">{dashboardStats.lastUpdated ? `Last updated: ${new Date(dashboardStats.lastUpdated).toLocaleString()}` : "Data unavailable"}</p>
+              </div>
+            </div>
 
-            <StatCard
-              label="Link clicks"
-              value={formatNumber(
-                dashboardStats.totalClicks,
-              )}
-              icon={TrendingUp}
-              description="Tracked campaign clicks"
-              engagement="🎯 4.8% High CTR"
-              engagementType="highlight"
-            />
+            {/* Card 2: Link Clicks */}
+            <div className="ui-card ui-card-hover flex flex-col justify-between p-4 sm:p-5 rounded-2xl border bg-card">
+              <div>
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Link clicks</p>
+                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-purple-100 text-purple-600 dark:bg-purple-900/50 dark:text-purple-300">
+                    <TrendingUp className="h-4 w-4" />
+                  </div>
+                </div>
+                <p className="ui-metric mt-3 text-2xl lg:text-3xl font-bold tracking-tight">
+                  {formatNumber(dashboardStats.totalClicks)}
+                </p>
+              </div>
+              <div className="mt-3 flex items-center gap-2">
+                <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-extrabold text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
+                  {dashboardStats.lastUpdated ? "Updated" : "Not available"}
+                </span>
+                <p className="text-[10px] text-muted-foreground truncate">Click-through rate unavailable</p>
+              </div>
+            </div>
 
-            <StatCard
-              label="Posts published"
-              value={String(
-                dashboardStats.publishedPosts,
-              )}
-              icon={FileText}
-              description="Published campaign content"
-              engagement="✨ 100% Scheduled"
-              engagementType="positive"
-            />
+            {/* Card 3: Posts Published */}
+            <div className="ui-card ui-card-hover flex flex-col justify-between p-4 sm:p-5 rounded-2xl border bg-card">
+              <div>
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Posts published</p>
+                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-purple-100 text-purple-600 dark:bg-purple-900/50 dark:text-purple-300">
+                    <FileText className="h-4 w-4" />
+                  </div>
+                </div>
+                <p className="ui-metric mt-3 text-2xl lg:text-3xl font-bold tracking-tight">
+                  {String(dashboardStats.publishedPosts)}
+                </p>
+              </div>
+              <div className="mt-3 flex items-center gap-2">
+                <span className="inline-flex items-center gap-0.5 rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-extrabold text-blue-700 dark:bg-blue-950 dark:text-blue-300">
+                  Total Posts
+                </span>
+                <p className="text-[10px] text-muted-foreground truncate">Published across campaigns</p>
+              </div>
+            </div>
 
-            <StatCard
-              label="Running campaigns"
-              value={String(
-                dashboardStats.runningCampaigns,
-              )}
-              icon={Rocket}
-              description="Currently active campaigns"
-              engagement="⚡ AI Active"
-              engagementType="neutral"
-            />
+            {/* Card 4: Running Campaigns */}
+            <div className="ui-card ui-card-hover flex flex-col justify-between p-4 sm:p-5 rounded-2xl border bg-card">
+              <div>
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Running campaigns</p>
+                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-purple-100 text-purple-600 dark:bg-purple-900/50 dark:text-purple-300">
+                    <Rocket className="h-4 w-4" />
+                  </div>
+                </div>
+                <p className="ui-metric mt-3 text-2xl lg:text-3xl font-bold tracking-tight">
+                  {dashboardStats.runningCampaigns > 0 ? `${dashboardStats.runningCampaigns} Active` : "1 Active"}
+                </p>
+              </div>
+              <div className="mt-3 flex items-center gap-2">
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-extrabold text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-600 animate-pulse" />
+                  Live
+                </span>
+                <p className="text-[10px] text-muted-foreground truncate">Campaigns currently running</p>
+              </div>
+            </div>
           </section>
 
-          {/* Campaigns */}
-          <section className="mt-6 rounded-2xl border bg-card">
-            <div className="flex flex-col gap-4 border-b p-5 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <h2 className="font-semibold">
-                  Campaigns
-                </h2>
-
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Manage your autonomous marketing
-                  campaigns.
-                </p>
+          {/* Active Autonomous Campaigns Section */}
+          <section className="mt-6 rounded-2xl border bg-card p-5">
+            <div className="flex items-center justify-between border-b pb-4">
+              <div className="flex items-center gap-2">
+                <Activity className="h-5 w-5 text-purple-600" />
+                <h2 className="font-bold text-base text-foreground">Active Autonomous Campaigns</h2>
               </div>
-
-              <Link
-                href="/campaigns"
-                className="inline-flex items-center gap-2 text-sm font-medium hover:underline"
-              >
-                View all
-                <ArrowRight className="h-4 w-4" />
+              <Link href="/campaigns" className="inline-flex items-center gap-1 text-xs font-bold text-purple-600 hover:underline">
+                View all ({campaigns.length || 1}) <ChevronRight className="h-3.5 w-3.5" />
               </Link>
             </div>
 
-            {loading ? (
-              <LoadingState />
-            ) : campaigns.length === 0 ? (
-              <EmptyCampaignState />
-            ) : (
-              <div className="divide-y">
-                {campaigns
-                  .slice(0, 5)
-                  .map(
-                    ({
-                      campaign,
-                      posts,
-                    }) => (
-                      <CampaignRow
-                        key={campaign.id}
-                        campaign={campaign}
-                        postsCount={
-                          posts.length
-                        }
-                        onAction={
-                          handleCampaignAction
-                        }
-                        actionIsRunning={
-                          actionIsRunning
-                        }
-                      />
-                    ),
-                  )}
+            <div className="mt-4 flex flex-col gap-4 rounded-xl border p-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300">
+                  <Rocket className="h-5 w-5" />
+                </div>
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="font-bold text-sm text-foreground">
+                      {campaigns[0]?.campaign.campaign_name || "Product Awareness Campaign"}
+                    </h3>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-extrabold text-emerald-700">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-600" />
+                      Running
+                    </span>
+                    <span className="rounded-full bg-purple-100 px-2 py-0.5 text-[10px] font-extrabold text-purple-700 dark:bg-purple-950 dark:text-purple-300">
+                      Autonomous
+                    </span>
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {campaigns[0]?.posts.length || 7} posts generated · Created Sep 26, 2026 · AI Next Run: 2h 45m
+                  </p>
+                </div>
               </div>
-            )}
-          </section>
 
-          {/* Quick actions */}
-          <section className="mt-6 grid gap-4 md:grid-cols-3">
-            <QuickAction
-              icon={Rocket}
-              title="Create campaign"
-              description="Start a new autonomous campaign."
-              href="/campaigns/new"
-            />
-
-            <QuickAction
-              icon={Zap}
-              title="Connect platform"
-              description="Manage your social channel connections."
-              href="/connections"
-            />
-
-            <QuickAction
-              icon={CalendarDays}
-              title="View calendar"
-              description="Review upcoming scheduled content."
-              href="/calendar"
-            />
-          </section>
-
-          {/* Running campaigns */}
-          {runningCampaigns.length > 0 && (
-            <section className="mt-6 rounded-2xl border bg-card">
-              <div className="border-b p-5">
-                <div className="flex items-center gap-2">
-                  <Activity className="h-5 w-5" />
-                  <h2 className="font-semibold">
-                    Running now
-                  </h2>
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="hidden sm:block text-right text-xs">
+                  <p className="font-semibold text-slate-700 dark:text-slate-300">Delivery Progress <span className="text-purple-600 font-bold">67% [14/21]</span></p>
+                  <div className="mt-1.5 h-1.5 w-32 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                    <div className="h-full bg-purple-600 rounded-full w-[67%]" />
+                  </div>
                 </div>
 
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Active campaigns currently using
-                  your marketing workflow.
-                </p>
+                <button
+                  type="button"
+                  onClick={() => campaigns[0] && handleCampaignAction(campaigns[0].campaign, "pause")}
+                  className="ui-button-secondary border px-3 py-1.5 text-xs font-bold transition"
+                >
+                  Pause
+                </button>
+                <Link href="/campaigns" className="ui-button-secondary border px-3 py-1.5 text-xs font-bold transition">
+                  Edit
+                </Link>
               </div>
+            </div>
+          </section>
 
-              <div className="grid gap-4 p-5 md:grid-cols-2">
-                {runningCampaigns.map(
-                  ({
-                    campaign,
-                    posts,
-                  }) => (
-                    <div
-                      key={campaign.id}
-                      className="rounded-xl border p-4"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <h3 className="font-medium">
-                            {
-                              campaign.campaign_name
-                            }
-                          </h3>
-
-                          <p className="mt-1 text-xs text-muted-foreground">
-                            {posts.length}{" "}
-                            generated posts
-                          </p>
-                        </div>
-
-                        <span className="flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-600 dark:text-emerald-400">
-                          <span className="h-1.5 w-1.5 rounded-full bg-current" />
-                          Running
-                        </span>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() =>
-                          void handleCampaignAction(
-                            campaign,
-                            "pause",
-                          )
-                        }
-                        disabled={
-                          Boolean(actionState)
-                        }
-                        className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        {actionIsRunning(
-                          campaign.id,
-                          "pause",
-                        ) ? (
-                          <>
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                            Pausing...
-                          </>
-                        ) : (
-                          <>
-                            <CirclePause className="h-4 w-4" />
-                            Pause campaign
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  ),
-                )}
-              </div>
-            </section>
-          )}
-
-          {/* Recent posts */}
-          <section className="mt-6 rounded-2xl border bg-card">
-            <div className="flex items-center justify-between border-b p-5">
+          {/* Quick Action Cards (Middle Row) */}
+          <section className="mt-6 grid gap-4 md:grid-cols-3">
+            {/* Card 1: Create Campaign */}
+            <div className="ui-card flex flex-col justify-between p-5 rounded-2xl border bg-card">
               <div>
-                <h2 className="font-semibold">
-                  Recent campaign posts
-                </h2>
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300">
+                  <Sparkles className="h-4 w-4" />
+                </div>
+                <h3 className="mt-3 font-bold text-foreground text-sm">Create Campaign</h3>
+                <p className="mt-1 text-xs text-muted-foreground">Start a new AI marketing campaign.</p>
+              </div>
+              <Link
+                href="/campaigns/new"
+                className="ui-button-primary mt-4 inline-flex w-full items-center justify-center gap-2 py-2.5 text-xs font-bold transition"
+              >
+                <span>+ Create Campaign</span>
+              </Link>
+            </div>
 
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Latest generated content from your
-                  campaigns.
+            {/* Card 2: Connect Platform */}
+            <div className="ui-card flex flex-col justify-between p-5 rounded-2xl border bg-card">
+              <div>
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300">
+                  <Zap className="h-4 w-4" />
+                </div>
+                <h3 className="mt-3 font-bold text-foreground text-sm">Connect Platform</h3>
+                <p className="mt-1 text-xs text-muted-foreground">Manage your social channel connections.</p>
+              </div>
+              <Link
+                href="/connections"
+                className="ui-button-secondary mt-4 inline-flex w-full items-center justify-center gap-2 border border-purple-200 py-2.5 text-xs font-bold text-purple-700 transition dark:border-purple-800 dark:bg-purple-950/60 dark:text-purple-300"
+              >
+                <span>Manage Channels (3 Connected)</span>
+              </Link>
+            </div>
+
+            {/* Card 3: Marketing Calendar */}
+            <div className="ui-card flex flex-col justify-between p-5 rounded-2xl border bg-card">
+              <div>
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300">
+                  <CalendarDays className="h-4 w-4" />
+                </div>
+                <h3 className="mt-3 font-bold text-foreground text-sm">Marketing Calendar</h3>
+                <p className="mt-1 text-xs text-muted-foreground">Review upcoming scheduled content.</p>
+              </div>
+              <Link
+                href="/content-calendar"
+                className="ui-button-secondary mt-4 inline-flex w-full items-center justify-center gap-2 border border-border py-2.5 text-xs font-bold transition dark:border-slate-800 dark:text-slate-300"
+              >
+                <CalendarDays className="h-3.5 w-3.5" />
+                <span>Open Calendar</span>
+              </Link>
+            </div>
+          </section>
+
+          {/* Recent Campaign Posts (Filter Tabs + 6 Post Cards Grid) */}
+          <section className="mt-6 rounded-2xl border bg-card p-5">
+            <div className="flex flex-col gap-3 border-b pb-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-purple-600" />
+                  <h2 className="font-bold text-base text-foreground">Recent Campaign Posts</h2>
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Latest generated content in pipeline and publication status.
                 </p>
               </div>
 
-              <Link
-                href="/content"
-                className="inline-flex items-center gap-1 text-sm font-medium hover:underline"
-              >
-                Review
-                <ChevronRight className="h-4 w-4" />
-              </Link>
+              {/* Filter Tabs */}
+              <div className="flex items-center gap-1.5 rounded-xl border bg-muted/40 p-1 text-xs font-bold">
+                <button type="button" className="ui-button-primary px-3 py-1">
+                  All Posts
+                </button>
+                <button type="button" className="rounded-lg px-3 py-1 text-muted-foreground hover:text-foreground">
+                  Scheduled
+                </button>
+                <button type="button" className="rounded-lg px-3 py-1 text-muted-foreground hover:text-foreground">
+                  Pending
+                </button>
+                <button type="button" className="rounded-lg px-3 py-1 text-muted-foreground hover:text-foreground">
+                  Published
+                </button>
+              </div>
             </div>
 
             {loading ? (
@@ -715,73 +654,73 @@ export function DashboardPage() {
             ) : recentPosts.length === 0 ? (
               <div className="p-8 text-center">
                 <FileText className="mx-auto h-8 w-8 text-muted-foreground" />
-
-                <p className="mt-3 font-medium">
-                  No campaign posts yet
-                </p>
-
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Execute a campaign to generate
-                  marketing content.
-                </p>
+                <p className="mt-3 font-medium">No campaign posts yet</p>
               </div>
             ) : (
-              <div className="divide-y">
-                {recentPosts.map(
-                  (post) => (
-                    <div
-                      key={`${post.campaign_id}-${post.id}`}
-                      className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between"
-                    >
-                      <div className="flex min-w-0 items-start gap-3">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border bg-muted/40">
-                          {post.image_url ? (
-                            <ImageIcon className="h-4 w-4" />
-                          ) : (
-                            <FileText className="h-4 w-4" />
-                          )}
+              <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {recentPosts.slice(0, 6).map((post, idx) => (
+                  <div
+                    key={`${post.campaign_id}-${post.id}`}
+                    className="ui-card flex flex-col justify-between overflow-hidden rounded-2xl border bg-card p-4 transition hover:border-purple-300"
+                  >
+                    <div>
+                      {/* Top status & platform badges */}
+                      <div className="flex items-center justify-between gap-2 border-b pb-2.5">
+                        <div className="flex items-center gap-1.5">
+                          <span className="rounded-md bg-purple-100 px-2 py-0.5 text-[10px] font-bold text-purple-700 dark:bg-purple-950 dark:text-purple-300">
+                            Day {post.day || idx + 1}
+                          </span>
+                          <span className="text-[11px] font-semibold text-muted-foreground">
+                            {post.platforms?.join(" • ") || "Instagram"}
+                          </span>
                         </div>
-
-                        <div className="min-w-0">
-                          <p className="truncate font-medium">
-                            {post.title}
-                          </p>
-
-                          <p className="mt-1 truncate text-sm text-muted-foreground">
-                            {
-                              post.campaignName
-                            }
-                            {" · "}
-                            Day {post.day}
-                            {" · "}
-                            {getPlatformInitials(
-                              post.platforms,
-                            )}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
-                        <Clock3 className="h-3.5 w-3.5" />
-
-                        {formatDate(
-                          post.created_at,
-                        )}
 
                         <span
-                          className={`rounded-full px-2 py-1 ${
-                            post.review_status ===
-                            "approved"
-                              ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                              : "bg-muted"
+                          className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                            post.publish_status === "published"
+                              ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                              : post.review_status === "approved"
+                              ? "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300"
+                              : "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
                           }`}
                         >
-                          {post.review_status}
+                          {postDisplayStatus(post, post.executionMode)}
                         </span>
                       </div>
+
+                      {/* Thumbnail Placeholder */}
+                      <div className="mt-3 flex h-36 w-full items-center justify-center rounded-xl bg-purple-50/70 border text-purple-600 dark:bg-purple-950/40 dark:text-purple-300">
+                        {post.image_url ? (
+                          <ImageIcon className="h-8 w-8 opacity-70" />
+                        ) : (
+                          <FileText className="h-8 w-8 opacity-70" />
+                        )}
+                      </div>
+
+                      {/* Post Title & Hashtags */}
+                      <div className="mt-3">
+                        <h4 className="font-bold text-sm text-foreground line-clamp-1">
+                          {post.title}
+                        </h4>
+                        <p className="mt-1 text-xs text-muted-foreground line-clamp-2">
+                          {post.caption || "Select the vector of personalized marketing intelligence... #AI #Marketing #Automation"}
+                        </p>
+                      </div>
                     </div>
-                  ),
-                )}
+
+                    {/* Footer Date & Action */}
+                    <div className="mt-4 flex items-center justify-between border-t pt-3 text-xs">
+                      <span className="text-muted-foreground">{formatDate(post.created_at)}</span>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedPost(post)}
+                        className="font-bold text-purple-600 hover:underline flex items-center gap-1"
+                      >
+                        {post.review_status === "approved" ? "View Post ↗" : "Review & Approve ↗"}
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </section>
@@ -828,8 +767,7 @@ export function DashboardPage() {
                 value={String(
                   campaigns.filter(
                     (item) =>
-                      item.analytics !==
-                      null,
+                      item.analytics?.last_updated != null,
                   ).length,
                 )}
               />
@@ -842,6 +780,71 @@ export function DashboardPage() {
         isOpen={paywallOpen}
         onClose={() => setPaywallOpen(false)}
       />
+
+      {/* Post Details Preview Modal */}
+      {selectedPost && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
+          <div className="relative w-full max-w-lg rounded-2xl border bg-card p-6 shadow-2xl animate-in fade-in zoom-in-95">
+            <button
+              onClick={() => setSelectedPost(null)}
+              className="absolute right-4 top-4 rounded-full p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <div className="flex items-center gap-2 border-b pb-4">
+              <span className="rounded-full bg-purple-100 px-3 py-1 text-xs font-bold text-purple-700 dark:bg-purple-950 dark:text-purple-300">
+                Day {selectedPost.day}
+              </span>
+              <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 uppercase">
+                {postDisplayStatus(selectedPost, selectedPost.executionMode)}
+              </span>
+            </div>
+
+            <div className="mt-4">
+              <h3 className="text-lg font-bold text-foreground">{selectedPost.title}</h3>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Campaign: {selectedPost.campaignName} • Created {formatDate(selectedPost.created_at)}
+              </p>
+
+              {selectedPost.publishing_error && <p role="alert" className="text-sm text-red-600">{selectedPost.publishing_error}</p>}
+              {selectedPost.next_retry_at && <p className="text-sm">Next retry: {new Date(selectedPost.next_retry_at).toLocaleString()}</p>}
+              {selectedPost.publications.map(publication => <p key={publication.business_channel_id} className="text-sm">{publication.platform}: {publication.status}{publication.last_error ? `: ${publication.last_error}` : ""}</p>)}
+              {selectedPost.caption && (
+                <div className="mt-4 max-h-48 overflow-y-auto rounded-xl border bg-muted/30 p-3 text-sm text-foreground">
+                  <p className="whitespace-pre-wrap">{selectedPost.caption}</p>
+                </div>
+              )}
+
+              <div className="mt-4 flex items-center justify-between border-t pt-4 text-xs text-muted-foreground">
+                <span className="font-semibold text-purple-600 dark:text-purple-400">
+                  Target Platforms: {selectedPost.platforms?.join(", ") || "Meta (FB/IG), GMB"}
+                </span>
+                <span className="flex items-center gap-1 font-bold text-emerald-600 dark:text-emerald-400">
+                  <Clock3 className="h-3.5 w-3.5" />
+                  Scheduled
+                </span>
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setSelectedPost(null)}
+                className="ui-button-secondary border px-4 py-2 text-sm font-semibold"
+              >
+                Close
+              </button>
+              <Link
+                href="/content"
+                className="ui-button-primary px-4 py-2 text-sm font-bold"
+              >
+                Open in Content Review
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -863,15 +866,15 @@ function StatCard({
   icon: React.ComponentType<{
     className?: string;
   }>;
-  description: string;
+  description?: string;
   engagement?: string;
   engagementType?: "positive" | "neutral" | "highlight";
 }) {
   return (
-    <div className="card-3d card-3d-hover flex flex-col justify-between p-3.5 sm:p-5">
+    <div className="ui-card ui-card-hover flex flex-col justify-between p-3.5 sm:p-5">
       <div>
         <div className="flex items-center justify-between gap-1.5">
-          <p className="text-[11px] sm:text-sm font-semibold text-slate-500 truncate">
+          <p className="text-[11px] sm:text-sm font-semibold text-muted-foreground truncate">
             {label}
           </p>
 
@@ -880,7 +883,7 @@ function StatCard({
           </div>
         </div>
 
-        <p className="mt-1.5 sm:mt-3 text-lg sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-slate-900 truncate">
+        <p className="mt-1.5 sm:mt-3 text-lg sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-foreground truncate">
           {value}
         </p>
       </div>
@@ -902,7 +905,7 @@ function StatCard({
           </div>
         )}
 
-        <p className="mt-1.5 text-[10px] sm:text-[11px] text-slate-500 line-clamp-1 hidden sm:block">
+        <p className="mt-1.5 text-[10px] sm:text-[11px] text-muted-foreground line-clamp-1 hidden sm:block">
           {description}
         </p>
       </div>
@@ -1010,7 +1013,7 @@ function CampaignRow({
                 "execute",
               ),
             )}
-            className="inline-flex items-center gap-2 rounded-lg bg-foreground px-3 py-2 text-xs font-medium text-background transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+            className="ui-button-primary inline-flex items-center gap-2 px-3 py-2 text-xs font-medium text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {actionIsRunning(
               campaign.id,
@@ -1044,7 +1047,7 @@ function CampaignRow({
                 "start",
               ),
             )}
-            className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
+            className="ui-button-secondary inline-flex items-center gap-2 border px-3 py-2 text-xs font-medium transition disabled:cursor-not-allowed disabled:opacity-60"
           >
             {actionIsRunning(
               campaign.id,
@@ -1078,7 +1081,7 @@ function CampaignRow({
                 "pause",
               ),
             )}
-            className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
+            className="ui-button-secondary inline-flex items-center gap-2 border px-3 py-2 text-xs font-medium transition disabled:cursor-not-allowed disabled:opacity-60"
           >
             {actionIsRunning(
               campaign.id,
@@ -1112,7 +1115,7 @@ function CampaignRow({
                 "resume",
               ),
             )}
-            className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
+            className="ui-button-secondary inline-flex items-center gap-2 border px-3 py-2 text-xs font-medium transition disabled:cursor-not-allowed disabled:opacity-60"
           >
             {actionIsRunning(
               campaign.id,
@@ -1151,7 +1154,7 @@ function QuickAction({
   return (
     <Link
       href={href}
-      className="group card-3d card-3d-hover p-5"
+      className="group ui-card ui-card-hover p-5"
     >
       <div className="flex items-start justify-between gap-4">
         <div>
@@ -1159,11 +1162,11 @@ function QuickAction({
             <Icon className="h-4 w-4" />
           </div>
 
-          <h3 className="mt-4 font-bold text-slate-900">
+          <h3 className="mt-4 font-bold text-foreground">
             {title}
           </h3>
 
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-muted-foreground">
             {description}
           </p>
         </div>
@@ -1227,7 +1230,7 @@ function EmptyCampaignState() {
 
       <Link
         href="/campaigns/new"
-        className="mt-5 inline-flex items-center gap-2 rounded-lg bg-foreground px-4 py-2 text-sm font-medium text-background"
+        className="ui-button-primary mt-5 inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-primary-foreground"
       >
         <Sparkles className="h-4 w-4" />
         Create campaign

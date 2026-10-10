@@ -4,6 +4,7 @@ import httpx
 from app.image.base import BaseImageProvider
 from app.image.schemas import GeneratedImageResult
 from app.models.config import settings
+from app.services.admin_settings_service import provider_api_key
 
 
 class StabilityImageProvider(BaseImageProvider):
@@ -13,11 +14,7 @@ class StabilityImageProvider(BaseImageProvider):
         return "stability"
 
     def _get_api_key(self) -> str:
-        return (
-            settings.STABILITY_API_KEY.get_secret_value()
-            if hasattr(settings.STABILITY_API_KEY, "get_secret_value")
-            else str(settings.STABILITY_API_KEY or "")
-        )
+        return provider_api_key("image", "stability")
 
     def generate(
         self,
@@ -54,10 +51,8 @@ class StabilityImageProvider(BaseImageProvider):
                 provider=self.provider_name,
                 prompt=prompt,
             )
-        except Exception as e:
-            print(f"[StabilityImageProvider] Generation failed: {e}. Falling back to mock.")
-            from app.image.providers.mock import MockImageProvider
-            return MockImageProvider().generate(prompt, output_path)
+        except Exception:
+            raise RuntimeError("Stability image generation failed. Check provider configuration and retry.") from None
 
     async def agenerate(
         self,

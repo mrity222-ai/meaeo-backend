@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import Any
+from app.image.catalogue import scoped_image_output
 
 from PIL import Image, ImageDraw, ImageFont
 
@@ -67,7 +68,7 @@ class ImageOverlayProcessor:
     ) -> Path:
 
         source = Path(image_path)
-        output = Path(output_path)
+        output = scoped_image_output(output_path)
 
         if not source.exists():
             raise FileNotFoundError(
@@ -108,13 +109,7 @@ class ImageOverlayProcessor:
             if candidate.exists() and candidate.is_file():
                 logo_file = candidate
             else:
-                # Search data/assets for the asset file
-                import glob
-                matches = glob.glob(f"data/assets/**/{candidate.name}*", recursive=True)
-                if matches:
-                    logo_file = Path(matches[0])
-                else:
-                    logo_file = None
+                raise ValueError("Configured brand logo file is missing.")
 
         output.parent.mkdir(
             parents=True,
@@ -189,29 +184,12 @@ class ImageOverlayProcessor:
                     logo_panel["size"][1]
                 )
 
-                draw.rounded_rectangle(
-                    (
-                        panel_x,
-                        panel_y,
-                        panel_x + panel_width,
-                        panel_y + panel_height,
-                    ),
-                    radius=self.PANEL_RADIUS,
-                    fill=(
-                        0,
-                        0,
-                        0,
-                        150,
-                    ),
-                )
-
+                # Render PNG logo with clean alpha blending (NO solid black background box)
                 base.alpha_composite(
                     logo,
                     dest=(
-                        panel_x
-                        + self.PANEL_PADDING,
-                        panel_y
-                        + self.PANEL_PADDING,
+                        panel_x,
+                        panel_y,
                     ),
                 )
 
@@ -225,114 +203,63 @@ class ImageOverlayProcessor:
                 )
 
             # ---------------------------------------------
-            # CONTACT OVERLAY
-            #
-            # Contact information is independent from
-            # logo placement and may be rendered alone.
+            # CONTACT OVERLAY - Full-Width Brand Footer Banner
             # ---------------------------------------------
 
             if text_lines:
+                base_w, base_h = base.size
+                banner_height = max(90, int(base_h * 0.12))
+                banner_y = base_h - banner_height
 
-                contact_panel = (
-                    self._build_contact_panel(
-                        draw=draw,
-                        base_size=base.size,
-                        text_lines=text_lines,
-                        font=font,
-                        small_font=small_font,
-                        position=(
-                            self._get_contact_position(
-                                brand
+                # Draw Full-Width Banner (Deep Navy / Primary Brand fill)
+                # Primary color fill: #0B192C with high opacity (235)
+                banner_fill = (11, 25, 44, 235)
+                accent_fill = (255, 157, 35, 255)  # Amber Solar Accent
+
+                # Extract brand colors if available
+                if hasattr(brand, "primary_color") and brand.primary_color:
+                    p_hex = str(brand.primary_color).lstrip("#")
+                    if len(p_hex) == 6:
+                        try:
+                            banner_fill = (
+                                int(p_hex[0:2], 16),
+                                int(p_hex[2:4], 16),
+                                int(p_hex[4:6], 16),
+                                235,
                             )
-                        ),
-                        occupied_rectangles=(
-                            occupied_rectangles
-                        ),
-                    )
+                        except ValueError:
+                            pass
+
+                # Draw main banner rectangle across full width (0 to base_w)
+                draw.rectangle(
+                    (0, banner_y, base_w, base_h),
+                    fill=banner_fill,
                 )
 
-                panel_x, panel_y = (
-                    contact_panel["position"]
+                # Draw top accent line (4px high)
+                draw.rectangle(
+                    (0, banner_y, base_w, banner_y + 4),
+                    fill=accent_fill,
                 )
 
-                panel_width = (
-                    contact_panel["size"][0]
+                # Format text lines into horizontal contact bar layout
+                contact_text = "   |   ".join(text_lines)
+
+                # Calculate text dimensions
+                bbox = draw.textbbox((0, 0), contact_text, font=font)
+                text_w = bbox[2] - bbox[0]
+                text_h = bbox[3] - bbox[1]
+
+                # Center text vertically and horizontally inside footer banner
+                text_x = max(24, (base_w - text_w) // 2)
+                text_y = banner_y + (banner_height - text_h) // 2 + 2
+
+                draw.text(
+                    (text_x, text_y),
+                    contact_text,
+                    font=font,
+                    fill=(255, 255, 255, 255),
                 )
-
-                panel_height = (
-                    contact_panel["size"][1]
-                )
-
-                draw.rounded_rectangle(
-                    (
-                        panel_x,
-                        panel_y,
-                        panel_x + panel_width,
-                        panel_y + panel_height,
-                    ),
-                    radius=self.PANEL_RADIUS,
-                    fill=(
-                        0,
-                        0,
-                        0,
-                        150,
-                    ),
-                )
-
-                cursor_x = (
-                    panel_x
-                    + self.PANEL_PADDING
-                )
-
-                cursor_y = (
-                    panel_y
-                    + self.PANEL_PADDING
-                )
-
-                for index, line in enumerate(
-                    text_lines
-                ):
-
-                    current_font = (
-                        font
-                        if index == 0
-                        else small_font
-                    )
-
-                    draw.text(
-                        (
-                            cursor_x,
-                            cursor_y,
-                        ),
-                        line,
-                        font=current_font,
-                        fill=(
-                            255,
-                            255,
-                            255,
-                            255,
-                        ),
-                    )
-
-                    bbox = draw.textbbox(
-                        (
-                            cursor_x,
-                            cursor_y,
-                        ),
-                        line,
-                        font=current_font,
-                    )
-
-                    cursor_y += (
-                        bbox[3] - bbox[1]
-                    )
-
-                    if index < (
-                        len(text_lines) - 1
-                    ):
-                        cursor_y += (
-                            self.TEXT_SPACING
-                        )
 
             # ---------------------------------------------
             # Save final image.

@@ -3,6 +3,7 @@ from typing import Any
 
 from app.models.base import BaseProvider
 from app.models.config import settings
+from app.services.admin_settings_service import provider_api_key
 
 
 class GeminiTextResponse:
@@ -14,11 +15,7 @@ class GeminiTextResponse:
 class GeminiProvider(BaseProvider):
 
     def __init__(self, model: str):
-        self.api_key = (
-            settings.GEMINI_API_KEY.get_secret_value()
-            if hasattr(settings.GEMINI_API_KEY, "get_secret_value")
-            else str(settings.GEMINI_API_KEY or "")
-        )
+        self.api_key = provider_api_key("text", "gemini")
         raw_model = (model or "").strip().lower()
         if not raw_model or raw_model in ("default_chat", "fast_chat", "default", "none"):
             self.model = "gemini-3.8-flash"
@@ -50,7 +47,7 @@ class GeminiProvider(BaseProvider):
 
     def invoke(self, messages):
         system_instruction, contents = self._convert_messages(messages)
-        models_to_try = [self.model, "gemini-3.8-flash", "gemini-1.5-flash", "gemini-2.0-flash"]
+        models_to_try = [self.model]
 
         payload: dict[str, Any] = {
             "contents": contents,

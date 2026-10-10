@@ -9,7 +9,7 @@ services:
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-maeaco_prod_db}
       POSTGRES_USER: ${POSTGRES_USER:-maeaco_admin}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-SecurePassword123}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set the existing PostgreSQL password}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -33,6 +33,7 @@ services:
 
   # ⚙️ Python FastAPI Backend Service
   backend:
+    image: maeaco-backend:${MAEACO_RELEASE_TAG:-current}
     build:
       context: .
       dockerfile: Dockerfile.backend
@@ -46,18 +47,32 @@ services:
     env_file:
       - .env
     environment:
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-maeaco_admin}:${POSTGRES_PASSWORD:-SecurePassword123}@postgres:5432/${POSTGRES_DB:-maeaco_prod_db}
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-maeaco_admin}:${POSTGRES_PASSWORD:?Set the existing PostgreSQL password}@postgres:5432/${POSTGRES_DB:-maeaco_prod_db}
       - REDIS_URL=redis://redis:6379/0
+      - CREDENTIAL_ENCRYPTION_KEY=${CREDENTIAL_ENCRYPTION_KEY:?Set the existing credential encryption key}
+      - APP_ENV=production
+      - CREDENTIAL_STORAGE_ROOT=data/credentials
       - HOST=0.0.0.0
       - PORT=8000
     volumes:
+      # Persistent credentials shared by API and worker.
+      - ./data/credentials:/app/data/credentials
+      - ./data/settings:/app/data/settings
       - ./data/assets:/app/data/assets
       - ./generated/images:/app/generated/images
+      - ./data/analytics:/app/data/analytics
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
     expose:
       - "8000"
 
   # 🖥️ Next.js 15 Frontend Service
   frontend:
+    image: maeaco-frontend:${MAEACO_RELEASE_TAG:-current}
     build:
       context: .
       dockerfile: Dockerfile.frontend
@@ -68,8 +83,67 @@ services:
     restart: always
     depends_on:
       - backend
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/login').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
     expose:
       - "3000"
+
+  # 👷 Celery Worker (Background Post Publishing Worker)
+  celery_worker:
+    image: maeaco-backend:${MAEACO_RELEASE_TAG:-current}
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: maeaco-celery-worker
+    restart: always
+    command: celery -A app.workers.celery_app worker --loglevel=info --concurrency=4
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-maeaco_admin}:${POSTGRES_PASSWORD:?Set the existing PostgreSQL password}@postgres:5432/${POSTGRES_DB:-maeaco_prod_db}
+      - REDIS_URL=redis://redis:6379/0
+      - CREDENTIAL_ENCRYPTION_KEY=${CREDENTIAL_ENCRYPTION_KEY:?Set the existing credential encryption key}
+      - APP_ENV=production
+      - CREDENTIAL_STORAGE_ROOT=data/credentials
+    volumes:
+      # Persistent credentials shared by API and worker.
+      - ./data/credentials:/app/data/credentials
+      - ./data/settings:/app/data/settings
+      - ./data/assets:/app/data/assets
+      - ./generated/images:/app/generated/images
+      - ./data/analytics:/app/data/analytics
+
+  # ⏱️ Celery Beat (Periodic Campaign Post Scheduler)
+  celery_beat:
+    image: maeaco-backend:${MAEACO_RELEASE_TAG:-current}
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: maeaco-celery-beat
+    restart: always
+    command: celery -A app.workers.celery_app beat --loglevel=info
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-maeaco_admin}:${POSTGRES_PASSWORD:?Set the existing PostgreSQL password}@postgres:5432/${POSTGRES_DB:-maeaco_prod_db}
+      - REDIS_URL=redis://redis:6379/0
+      - CREDENTIAL_ENCRYPTION_KEY=${CREDENTIAL_ENCRYPTION_KEY:?Set the existing credential encryption key}
+      - APP_ENV=production
+      - CREDENTIAL_STORAGE_ROOT=data/credentials
 
   # 🔒 Caddy Reverse Proxy & Automatic HTTPS SSL
   caddy:

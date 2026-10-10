@@ -216,7 +216,7 @@ export default function AdminCampaignsPage() {
 
         <button
           type="button"
-          className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-foreground px-4 text-sm font-medium text-background hover:opacity-90"
+          className="ui-button-primary inline-flex h-10 items-center justify-center gap-2 px-4 text-sm font-medium text-primary-foreground hover:opacity-90"
         >
           <Plus className="h-4 w-4" />
           Create Campaign
@@ -398,7 +398,7 @@ export default function AdminCampaignsPage() {
                   <td className="px-5 py-4 text-right">
                     <Link
                       href={`/admin/campaigns/${campaign.id}`}
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border hover:bg-muted"
+                      className="ui-button-secondary inline-flex h-8 w-8 items-center justify-center border border-border"
                     >
                       <Eye className="h-4 w-4" />
                     </Link>
@@ -471,7 +471,7 @@ export default function AdminCampaignsPage() {
 
               <Link
                 href={`/admin/campaigns/${campaign.id}`}
-                className="mt-4 flex h-9 items-center justify-center gap-2 rounded-lg border border-border text-sm font-medium hover:bg-muted"
+                className="ui-button-secondary mt-4 flex h-9 items-center justify-center gap-2 border border-border text-sm font-medium"
               >
                 <Eye className="h-4 w-4" />
                 View Campaign
@@ -504,19 +504,19 @@ export default function AdminCampaignsPage() {
             <button
               type="button"
               disabled
-              className="inline-flex h-8 items-center gap-1 rounded-md border border-border px-3 text-xs opacity-50"
+              className="ui-button-secondary inline-flex h-8 items-center gap-1 border border-border px-3 text-xs opacity-50"
             >
               <ChevronLeft className="h-3.5 w-3.5" />
               Previous
             </button>
 
-            <span className="inline-flex h-8 min-w-8 items-center justify-center rounded-md bg-foreground px-2 text-xs text-background">
+            <span className="inline-flex h-8 min-w-8 items-center justify-center rounded-md bg-foreground px-2 text-xs text-primary-foreground">
               1
             </span>
 
             <button
               type="button"
-              className="inline-flex h-8 items-center gap-1 rounded-md border border-border px-3 text-xs"
+              className="ui-button-secondary inline-flex h-8 items-center gap-1 border border-border px-3 text-xs"
             >
               Next
               <ChevronRight className="h-3.5 w-3.5" />

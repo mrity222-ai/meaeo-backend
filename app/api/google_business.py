@@ -1,17 +1,16 @@
 from __future__ import annotations
+from datetime import date
 
-from datetime import datetime, timezone
-from fastapi import APIRouter, Depends, Header, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from app.database.session import get_db
 from app.agents.gbp_offer_generator import GoogleBusinessOfferAgent
+from app.agents.gbp_seo_optimizer import GoogleBusinessSeoOptimizerAgent
 from app.database.models import (
-    BusinessChannel,
     BusinessProfile,
     GoogleBusinessPost,
-    GoogleBusinessReview,
-    UserTenant,
+    BusinessAccount,
 )
 from app.schemas.google_business import (
     GenerateDailyOfferRequest,
@@ -24,8 +23,7 @@ from app.schemas.google_business import (
     SendReviewReplyRequest,
     UpdateGbpDescriptionRequest,
 )
-from app.security.authentication import AuthenticatedUser
-from app.security.dependencies import get_current_user
+from app.security.dependencies import get_current_tenant
 from app.security.tenant import TenantContext
 from app.services.google_reviews_service import GoogleBusinessService
 
@@ -36,30 +34,36 @@ router = APIRouter(
 )
 
 
-def resolve_tenant(
-    x_tenant_id: str | None = Header(default=None, alias="X-Tenant-ID"),
-    tenant_param: str | None = Query(default=None, alias="tenant_id"),
-    current_user: AuthenticatedUser = Depends(get_current_user),
+@router.get("/performance")
+async def get_performance(
+    start_date: date = Query(...),
+    end_date: date = Query(...),
+    location_name: str | None = Query(default=None),
+    tenant: TenantContext = Depends(get_current_tenant),
+    business_account_id: int = Query(..., gt=0),
     db: Session = Depends(get_db),
-) -> TenantContext:
-    target_tenant_id = x_tenant_id or tenant_param
-    if not target_tenant_id:
-        membership = db.scalar(
-            select(UserTenant).where(
-                UserTenant.user_id == current_user.user_id,
-                UserTenant.is_active.is_(True),
-            )
-        )
-        if membership and membership.tenant:
-            target_tenant_id = membership.tenant.tenant_id
+):
+    selected_business(business_account_id, tenant, db)
+    result = await GoogleBusinessService(business_account_id=business_account_id).fetch_performance(
+        db, tenant.tenant_id, start_date, end_date, location_name)
+    from app.repositories.analytics_repository import AnalyticsRepository
+    AnalyticsRepository().save_profile_performance(tenant.tenant_id, business_account_id, result)
+    return result
 
-    if not target_tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Tenant context required",
-        )
 
-    return TenantContext(tenant_id=target_tenant_id)
+def selected_business(
+    business_account_id: int = Query(..., gt=0),
+    tenant: TenantContext = Depends(get_current_tenant),
+    db: Session = Depends(get_db),
+) -> int:
+    business = db.scalar(select(BusinessAccount).where(
+        BusinessAccount.id == business_account_id,
+        BusinessAccount.tenant_id == tenant.tenant_id,
+        BusinessAccount.status == "active",
+    ))
+    if business is None:
+        raise HTTPException(404, "Active business not found for this tenant")
+    return business.id
 
 
 # -------------------------------------------------------------
@@ -69,14 +73,15 @@ def resolve_tenant(
 @router.get("/reviews", response_model=list[GoogleReviewOut])
 async def list_reviews(
     location_name: str | None = Query(default=None),
-    tenant: TenantContext = Depends(resolve_tenant),
+    tenant: TenantContext = Depends(get_current_tenant),
+    business_account_id: int = Depends(selected_business),
     db: Session = Depends(get_db),
 ):
     """
     Get all Google Business Profile reviews for the active business.
     Synchronizes with Google My Business API if credentials are connected.
     """
-    service = GoogleBusinessService()
+    service = GoogleBusinessService(business_account_id=business_account_id)
     reviews = await service.fetch_and_sync_reviews(
         db=db,
         tenant_id=tenant.tenant_id,
@@ -87,25 +92,22 @@ async def list_reviews(
 
 @router.get("/status")
 async def get_connection_status(
-    tenant: TenantContext = Depends(resolve_tenant),
+    tenant: TenantContext = Depends(get_current_tenant),
+    business_account_id: int = Depends(selected_business),
     db: Session = Depends(get_db),
 ):
     """
     Check if the active tenant has an authenticated Google Business Profile channel connected.
     Also returns the active business name and city from BusinessProfile.
     """
-    channel_stmt = select(BusinessChannel).where(
-        BusinessChannel.tenant_id == tenant.tenant_id,
-        BusinessChannel.platform == "google_business",
-        BusinessChannel.status == "active",
-    )
-    channel = db.scalars(channel_stmt).first()
+    service = GoogleBusinessService(business_account_id=business_account_id)
+    channel, location, token = await service._get_channel_and_credential(db, tenant.tenant_id)
 
-    prof_stmt = select(BusinessProfile).where(BusinessProfile.tenant_id == tenant.tenant_id)
+    prof_stmt = select(BusinessProfile).where(BusinessProfile.tenant_id == tenant.tenant_id, BusinessProfile.business_account_id == business_account_id)
     profile = db.scalars(prof_stmt).first()
 
     return {
-        "is_connected": channel is not None,
+        "is_connected": channel is not None and bool(token),
         "channel_id": channel.id if channel else None,
         "external_account_id": channel.external_account_id if channel else None,
         "business_name": profile.business_name if profile else "My Business",
@@ -117,14 +119,15 @@ async def get_connection_status(
 @router.post("/reviews/generate-reply", response_model=GoogleReviewOut)
 async def generate_review_reply(
     payload: GenerateReviewReplyRequest,
-    tenant: TenantContext = Depends(resolve_tenant),
+    tenant: TenantContext = Depends(get_current_tenant),
+    business_account_id: int = Depends(selected_business),
     db: Session = Depends(get_db),
 ):
     """
     Generate an AI-powered Local SEO review response that weaves in the
     Business Name, City, and key services to maximize Google Maps ranking.
     """
-    service = GoogleBusinessService()
+    service = GoogleBusinessService(business_account_id=business_account_id)
     try:
         updated_rev = await service.generate_reply(
             db=db,
@@ -138,6 +141,8 @@ async def generate_review_reply(
         return updated_rev
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to generate reply: {str(e)}")
 
@@ -145,13 +150,14 @@ async def generate_review_reply(
 @router.post("/reviews/send-reply", response_model=GoogleReviewOut)
 async def send_review_reply(
     payload: SendReviewReplyRequest,
-    tenant: TenantContext = Depends(resolve_tenant),
+    tenant: TenantContext = Depends(get_current_tenant),
+    business_account_id: int = Depends(selected_business),
     db: Session = Depends(get_db),
 ):
     """
     Publishes the approved review reply directly to Google My Business API.
     """
-    service = GoogleBusinessService()
+    service = GoogleBusinessService(business_account_id=business_account_id)
     try:
         updated_rev = await service.send_reply_to_google(
             db=db,
@@ -162,6 +168,8 @@ async def send_review_reply(
         return updated_rev
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to publish reply: {str(e)}")
 
@@ -173,7 +181,8 @@ async def send_review_reply(
 @router.post("/offers/generate")
 async def generate_daily_offer(
     payload: GenerateDailyOfferRequest,
-    tenant: TenantContext = Depends(resolve_tenant),
+    tenant: TenantContext = Depends(get_current_tenant),
+    business_account_id: int = Depends(selected_business),
 ):
     """
     AI-generates high-converting Promotional Offer copy, catchy headline,
@@ -193,13 +202,14 @@ async def generate_daily_offer(
 @router.post("/offers/publish", response_model=GooglePostOut)
 async def publish_local_post(
     payload: GooglePostCreateRequest,
-    tenant: TenantContext = Depends(resolve_tenant),
+    tenant: TenantContext = Depends(get_current_tenant),
+    business_account_id: int = Depends(selected_business),
     db: Session = Depends(get_db),
 ):
     """
     Publishes a promotional offer, event, or standard update post directly to GBP.
     """
-    service = GoogleBusinessService()
+    service = GoogleBusinessService(business_account_id=business_account_id)
     try:
         post = await service.publish_local_post(
             db=db,
@@ -207,21 +217,27 @@ async def publish_local_post(
             post_data=payload,
         )
         return post
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to post to Google Business: {str(e)}")
 
 
 @router.get("/offers", response_model=list[GooglePostOut])
 async def list_local_posts(
-    tenant: TenantContext = Depends(resolve_tenant),
+    tenant: TenantContext = Depends(get_current_tenant),
+    business_account_id: int = Depends(selected_business),
     db: Session = Depends(get_db),
 ):
     """
     Lists all promotional offers and local updates posted to Google Business Profile.
     """
+    channels = GoogleBusinessService(business_account_id=business_account_id).owned_channels(db, tenant.tenant_id)
     stmt = (
         select(GoogleBusinessPost)
-        .where(GoogleBusinessPost.tenant_id == tenant.tenant_id)
+        .where(GoogleBusinessPost.tenant_id == tenant.tenant_id,
+               GoogleBusinessPost.business_channel_id.in_([c.id for c in channels]),
+               GoogleBusinessPost.location_name.in_([c.external_account_id for c in channels]))
         .order_by(GoogleBusinessPost.created_at.desc())
     )
     return list(db.scalars(stmt).all())
@@ -234,7 +250,8 @@ async def list_local_posts(
 @router.post("/seo/optimize", response_model=OptimizeLocalSeoResponse)
 async def optimize_local_seo(
     payload: OptimizeLocalSeoRequest,
-    tenant: TenantContext = Depends(resolve_tenant),
+    tenant: TenantContext = Depends(get_current_tenant),
+    business_account_id: int = Depends(selected_business),
 ):
     """
     Analyzes business profile and crafts a complete Local SEO package:
@@ -257,13 +274,14 @@ async def optimize_local_seo(
 @router.post("/profile/update-description")
 async def update_profile_description(
     payload: UpdateGbpDescriptionRequest,
-    tenant: TenantContext = Depends(resolve_tenant),
+    tenant: TenantContext = Depends(get_current_tenant),
+    business_account_id: int = Depends(selected_business),
     db: Session = Depends(get_db),
 ):
     """
     Pushes the optimized business description directly to Google Business Profile.
     """
-    service = GoogleBusinessService()
+    service = GoogleBusinessService(business_account_id=business_account_id)
     res = await service.update_profile_description(
         db=db,
         tenant_id=tenant.tenant_id,

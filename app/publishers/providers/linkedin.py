@@ -8,6 +8,7 @@ from app.repositories.local_credential_repository import (
 )
 from app.schemas.publishing import (
     PublishedPost,
+    publication_failure_flags,
     PublishingResult,
 )
 from app.schemas.schedule import PublishingSchedule
@@ -106,10 +107,7 @@ class LinkedInPublisherProvider:
                     if should_close:
                         await client.aclose()
 
-                if response.status_code not in (200, 201):
-                    raise ValueError(
-                        f"LinkedIn API returned status {response.status_code}: {response.text}"
-                    )
+                response.raise_for_status()
 
                 res_data = response.json()
                 external_id = (
@@ -297,4 +295,5 @@ class LinkedInPublisherProvider:
             image_path=post.image_path,
             image_source=post.image_source,
             errors=[str(exc)],
+            **publication_failure_flags(exc),
         )

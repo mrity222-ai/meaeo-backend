@@ -7,9 +7,9 @@ import { apiRequest } from "@/lib/api/client";
 import { saveAuthToken } from "@/lib/auth";
 
 export default function AdminLoginPage() {
-  const [email, setEmail] = useState("admin@marketingsystem.com");
-  const [password, setPassword] = useState("Admin@12345");
-  const [securityPin, setSecurityPin] = useState("984102");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [securityPin, setSecurityPin] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -77,6 +77,7 @@ export default function AdminLoginPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                placeholder="admin@example.com"
                 className="mt-1.5 h-11 w-full rounded-xl border border-neutral-700 bg-neutral-950 px-4 text-sm text-white focus:border-purple-500 focus:outline-none"
                 required
               />
@@ -88,6 +89,7 @@ export default function AdminLoginPage() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
                 className="mt-1.5 h-11 w-full rounded-xl border border-neutral-700 bg-neutral-950 px-4 text-sm text-white focus:border-purple-500 focus:outline-none"
                 required
               />
@@ -108,7 +110,7 @@ export default function AdminLoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-purple-600 font-semibold text-sm text-white shadow-lg shadow-purple-600/30 transition hover:bg-purple-500 disabled:opacity-60"
+              className="ui-button-primary mt-4 flex h-11 w-full items-center justify-center gap-2 font-semibold text-sm transition disabled:opacity-60"
             >
               {loading ? (
                 <>

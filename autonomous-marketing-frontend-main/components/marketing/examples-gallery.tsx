@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { MarketingPageHero } from "./marketing-page-hero";
 import {
   Play,
   X,
@@ -119,7 +120,7 @@ const EXAMPLES_DATA: ExampleItem[] = [
     id: "ex-7",
     title: "One Stop School Uniform Shop",
     category: "Services",
-    categoryTag: "GIFTS, BOOKS & CRAFTS",
+    categoryTag: "SERVICES",
     brandName: "M.S. AMARNATH CHOTANI",
     lang: "HINDI",
     image: "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&w=800&q=80",
@@ -129,8 +130,8 @@ const EXAMPLES_DATA: ExampleItem[] = [
   {
     id: "ex-8",
     title: "The Kashmiri Welcome Suite",
-    category: "Healthcare",
-    categoryTag: "HEALTHCARE & MEDICAL",
+    category: "Travel",
+    categoryTag: "TRAVEL & HOSPITALITY",
     brandName: "HOTEL MIRAGE",
     lang: "ENGLISH",
     image: "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=800&q=80",
@@ -140,8 +141,8 @@ const EXAMPLES_DATA: ExampleItem[] = [
   {
     id: "ex-9",
     title: "The Winged Lion Reveal Painting",
-    category: "Services",
-    categoryTag: "MARKETING & ADVERTISING",
+    category: "Decor",
+    categoryTag: "HOME, FURNITURE & DECOR",
     brandName: "INSPIRATIONAL KITCHENS",
     lang: "ENGLISH",
     image: "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?auto=format&fit=crop&w=800&q=80",
@@ -187,7 +188,7 @@ const EXAMPLES_DATA: ExampleItem[] = [
     category: "Food",
     categoryTag: "FOOD",
     brandName: "SILVER BAWARCHI REST",
-    lang: "GUTARATI",
+    lang: "GUJARATI",
     image: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80",
     caption: "🍲 Authentic Dum Biryani & Butter Chicken delivered hot at your doorstep till 3 AM!",
     hashtags: "#SilverBawarchi #DumBiryani #LateNightFood #FoodDelivery",
@@ -217,8 +218,8 @@ const EXAMPLES_DATA: ExampleItem[] = [
   {
     id: "ex-16",
     title: "Morning Coffee Routine Upgrade",
-    category: "Fitness",
-    categoryTag: "FITNESS & SPORT",
+    category: "Food",
+    categoryTag: "FOOD",
     brandName: "FLOWERS",
     lang: "HINDI/ENG",
     image: "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=800&q=80",
@@ -239,8 +240,8 @@ const EXAMPLES_DATA: ExampleItem[] = [
   {
     id: "ex-18",
     title: "Premium Look, Budget Price Serums",
-    category: "Agriculture",
-    categoryTag: "AGRICULTURE & FARMING",
+    category: "Beauty",
+    categoryTag: "BEAUTY & WELLNESS",
     brandName: "THE HARPER STUDIO",
     lang: "HINDI/ENG",
     image: "https://images.unsplash.com/photo-1608248597261-833258657640?auto=format&fit=crop&w=800&q=80",
@@ -276,6 +277,26 @@ export function ExamplesGallery() {
   const [aspectRatio, setAspectRatio] = useState<AspectRatio>("9:16");
   const [activeItem, setActiveItem] = useState<ExampleItem | null>(null);
 
+  const modalRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!activeItem) return;
+    const previousFocus = document.activeElement as HTMLElement | null;
+    const overflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const dialog = modalRef.current;
+    dialog?.querySelector<HTMLButtonElement>("button")?.focus();
+    const handleKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") { event.preventDefault(); setActiveItem(null); }
+      if (event.key !== "Tab" || !dialog) return;
+      const targets = Array.from(dialog.querySelectorAll<HTMLElement>('button, a[href], input, [tabindex="0"]'));
+      const first = targets[0], last = targets[targets.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+    };
+    document.addEventListener("keydown", handleKey);
+    return () => { document.removeEventListener("keydown", handleKey); document.body.style.overflow = overflow; previousFocus?.focus(); };
+  }, [activeItem]);
+  const categories = CATEGORIES.map((category) => ({ ...category, count: category.id === "All" ? EXAMPLES_DATA.length : EXAMPLES_DATA.filter((item) => item.category === category.id).length })).filter((category) => category.count > 0);
   const filteredData =
     selectedCategory === "All"
       ? EXAMPLES_DATA
@@ -294,35 +315,13 @@ export function ExamplesGallery() {
   };
 
   return (
-    <div className="bg-[#FAF8FF] min-h-screen py-10 lg:py-16 text-zinc-900">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <div className="bg-[#FAF8FF] min-h-screen text-zinc-900">
+      <MarketingPageHero label="Examples & Showcase" title="Explore sample posts for your business." description="Illustrative image layouts and captions using stock photos. These samples are not live generated posts, videos or verified customer campaigns.">
+        <Link href="/signup" className="marketing-action-primary">Create your branded posts</Link>
+        <Link href="/" className="marketing-action-secondary">Use on web</Link>
+      </MarketingPageHero>
+      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         
-        {/* HEADER SECTION */}
-        <div className="mx-auto max-w-4xl text-left mb-10">
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-zinc-950">
-            Real reels & posts, made by maeaco for real businesses.
-          </h1>
-          <p className="mt-3 text-base sm:text-lg text-zinc-600 font-normal">
-            You describe the business. maeaco writes, designs, shoots and publishes the reel.
-          </p>
-
-          <div className="mt-6 flex flex-wrap items-center gap-4">
-            <Link
-              href="/signup"
-              className="inline-flex items-center gap-2 rounded-full bg-emerald-500 px-6 py-3 text-sm font-bold text-zinc-950 shadow-md transition-all hover:bg-emerald-400 hover:scale-[1.02]"
-            >
-              <span>Make your reel with maeaco</span>
-            </Link>
-
-            <Link
-              href="/"
-              className="inline-flex items-center gap-2 rounded-full border border-zinc-300 bg-white px-5 py-3 text-sm font-semibold text-zinc-800 transition-all hover:bg-zinc-100"
-            >
-              <span>Use on web</span>
-            </Link>
-          </div>
-        </div>
-
         {/* ASPECT RATIO FORMAT TOGGLE */}
         <div className="mb-8 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-purple-100 bg-white p-4 shadow-sm">
           <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-purple-700">
@@ -330,9 +329,10 @@ export function ExamplesGallery() {
             <span>Card Aspect Ratio Format:</span>
           </div>
 
-          <div className="flex items-center gap-2 bg-purple-50 p-1.5 rounded-xl border border-purple-100">
+          <div className="flex flex-wrap items-center gap-2 bg-purple-50 p-1.5 rounded-xl border border-purple-100">
             <button
               type="button"
+              aria-pressed={aspectRatio === "9:16"}
               onClick={() => setAspectRatio("9:16")}
               className={`flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all ${
                 aspectRatio === "9:16"
@@ -341,11 +341,12 @@ export function ExamplesGallery() {
               }`}
             >
               <Smartphone className="h-3.5 w-3.5" />
-              <span>9:16 Reel / Story</span>
+              <span>9:16 Portrait layout</span>
             </button>
 
             <button
               type="button"
+              aria-pressed={aspectRatio === "4:5"}
               onClick={() => setAspectRatio("4:5")}
               className={`flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all ${
                 aspectRatio === "4:5"
@@ -359,6 +360,7 @@ export function ExamplesGallery() {
 
             <button
               type="button"
+              aria-pressed={aspectRatio === "1:1"}
               onClick={() => setAspectRatio("1:1")}
               className={`flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all ${
                 aspectRatio === "1:1"
@@ -374,12 +376,13 @@ export function ExamplesGallery() {
 
         {/* CATEGORY PILLS BAR */}
         <div className="mb-10 flex flex-wrap items-center gap-2">
-          {CATEGORIES.map((cat) => {
+          {categories.map((cat) => {
             const isActive = selectedCategory === cat.id;
             return (
               <button
                 key={cat.id}
                 type="button"
+                aria-pressed={isActive}
                 onClick={() => setSelectedCategory(cat.id)}
                 className={`flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-medium transition-all ${
                   isActive
@@ -405,11 +408,17 @@ export function ExamplesGallery() {
           {filteredData.map((item) => (
             <div
               key={item.id}
+              role="button"
+              tabIndex={0}
+              aria-label={`View sample: ${item.title}`}
+              onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setActiveItem(item); } }}
               onClick={() => setActiveItem(item)}
               className={`group relative overflow-hidden rounded-2xl border border-zinc-200/90 bg-zinc-900 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-purple-500/10 cursor-pointer ${getAspectClass()}`}
             >
               {/* Background Image */}
               <img
+                  loading="lazy"
+                  decoding="async"
                 src={item.image}
                 alt={item.title}
                 className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
@@ -424,7 +433,7 @@ export function ExamplesGallery() {
                   {item.categoryTag}
                 </span>
                 <div className="flex h-6 w-6 items-center justify-center rounded-full bg-black/60 backdrop-blur-md text-white border border-white/20">
-                  <Play className="h-3 w-3 fill-white ml-0.5" />
+                  <Maximize2 className="h-3 w-3" />
                 </div>
               </div>
 
@@ -450,21 +459,24 @@ export function ExamplesGallery() {
 
       {/* INTERACTIVE MODAL */}
       {activeItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
-          <div className="relative w-full max-w-3xl overflow-hidden rounded-3xl bg-white shadow-2xl lg:grid lg:grid-cols-12 max-h-[90vh]">
+        <div onClick={(event) => { if (event.target === event.currentTarget) setActiveItem(null); }} className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
+          <div ref={modalRef} role="dialog" aria-modal="true" aria-labelledby="example-dialog-title" className="relative w-full max-w-3xl overflow-y-auto rounded-3xl bg-white shadow-2xl lg:grid lg:grid-cols-12 max-h-[90vh]">
             
             {/* Close Button */}
             <button
               type="button"
               onClick={() => setActiveItem(null)}
+              aria-label="Close sample preview"
               className="absolute top-4 right-4 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-black/60 text-white transition-all hover:bg-black"
             >
               <X className="h-5 w-5" />
             </button>
 
             {/* Left Media Container */}
-            <div className="lg:col-span-6 relative bg-zinc-950 flex items-center justify-center overflow-hidden aspect-[9/16] lg:aspect-auto">
+            <div className="lg:col-span-6 relative bg-zinc-950 flex items-center justify-center overflow-hidden aspect-square lg:aspect-auto">
               <img
+                  loading="lazy"
+                  decoding="async"
                 src={activeItem.image}
                 alt={activeItem.title}
                 className="h-full w-full object-cover"
@@ -486,10 +498,10 @@ export function ExamplesGallery() {
               <div>
                 <div className="inline-flex items-center gap-2 rounded-lg bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800">
                   <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                  <span>Generated by maeaco AI</span>
+                  <span>Sample layout · Stock image</span>
                 </div>
 
-                <h3 className="mt-4 text-xl font-bold text-zinc-950">
+                <h3 id="example-dialog-title" className="mt-4 text-xl font-bold text-zinc-950">
                   {activeItem.title}
                 </h3>
 
@@ -507,7 +519,7 @@ export function ExamplesGallery() {
                   href="/signup"
                   className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#6929E8] via-[#8527D6] to-[#D925A3] py-3.5 text-sm font-bold text-white shadow-lg transition-all hover:opacity-95"
                 >
-                  <span>Create a Reel Like This</span>
+                  <span>Create your campaign</span>
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               </div>

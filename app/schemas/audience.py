@@ -1,7 +1,15 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
+
+
+def validate_age_groups(value):
+    if value is not None and any(group not in {"18-24", "25-34", "35-44", "45-54", "55+", "All Ages"} for group in value):
+        raise ValueError("Select valid age groups.")
+    return value
 
 
 class TargetAudienceBase(BaseModel):
+    _groups = field_validator("age_groups", check_fields=False)(validate_age_groups)
+
 
     name: str = Field(
         min_length=1,
@@ -12,6 +20,8 @@ class TargetAudienceBase(BaseModel):
         default=None,
         max_length=5000,
     )
+
+    age_groups: list[str] = Field(default_factory=list)
 
     age_min: int | None = Field(
         default=None,
@@ -59,6 +69,8 @@ class TargetAudienceCreate(
 
 
 class TargetAudienceUpdate(BaseModel):
+    _groups = field_validator("age_groups", check_fields=False)(validate_age_groups)
+
 
     name: str | None = Field(
         default=None,
@@ -70,6 +82,8 @@ class TargetAudienceUpdate(BaseModel):
         default=None,
         max_length=5000,
     )
+
+    age_groups: list[str] | None = None
 
     age_min: int | None = Field(
         default=None,

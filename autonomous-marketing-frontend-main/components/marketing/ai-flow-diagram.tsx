@@ -35,12 +35,12 @@ export function AIFlowDiagram() {
                 </div>
                 <div>
                   <p className="text-xs font-bold text-white">Instagram & FB</p>
-                  <p className="text-[10px] text-purple-300">Reels, Captions & Posts</p>
+                  <p className="text-[10px] text-purple-300">Images, Captions & Posts</p>
                 </div>
               </div>
               <div className="mt-2.5 flex items-center justify-between text-[10px] text-zinc-400 border-t border-purple-900/50 pt-2">
-                <span>Auto-Published</span>
-                <span className="font-bold text-emerald-400">● Active</span>
+                <span>Scheduled publishing</span>
+                <span className="font-bold text-emerald-400">Connection required</span>
               </div>
             </div>
 
@@ -56,8 +56,8 @@ export function AIFlowDiagram() {
                 </div>
               </div>
               <div className="mt-2.5 flex items-center justify-between text-[10px] text-zinc-400 border-t border-blue-900/50 pt-2">
-                <span>Auto-Published</span>
-                <span className="font-bold text-emerald-400">● Active</span>
+                <span>Scheduled publishing</span>
+                <span className="font-bold text-emerald-400">Connection required</span>
               </div>
             </div>
           </div>
@@ -85,7 +85,7 @@ export function AIFlowDiagram() {
               {/* Status Badge */}
               <div className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-purple-950/80 border border-purple-400/40 px-3 py-1 text-[11px] font-semibold text-purple-200">
                 <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
-                <span>24/7 Replaces Human Social & SEO Team</span>
+                <span>24/7 Plans, creates and schedules</span>
               </div>
 
             </div>
@@ -105,8 +105,8 @@ export function AIFlowDiagram() {
                 </div>
               </div>
               <div className="mt-2.5 flex items-center justify-between text-[10px] text-zinc-400 border-t border-amber-900/50 pt-2">
-                <span>Auto-Responded</span>
-                <span className="font-bold text-emerald-400">● Active</span>
+                <span>Review management</span>
+                <span className="font-bold text-emerald-400">Connection required</span>
               </div>
             </div>
 
@@ -122,8 +122,8 @@ export function AIFlowDiagram() {
                 </div>
               </div>
               <div className="mt-2.5 flex items-center justify-between text-[10px] text-zinc-400 border-t border-emerald-900/50 pt-2">
-                <span>Rank #1 Boost</span>
-                <span className="font-bold text-emerald-400">● Active</span>
+                <span>Local profile metrics</span>
+                <span className="font-bold text-emerald-400">Connection required</span>
               </div>
             </div>
           </div>

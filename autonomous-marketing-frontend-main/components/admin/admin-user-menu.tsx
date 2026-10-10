@@ -30,7 +30,7 @@ export function AdminUserMenu() {
     <div className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-2.5 rounded-xl border border-neutral-200 bg-white p-1.5 pr-3 text-left transition hover:bg-neutral-50"
+        className="ui-button-secondary flex items-center gap-2.5 border border-border p-1.5 pr-3 text-left transition"
       >
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-neutral-950 font-bold text-xs text-white">
           SA
@@ -47,10 +47,10 @@ export function AdminUserMenu() {
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 z-50 mt-2 w-56 rounded-2xl border border-neutral-200 bg-white p-2 shadow-lg animate-in fade-in slide-in-from-top-2">
+          <div className="absolute right-0 z-50 mt-2 w-56 rounded-2xl border border-border bg-card p-2 shadow-lg animate-in fade-in slide-in-from-top-2">
             <div className="border-b border-neutral-100 p-3">
-              <p className="text-xs font-semibold text-neutral-950">{adminUser.name}</p>
-              <p className="text-xs text-neutral-500">{adminUser.email}</p>
+              <p className="text-xs font-semibold text-foreground">{adminUser.name}</p>
+              <p className="text-xs text-muted-foreground">{adminUser.email}</p>
               <span className="mt-2 inline-flex items-center gap-1 rounded-md bg-purple-50 px-2 py-0.5 text-[10px] font-bold text-purple-700 border border-purple-200">
                 <ShieldCheck size={12} />
                 Full System Control

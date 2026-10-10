@@ -5,6 +5,7 @@ from openai import OpenAI
 from app.image.base import BaseImageProvider
 from app.image.schemas import GeneratedImageResult
 from app.models.config import settings
+from app.services.admin_settings_service import provider_api_key
 
 
 class OpenAIImageProvider(BaseImageProvider):
@@ -14,11 +15,7 @@ class OpenAIImageProvider(BaseImageProvider):
         return "openai"
 
     def _get_client(self) -> OpenAI:
-        api_key = (
-            settings.OPENAI_API_KEY.get_secret_value()
-            if hasattr(settings.OPENAI_API_KEY, "get_secret_value")
-            else str(settings.OPENAI_API_KEY or "")
-        )
+        api_key = provider_api_key("image", "openai")
         return OpenAI(api_key=api_key)
 
     def generate(
@@ -53,10 +50,8 @@ class OpenAIImageProvider(BaseImageProvider):
                 provider=self.provider_name,
                 prompt=prompt,
             )
-        except Exception as e:
-            print(f"[OpenAIImageProvider] Generation failed: {e}. Falling back to mock.")
-            from app.image.providers.mock import MockImageProvider
-            return MockImageProvider().generate(prompt, output_path)
+        except Exception:
+            raise RuntimeError("OpenAI image generation failed. Check provider configuration and retry.") from None
 
     async def agenerate(
         self,

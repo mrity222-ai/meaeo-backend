@@ -1,4 +1,5 @@
 "use client";
+import { BusinessAvatar } from "@/components/profile/business-avatar";
 
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -28,13 +29,13 @@ const tabs: { id: TabKey; label: string; icon: any; desc: string }[] = [
     id: "profile",
     label: "My Profile",
     icon: User,
-    desc: "Personal & Workspace Info",
+    desc: "Account & Business Logo",
   },
   {
     id: "settings",
     label: "Settings",
     icon: Settings,
-    desc: "Brand & Preferences",
+    desc: "Business, Brand & Audience",
   },
   {
     id: "subscription",
@@ -102,7 +103,7 @@ function ProfileContent() {
   const desktopActiveTab: TabKey = activeTab || "profile";
 
   return (
-    <div className="min-h-screen bg-white text-neutral-950 pb-20 md:pb-8">
+    <div className="min-h-screen bg-card text-foreground pb-20 md:pb-8">
       <DashboardSidebar
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
@@ -125,23 +126,23 @@ function ProfileContent() {
             {!activeTab ? (
               <div className="space-y-5 animate-in fade-in">
                 {/* User Card */}
-                <div className="rounded-2xl border border-neutral-200/90 bg-neutral-50/70 p-5 shadow-xs">
+                <div className="rounded-2xl border border-border/90 bg-neutral-50/70 p-5 shadow-xs">
                   <div className="flex items-center gap-3.5">
                     <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-neutral-950 text-base font-bold text-white shadow-xs">
-                      {initials}
+                      <BusinessAvatar initials={initials} className="h-full w-full" />
                     </div>
                     <div className="min-w-0">
-                      <p className="truncate text-base font-bold text-neutral-950">
+                      <p className="truncate text-base font-bold text-foreground">
                         {displayName}
                       </p>
-                      <p className="truncate text-xs text-neutral-500">
+                      <p className="truncate text-xs text-muted-foreground">
                         {displayEmail}
                       </p>
                     </div>
                   </div>
 
-                  <div className="mt-3.5 flex items-center justify-between rounded-xl border border-neutral-200 bg-white px-3 py-1.5 text-xs text-neutral-600">
-                    <span className="text-[11px] font-medium text-neutral-500">Active Workspace</span>
+                  <div className="mt-3.5 flex items-center justify-between rounded-xl border border-border bg-card px-3 py-1.5 text-xs text-neutral-600">
+                    <span className="text-[11px] font-medium text-muted-foreground">Active Workspace</span>
                     <span className="font-semibold text-neutral-900 truncate max-w-[160px]">
                       {tenantId}
                     </span>
@@ -154,7 +155,7 @@ function ProfileContent() {
                     Account Options
                   </p>
 
-                  <div className="divide-y divide-neutral-100 rounded-2xl border border-neutral-200/90 bg-white shadow-xs overflow-hidden">
+                  <div className="divide-y divide-neutral-100 rounded-2xl border border-border/90 bg-card shadow-xs overflow-hidden">
                     {tabs.map((tab) => {
                       const Icon = tab.icon;
                       return (
@@ -169,10 +170,10 @@ function ProfileContent() {
                               <Icon size={18} />
                             </div>
                             <div>
-                              <p className="text-sm font-semibold text-neutral-950">
+                              <p className="text-sm font-semibold text-foreground">
                                 {tab.label}
                               </p>
-                              <p className="text-xs text-neutral-500">
+                              <p className="text-xs text-muted-foreground">
                                 {tab.desc}
                               </p>
                             </div>
@@ -204,19 +205,12 @@ function ProfileContent() {
                 <button
                   type="button"
                   onClick={handleBackToMenu}
-                  className="inline-flex items-center gap-2 rounded-xl border border-neutral-200 bg-neutral-50 px-3.5 py-2 text-xs font-bold text-neutral-800 shadow-xs hover:bg-neutral-100 active:scale-95 transition"
+                  className="ui-button-secondary inline-flex items-center gap-2 border border-border px-3.5 py-2 text-xs font-bold active:scale-95 transition"
                 >
                   <ArrowLeft size={15} />
                   <span>Back to Account Options</span>
                 </button>
 
-                {/* Section Details */}
-                <div className="mt-2">
-                  {activeTab === "profile" && <ProfileInfoTab />}
-                  {activeTab === "settings" && <ProfileSettingsTab />}
-                  {activeTab === "subscription" && <ProfileSubscriptionTab />}
-                  {activeTab === "support" && <ProfileSupportTab />}
-                </div>
               </div>
             )}
           </div>
@@ -227,17 +221,17 @@ function ProfileContent() {
           <div className="hidden md:block">
             {/* Header Title */}
             <div>
-              <p className="text-xs font-medium text-neutral-500">Central Account Hub</p>
-              <h1 className="mt-1 text-2xl font-bold tracking-tight sm:text-3xl text-neutral-950">
+              <p className="text-xs font-medium text-muted-foreground">Central Account Hub</p>
+              <h1 className="mt-1 text-2xl font-bold tracking-tight sm:text-3xl text-foreground">
                 My Profile & Preferences
               </h1>
-              <p className="mt-1 text-xs sm:text-sm text-neutral-500">
-                Manage personal details, workspace preferences, brand settings, active subscription plans, and support tickets in one place.
+              <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
+                Manage your business details, brand identity, audience, subscription and support in one place.
               </p>
             </div>
 
             {/* Navigation Hub Tabs */}
-            <div className="mt-8 flex flex-wrap border-b border-neutral-200 pb-px gap-3">
+            <div className="mt-8 flex flex-wrap border-b border-border pb-px gap-3">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
                 const active = desktopActiveTab === tab.id;
@@ -247,11 +241,11 @@ function ProfileContent() {
                     onClick={() => handleTabChange(tab.id)}
                     className={`flex items-center gap-2.5 rounded-t-xl px-4 py-3 text-xs font-semibold transition sm:text-sm ${
                       active
-                        ? "border-b-2 border-neutral-950 bg-neutral-50/80 text-neutral-950 shadow-xs"
-                        : "text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900"
+                        ? "border-b-2 border-neutral-950 bg-neutral-50/80 text-foreground shadow-xs"
+                        : "text-muted-foreground hover:bg-neutral-50 hover:text-neutral-900"
                     }`}
                   >
-                    <Icon size={16} className={active ? "text-neutral-950" : "text-neutral-400"} />
+                    <Icon size={16} className={active ? "text-foreground" : "text-neutral-400"} />
                     <div className="text-left">
                       <p className="leading-tight">{tab.label}</p>
                       <p className="text-[10px] font-normal text-neutral-400 hidden sm:block">{tab.desc}</p>
@@ -261,13 +255,13 @@ function ProfileContent() {
               })}
             </div>
 
-            {/* Active Tab Panel */}
-            <div className="mt-8">
-              {desktopActiveTab === "profile" && <ProfileInfoTab />}
-              {desktopActiveTab === "settings" && <ProfileSettingsTab />}
-              {desktopActiveTab === "subscription" && <ProfileSubscriptionTab />}
-              {desktopActiveTab === "support" && <ProfileSupportTab />}
-            </div>
+          </div>
+          {/* Share one panel between breakpoints so edits never diverge. */}
+          <div className={activeTab ? "mt-8" : "mt-8 hidden md:block"}>
+            {desktopActiveTab === "profile" && <ProfileInfoTab />}
+            {desktopActiveTab === "settings" && <ProfileSettingsTab />}
+            {desktopActiveTab === "subscription" && <ProfileSubscriptionTab />}
+            {desktopActiveTab === "support" && <ProfileSupportTab />}
           </div>
         </div>
       </main>
@@ -279,7 +273,7 @@ export default function ProfilePage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen items-center justify-center bg-white">
+        <div className="flex min-h-screen items-center justify-center bg-card">
           <div className="h-6 w-6 animate-spin rounded-full border-2 border-neutral-950 border-t-transparent" />
         </div>
       }

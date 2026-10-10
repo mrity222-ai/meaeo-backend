@@ -18,6 +18,8 @@ class BusinessProfileBase(BaseModel):
         max_length=5000,
     )
 
+    pincode: str | None = Field(default=None, max_length=32)
+
     website: HttpUrl | None = None
 
     country: str = Field(
@@ -58,6 +60,8 @@ class BusinessProfileUpdate(BaseModel):
         min_length=1,
         max_length=5000,
     )
+
+    pincode: str | None = Field(default=None, max_length=32)
 
     website: HttpUrl | None = None
 

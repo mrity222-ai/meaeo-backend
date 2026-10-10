@@ -550,7 +550,7 @@ export default function AdminAuditLogsPage() {
                             onClick={() =>
                               setExpandedId(expanded ? null : log.id)
                             }
-                            className="flex h-8 w-8 items-center justify-center rounded-lg border border-border hover:bg-muted"
+                            className="ui-button-secondary flex h-8 w-8 items-center justify-center border border-border"
                             aria-label={
                               expanded
                                 ? "Hide audit details"
@@ -651,7 +651,7 @@ export default function AdminAuditLogsPage() {
                     onClick={() =>
                       setExpandedId(expanded ? null : log.id)
                     }
-                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border"
+                    className="ui-button-secondary flex h-8 w-8 shrink-0 items-center justify-center border border-border"
                   >
                     {expanded ? (
                       <ChevronUp className="h-4 w-4" />
@@ -773,18 +773,18 @@ export default function AdminAuditLogsPage() {
           <button
             type="button"
             disabled
-            className="rounded-lg border border-border px-3 py-2 text-sm opacity-50"
+            className="ui-button-secondary border border-border px-3 py-2 text-sm opacity-50"
           >
             Previous
           </button>
 
-          <span className="rounded-lg bg-foreground px-3 py-2 text-sm text-background">
+          <span className="rounded-lg bg-foreground px-3 py-2 text-sm text-primary-foreground">
             1
           </span>
 
           <button
             type="button"
-            className="rounded-lg border border-border px-3 py-2 text-sm hover:bg-muted"
+            className="ui-button-secondary border border-border px-3 py-2 text-sm"
           >
             Next
           </button>

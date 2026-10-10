@@ -411,7 +411,7 @@ export default function AdminContentPage() {
                   <td className="px-5 py-4 text-right">
                     <button
                       type="button"
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border hover:bg-muted"
+                      className="ui-button-secondary inline-flex h-8 w-8 items-center justify-center border border-border"
                       aria-label={`View ${item.title}`}
                     >
                       <Eye className="h-4 w-4" />
@@ -502,7 +502,7 @@ export default function AdminContentPage() {
 
                   <button
                     type="button"
-                    className="mt-4 flex h-9 w-full items-center justify-center gap-2 rounded-lg border border-border text-sm font-medium hover:bg-muted"
+                    className="ui-button-secondary mt-4 flex h-9 w-full items-center justify-center gap-2 border border-border text-sm font-medium"
                   >
                     <Eye className="h-4 w-4" />
                     View Content
@@ -538,19 +538,19 @@ export default function AdminContentPage() {
             <button
               type="button"
               disabled
-              className="inline-flex h-8 items-center gap-1 rounded-md border border-border px-3 text-xs opacity-50"
+              className="ui-button-secondary inline-flex h-8 items-center gap-1 border border-border px-3 text-xs opacity-50"
             >
               <ChevronLeft className="h-3.5 w-3.5" />
               Previous
             </button>
 
-            <span className="inline-flex h-8 min-w-8 items-center justify-center rounded-md bg-foreground px-2 text-xs text-background">
+            <span className="inline-flex h-8 min-w-8 items-center justify-center rounded-md bg-foreground px-2 text-xs text-primary-foreground">
               1
             </span>
 
             <button
               type="button"
-              className="inline-flex h-8 items-center gap-1 rounded-md border border-border px-3 text-xs"
+              className="ui-button-secondary inline-flex h-8 items-center gap-1 border border-border px-3 text-xs"
             >
               Next
               <ChevronRight className="h-3.5 w-3.5" />

@@ -102,7 +102,7 @@ export function DashboardSidebar({
   const initials = (userMeta.name ? userMeta.name.slice(0, 2) : "US").toUpperCase();
 
   const isActive = (href: string) => {
-    return pathname === href;
+    return pathname === href || pathname.startsWith(`${href}/`);
   };
 
   return (
@@ -119,14 +119,14 @@ export function DashboardSidebar({
       <aside
         className={[
           "fixed inset-y-0 left-0 z-50 flex w-[230px] flex-col",
-          "border-r border-purple-100 bg-white/92 backdrop-blur-xl shadow-xl shadow-purple-500/5",
+          "border-r border-border bg-card text-card-foreground",
           "transition-transform duration-200",
           open ? "translate-x-0" : "-translate-x-full",
           "md:translate-x-0",
         ].join(" ")}
       >
         {/* Brand */}
-        <div className="flex h-[62px] items-center justify-between border-b border-purple-100/80 px-5">
+        <div className="flex h-[62px] items-center justify-between border-b border-border px-5">
           <Link
             href="/dashboard"
             onClick={onClose}
@@ -138,7 +138,7 @@ export function DashboardSidebar({
               className="h-8 w-8 rounded-lg object-contain shadow-xs"
             />
 
-            <span className="text-lg font-bold tracking-tight text-slate-900">
+            <span className="text-lg font-bold tracking-tight text-foreground">
               maeaco
             </span>
           </Link>
@@ -146,7 +146,7 @@ export function DashboardSidebar({
           <button
             onClick={onClose}
             aria-label="Close menu"
-            className="rounded-md p-1.5 text-slate-500 hover:bg-purple-50 md:hidden"
+            className="rounded-md p-1.5 text-muted-foreground hover:bg-purple-50 md:hidden"
           >
             <X size={18} />
           </button>
@@ -160,17 +160,13 @@ export function DashboardSidebar({
           </p>
 
           {/* Workspace selector */}
-          <button className="mb-4 flex h-9 w-full items-center justify-between rounded-xl btn-purple-gradient px-3 text-left text-xs font-semibold text-white">
-            <span className="truncate">Your workspace</span>
-
-            <ChevronDown
-              size={14}
-              className="shrink-0 text-white/80"
-            />
-          </button>
+          <div className="mb-4 rounded-xl border border-border bg-muted/50 px-3 py-3">
+            <p className="text-xs font-semibold text-foreground">Your workspace</p>
+            <p className="mt-1 text-xs text-muted-foreground">Manage your business marketing</p>
+          </div>
 
           {/* Primary navigation */}
-          <nav className="space-y-1">
+          <nav aria-label="Workspace navigation" className="space-y-1">
             {primaryNavigation.map((item) => {
               const Icon = item.icon;
               const active = isActive(item.href);
@@ -179,12 +175,13 @@ export function DashboardSidebar({
                 <Link
                   key={item.href}
                   href={item.href}
+                  aria-current={active ? "page" : undefined}
                   onClick={onClose}
                   className={[
-                    "flex h-9 items-center gap-3 rounded-xl px-3 text-[13px] font-semibold transition-all duration-200",
+                    "flex min-h-11 items-center gap-3 rounded-xl px-3 text-[13px] font-semibold transition-all duration-200",
                     active
-                      ? "active-purple-slider"
-                      : "text-slate-600 hover:bg-purple-50/80 hover:text-purple-700",
+                      ? "ui-nav-active"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground",
                   ].join(" ")}
                 >
                   <Icon size={16} strokeWidth={2} />
@@ -199,7 +196,7 @@ export function DashboardSidebar({
           </p>
 
           {/* Manage navigation */}
-          <nav className="space-y-1">
+          <nav aria-label="Content management" className="space-y-1">
             {manageNavigation.map((item) => {
               const Icon = item.icon;
               const active = isActive(item.href);
@@ -208,12 +205,13 @@ export function DashboardSidebar({
                 <Link
                   key={item.href}
                   href={item.href}
+                  aria-current={active ? "page" : undefined}
                   onClick={onClose}
                   className={[
-                    "flex h-9 items-center gap-3 rounded-xl px-3 text-[13px] font-semibold transition-all duration-200",
+                    "flex min-h-11 items-center gap-3 rounded-xl px-3 text-[13px] font-semibold transition-all duration-200",
                     active
-                      ? "active-purple-slider"
-                      : "text-slate-600 hover:bg-purple-50/80 hover:text-purple-700",
+                      ? "ui-nav-active"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground",
                   ].join(" ")}
                 >
                   <Icon size={16} strokeWidth={2} />
@@ -225,15 +223,15 @@ export function DashboardSidebar({
         </div>
 
         {/* Bottom */}
-        <div className="border-t border-purple-100 p-3">
+        <div className="border-t border-border p-3">
           <Link
             href="/profile"
             onClick={onClose}
             className={[
               "flex items-center justify-between rounded-xl px-3 py-2 text-xs font-semibold transition-all duration-200",
               isActive("/profile")
-                ? "active-purple-slider"
-                : "text-slate-600 hover:bg-purple-50 hover:text-purple-700",
+                ? "ui-nav-active"
+                : "text-muted-foreground hover:bg-purple-50 hover:text-purple-700",
             ].join(" ")}
           >
             <span className="flex items-center gap-2">

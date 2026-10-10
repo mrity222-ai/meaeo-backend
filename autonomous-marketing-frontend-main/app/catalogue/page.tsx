@@ -14,6 +14,7 @@ import {
   getBusinessAccountId,
   getTenantId,
 } from "@/lib/auth";
+import { DashboardTopHeader } from "@/components/navigation/dashboard-top-header";
 import { DashboardSidebar } from "@/components/navigation/dashboard-sidebar";
 import { UserAccountMenu } from "@/components/navigation/user-account-menu";
 import { Menu, Sparkles, RefreshCw, Upload, Trash2, Image as ImageIcon } from "lucide-react";
@@ -467,18 +468,18 @@ export default function CataloguePage() {
     )
   ) {
     return (
-      <div className="min-h-screen bg-white text-neutral-950">
+      <div className="min-h-screen bg-card text-foreground">
         <DashboardSidebar
           open={sidebarOpen}
           onClose={() => setSidebarOpen(false)}
         />
         <main className="min-h-screen md:pl-[230px]">
-          <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-neutral-200 bg-white px-4 md:hidden">
+          <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-border bg-card px-4 md:hidden">
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setSidebarOpen(true)}
                 aria-label="Open menu"
-                className="flex h-9 w-9 items-center justify-center rounded-lg border border-neutral-200 text-neutral-700 hover:bg-neutral-50"
+                className="ui-button-secondary flex h-9 w-9 items-center justify-center border border-border"
               >
                 <Menu size={19} />
               </button>
@@ -488,7 +489,7 @@ export default function CataloguePage() {
                   alt="maeaco logo"
                   className="h-7 w-7 rounded-lg object-contain"
                 />
-                <span className="text-base font-bold tracking-tight text-neutral-950">maeaco</span>
+                <span className="text-base font-bold tracking-tight text-foreground">maeaco</span>
               </div>
             </div>
             <UserAccountMenu />
@@ -498,15 +499,15 @@ export default function CataloguePage() {
               <h1 className="text-3xl font-semibold tracking-tight">
                 Catalogue
               </h1>
-              <p className="mt-2 max-w-2xl text-sm text-neutral-500">
+              <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
                 Manage the product and brand images your AI marketing campaigns can use.
               </p>
             </div>
-            <div className="rounded-xl border border-neutral-200 bg-white p-6">
+            <div className="rounded-xl border border-border bg-card p-6">
               <p className="font-medium text-neutral-900">
                 Workspace context required
               </p>
-              <p className="mt-1 text-sm text-neutral-500">
+              <p className="mt-1 text-sm text-muted-foreground">
                 Your business workspace could not be loaded. Please refresh the page or complete onboarding.
               </p>
             </div>
@@ -522,57 +523,25 @@ export default function CataloguePage() {
    * ---------------------------------------------------------
    */
   return (
-    <div className="min-h-screen bg-white text-neutral-950">
+    <div className="min-h-screen bg-card text-foreground">
       <DashboardSidebar
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
       />
 
       <main className="min-h-screen md:pl-[230px]">
-        {/* Mobile Header */}
-        <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-neutral-200 bg-white px-4 md:hidden">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setSidebarOpen(true)}
-              aria-label="Open menu"
-              className="flex h-9 w-9 items-center justify-center rounded-lg border border-neutral-200 text-neutral-700 hover:bg-neutral-50"
-            >
-              <Menu size={19} />
-            </button>
-            <div className="flex items-center gap-2">
-              <img
-                src="/logo/app logo.png"
-                alt="maeaco logo"
-                className="h-7 w-7 rounded-lg object-contain"
-              />
-              <span className="text-base font-bold tracking-tight text-neutral-950">maeaco</span>
-            </div>
-          </div>
-          <UserAccountMenu />
-        </header>
+        <DashboardTopHeader title="Product Catalogue" subtitle="Original product photos for your campaigns"
+          onMenuClick={() => setSidebarOpen(true)} actions={<>
 
-        {/* Desktop Header */}
-        <div className="hidden h-16 items-center justify-between border-b border-neutral-200 px-7 md:flex">
-          <div>
-            <p className="text-xs text-neutral-500">Workspace</p>
-            <p className="text-sm font-medium">Product & Brand Catalogue</p>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => void loadAssets()}
-              disabled={loading}
-              className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-3 text-xs font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-50 transition"
-            >
-              <RefreshCw size={13} className={loading ? "animate-spin" : ""} />
-              {loading ? "Refreshing..." : "Refresh Catalogue"}
+            <button type="button" onClick={() => void loadAssets()} disabled={loading}
+              aria-label="Refresh product catalogue" className="ui-button-secondary inline-flex min-h-11 items-center gap-2 border border-border px-3 text-sm disabled:opacity-50">
+              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+              <span className="hidden sm:inline">Refresh</span>
             </button>
-            <UserAccountMenu />
-          </div>
-        </div>
+          </>} />
 
         {/* Main Content Area */}
-        <div className="mx-auto max-w-[1450px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+        <div className="mx-auto max-w-[1450px] px-4 py-6 pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-8 sm:px-6 lg:px-8 lg:py-8">
           <div className="mx-auto w-full max-w-6xl">
 
             {/* Header */}
@@ -583,8 +552,7 @@ export default function CataloguePage() {
                 </h1>
 
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-                  Manage the product and brand images
-                  your AI marketing campaigns can use.
+                  Upload original product photos for your campaigns. Your business logo is managed separately in brand settings.
                 </p>
               </div>
 
@@ -597,11 +565,11 @@ export default function CataloguePage() {
               uploading ||
               !authReady
             }
-            className="inline-flex h-11 items-center justify-center rounded-xl bg-foreground px-5 text-sm font-medium text-background transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+            className="ui-button-primary inline-flex h-11 items-center justify-center px-5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {uploading
               ? "Uploading..."
-              : "Upload images"}
+              : "Upload product photos"}
           </button>
         </div>
 
@@ -692,7 +660,7 @@ export default function CataloguePage() {
               uploading ||
               !authReady
             }
-            className="mt-5 inline-flex h-10 items-center justify-center rounded-lg border border-border bg-background px-4 text-sm font-medium transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+            className="ui-button-secondary mt-5 inline-flex h-10 items-center justify-center border border-border px-4 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50"
           >
             {uploading
               ? "Uploading..."
@@ -767,7 +735,7 @@ export default function CataloguePage() {
                     uploading ||
                     !authReady
                   }
-                  className="mt-5 inline-flex h-10 items-center justify-center rounded-lg bg-foreground px-4 text-sm font-medium text-background hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="ui-button-primary mt-5 inline-flex h-10 items-center justify-center px-4 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Upload your first image
                 </button>
@@ -853,7 +821,7 @@ export default function CataloguePage() {
                             uploading ||
                             isDeleting
                           }
-                          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border text-sm transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+                          className="ui-button-secondary flex h-9 w-9 shrink-0 items-center justify-center border border-border text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           🗑
                         </button>

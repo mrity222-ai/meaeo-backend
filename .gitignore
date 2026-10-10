@@ -25,6 +25,7 @@ __pycache__/
 # Node.js & Next.js Build Artifacts
 node_modules/
 .next/
+.next-marketing-verify/
 out/
 build/
 dist/
@@ -36,3 +37,25 @@ Thumbs.db
 
 # Temp Scratch Testing Outputs
 scratch/
+
+# OAuth credentials and encrypted backups
+data/credentials/
+data/credential-backups/
+
+# Encrypted runtime settings and lock files
+data/settings/
+
+# Local backup before the business profile schema update
+*.before-business-profile-edit.bak
+
+# Customer/runtime data must remain on the server, not in release commits.
+data/assets/
+data/analytics/
+generated/
+backups/
+.env.docker
+*.sqlite3
+*.tsbuildinfo
+docs/*.png
+docs/*.jpg
+.deployment.lock

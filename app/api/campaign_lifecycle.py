@@ -1,5 +1,6 @@
 from fastapi import (
     APIRouter,
+    Body,
     Depends,
     HTTPException,
     Query,
@@ -9,6 +10,7 @@ from fastapi import (
 from sqlalchemy.orm import Session
 
 from app.database.session import get_db
+from app.schemas.campaign_api import CampaignImageRequest
 from app.schemas.campaign_lifecycle import (
     CampaignCreateRequest,
     CampaignResponse,
@@ -431,6 +433,7 @@ def execute_campaign(
         get_current_tenant
     ),
     db: Session = Depends(get_db),
+    request: CampaignImageRequest | None = Body(default=None),
 ):
     service = CampaignLifecycleService(db)
 
@@ -454,25 +457,39 @@ def execute_campaign(
         )
 
     try:
+        from app.campaign.onboarding_context import OnboardingContextService
+        from app.campaign.campaign_context import CampaignContextBuilder
+
+        onboarding = OnboardingContextService(db).load(
+            context,
+            business_account_id,
+        )
+        campaign_context = CampaignContextBuilder.build(onboarding)
+
         runner = GraphRunner()
 
-        result = runner.run(
-            {
-                "tenant_id": context.tenant_id,
-                "business_account_id": business_account_id,
-                "campaign_id": campaign_id,
-                "execution_mode": campaign.execution_mode,
-                "user_input": (
-                    f"Create the marketing content "
-                    f"for campaign "
-                    f"'{campaign.campaign_name}'."
-                ),
-                "brand_name": None,
-                "errors": [],
-                "warnings": [],
-                "status": "running",
-            }
-        )
+        state = {
+            "tenant_id": context.tenant_id,
+            "image_strategy": request.image_strategy if isinstance(request, CampaignImageRequest) else None,
+            "business_account_id": business_account_id,
+            "campaign_id": campaign_id,
+            "execution_mode": campaign.execution_mode,
+            "user_input": (
+                f"Create the marketing content "
+                f"for campaign "
+                f"'{campaign.campaign_name}'."
+            ),
+            "brand_name": onboarding.brand.brand_name,
+            "campaign_context": campaign_context,
+            "errors": [],
+            "warnings": [],
+            "status": "running",
+        }
+
+        if campaign_context.brand is not None:
+            state["brand_profile"] = campaign_context.brand
+
+        result = runner.run(state)
 
         if result.get("status") == "failed":
             raise ValueError(

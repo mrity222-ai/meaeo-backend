@@ -1,8 +1,18 @@
-from pydantic import SecretStr
+from contextvars import ContextVar
+from pydantic import SecretStr, field_validator
+
+# Request/task snapshots prevent settings saves changing an in-flight operation.
+runtime_settings: ContextVar[dict | None] = ContextVar("runtime_settings", default=None)
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class ModelSettings(BaseSettings):
+    def __getattribute__(self, name):
+        snapshot = runtime_settings.get()
+        if snapshot is not None and name in snapshot:
+            return snapshot[name]
+        return super().__getattribute__(name)
+
     DEFAULT_BRAND: str = "brand_001"
     APP_ENV: str = "development"
 
@@ -18,6 +28,10 @@ class ModelSettings(BaseSettings):
 
     TAVILY_API_KEY: SecretStr
     FIRECRAWL_API_KEY: SecretStr | None = None
+    RESEARCH_PROVIDERS: str = "tavily"
+    TAVILY_ENABLED: bool | None = None
+    FIRECRAWL_ENABLED: bool | None = None
+    SEO_ENABLED: bool | None = None
 
     DATAFORSEO_API_KEY: str | None = None
     DATAFORSEO_LOGIN: str | None = None
@@ -34,7 +48,26 @@ class ModelSettings(BaseSettings):
     PUBLISH_MODE: str = "development"
     PUBLISH_TIMEZONE: str = "UTC"
 
+    CREDENTIAL_STORAGE_ROOT: str = "data/credentials"
     CREDENTIAL_ENCRYPTION_KEY: SecretStr
+
+    @field_validator("CREDENTIAL_ENCRYPTION_KEY")
+    @classmethod
+    def valid_credential_key(cls, value: SecretStr) -> SecretStr:
+        from cryptography.fernet import Fernet
+        try:
+            Fernet(value.get_secret_value().encode("utf-8"))
+        except (ValueError, TypeError):
+            raise ValueError("CREDENTIAL_ENCRYPTION_KEY must be a valid Fernet key; retain the existing key for stored credentials") from None
+        return value
+
+    @field_validator("CREDENTIAL_STORAGE_ROOT")
+    @classmethod
+    def valid_credential_root(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("CREDENTIAL_STORAGE_ROOT must not be blank")
+        return value
+
 
     META_API_VERSION: str = "v26.0"
     META_APP_ID: str | None = None
@@ -119,12 +152,32 @@ class ModelSettings(BaseSettings):
     # -------------------------------------------------
 
     ANALYTICS_ENABLED: bool = False
+    ANALYTICS_SYNC_ENABLED: bool = True
+    LINKEDIN_OAUTH_SCOPES: str = "openid profile email w_member_social"
+    LINKEDIN_ANALYTICS_API_VERSION: str = "202609"
 
     def validate_production_config(self) -> None:
-        if self.APP_ENV.strip().lower() != "production":
+        if self.APP_ENV.strip().lower() not in {"production", "prod"}:
             return
 
         errors: list[str] = []
+        from urllib.parse import urlsplit
+        for key in ("SUPER_ADMIN_PASSWORD", "SUPER_ADMIN_PIN"):
+            value = getattr(self, key)
+            value = value.get_secret_value() if hasattr(value, "get_secret_value") else value
+            if not value or value == type(self).model_fields[key].default:
+                errors.append(f"{key} must be explicitly changed from its built-in default")
+        for key, platform in (("META_REDIRECT_URI", "meta"),
+                              ("GOOGLE_BUSINESS_REDIRECT_URI", "google_business"),
+                              ("LINKEDIN_REDIRECT_URI", "linkedin")):
+            client_key = {"meta": "META_APP_ID", "google_business": "GOOGLE_CLIENT_ID", "linkedin": "LINKEDIN_CLIENT_ID"}[platform]
+            if not getattr(self, client_key):
+                continue
+            uri = urlsplit(getattr(self, key) or "")
+            path = uri.path.replace("-", "_")
+            allowed = {f"{prefix}/oauth/callback/{platform}" for prefix in ("", "/api/v1")} | {f"{prefix}/oauth/{platform}/callback" for prefix in ("", "/api/v1")}
+            if uri.scheme != "https" or not uri.hostname or uri.hostname in {"localhost", "127.0.0.1", "::1"} or uri.username or uri.password or path not in allowed:
+                errors.append(f"{key} must be a public HTTPS URL for this platform's callback route")
 
         if self.PUBLISH_MODE.strip().lower() != "production":
             errors.append("PUBLISH_MODE must be 'production'")
@@ -160,6 +213,7 @@ class ModelSettings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env",
         extra="ignore",
+        hide_input_in_errors=True,
     )
 
 

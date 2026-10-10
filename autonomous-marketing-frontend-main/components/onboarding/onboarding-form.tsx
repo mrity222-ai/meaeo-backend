@@ -1,4 +1,5 @@
 "use client";
+import { normalizePhone } from "@/lib/phone";
 
 import {
   AlertCircle,
@@ -31,21 +32,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import type { OnboardingData } from "@/types/onboarding";
-import {
-  createAudience,
-  createBrand,
-  createBusinessAccount,
-  createBusinessProfile,
-  createMarketingPreferences,
-  uploadCatalogueAsset,
-} from "@/lib/api/onboarding";
-import { apiRequest, ApiError } from "@/lib/api/client";
-import {
-  saveTenantContext,
-  getTenantId,
-  getBusinessAccountId,
-} from "@/lib/auth";
-
+import { checkoutSubscription, saveOnboarding } from "@/lib/api/onboarding";
+import { apiRequest } from "@/lib/api/client";
 // =========================================================================
 // 5-STEP DEFINITIONS
 // =========================================================================
@@ -121,81 +109,6 @@ interface SubscriptionPlan {
   is_active: boolean;
 }
 
-const FALLBACK_PLANS: SubscriptionPlan[] = [
-  {
-    id: 1,
-    plan_code: "basic",
-    name: "Basic",
-    description: "Ideal for exploring autonomous AI marketing for your brand.",
-    price: 0,
-    price_usd: 0,
-    currency: "INR",
-    billing_interval: "monthly",
-    max_brands: 1,
-    max_campaigns_per_month: 3,
-    features: {
-      bullets: [
-        "15 AI generated posts per month",
-        "Instagram & Facebook auto-publishing",
-        "Basic marketing & reach tracking",
-        "Community & email support",
-      ],
-    },
-    is_popular: false,
-    badge_text: null,
-    is_active: true,
-  },
-  {
-    id: 2,
-    plan_code: "premium",
-    name: "Premium",
-    description: "Full AI power for growing businesses, creators, and brands.",
-    price: 999,
-    price_usd: 9.99,
-    currency: "INR",
-    billing_interval: "monthly",
-    max_brands: 3,
-    max_campaigns_per_month: 30,
-    features: {
-      bullets: [
-        "150 AI posts / month (1 post daily)",
-        "Instagram, Facebook, LinkedIn & Google Business",
-        "AI Review Responder & Local SEO Engine",
-        "Daily promotional offers & coupon codes",
-        "Auto-scheduling on peak engagement hours",
-        "Priority customer support",
-      ],
-    },
-    is_popular: true,
-    badge_text: "Most Popular",
-    is_active: true,
-  },
-  {
-    id: 3,
-    plan_code: "enterprise",
-    name: "Enterprise",
-    description: "Unlimited scale and multi-location management for agencies.",
-    price: 1999,
-    price_usd: 19.99,
-    currency: "INR",
-    billing_interval: "monthly",
-    max_brands: 15,
-    max_campaigns_per_month: 150,
-    features: {
-      bullets: [
-        "Unlimited AI posts & campaigns",
-        "All 4 platforms + multi-location management",
-        "Dedicated Google Maps 3-Pack optimization",
-        "Custom brand voice & AI model tuning",
-        "24/7 dedicated account manager",
-      ],
-    },
-    is_popular: false,
-    badge_text: "Best Value",
-    is_active: true,
-  },
-];
-
 const emptyData: OnboardingData = {
   businessName: "",
   industry: "",
@@ -229,15 +142,16 @@ export function OnboardingForm() {
   const [currentStep, setCurrentStep] = useState(1);
   const [data, setData] = useState<OnboardingData>(emptyData);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [colorStatus, setColorStatus] = useState<"idle" | "pending" | "ready" | "manual">("idle");
+  const colorPreviewRef = useRef<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [paymentDone, setPaymentDone] = useState(false);
 
   // New location input state
   const [newLocationInput, setNewLocationInput] = useState("");
 
   // Plans from backend
-  const [plans, setPlans] = useState<SubscriptionPlan[]>(FALLBACK_PLANS);
+  const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [selectedPlanCode, setSelectedPlanCode] = useState<string>("premium");
 
   // Microphone / Speech-to-Text States
@@ -252,25 +166,13 @@ export function OnboardingForm() {
   // Fetch live subscription plans
   useEffect(() => {
     let isMounted = true;
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
-
     const fetchPlans = async () => {
       try {
-        const res = await fetch(`${apiUrl}/payments/plans?include_inactive=false`);
-        if (res.ok) {
-          const list = await res.json();
-          if (Array.isArray(list) && list.length > 0 && isMounted) {
-            setPlans(list);
-            const popular = list.find((p) => p.is_popular);
-            if (popular) {
-              setSelectedPlanCode(popular.plan_code);
-            } else {
-              setSelectedPlanCode(list[0].plan_code);
-            }
-          }
-        }
+        const list = await apiRequest<SubscriptionPlan[]>("/payments/plans?include_inactive=false");
+        if (!Array.isArray(list) || !list.length) throw new Error("No subscription plans are available.");
+        if (isMounted) { setPlans(list); setSelectedPlanCode((list.find(p => p.is_popular) || list[0]).plan_code); }
       } catch {
-        // Fallback plans remain active
+        if (isMounted) setError("Subscription plans could not be loaded. Reload this page to retry.");
       }
     };
 
@@ -385,13 +287,16 @@ export function OnboardingForm() {
   // Canvas-based dominant color extraction from uploaded logo
   const extractColorsFromImage = (imageSrc: string) => {
     if (typeof window === "undefined") return;
+    colorPreviewRef.current = imageSrc;
+    setColorStatus("pending");
     const img = new Image();
     img.crossOrigin = "anonymous";
     img.onload = () => {
+      if (colorPreviewRef.current !== imageSrc) return;
       try {
         const canvas = document.createElement("canvas");
         const ctx = canvas.getContext("2d");
-        if (!ctx) return;
+        if (!ctx) { setColorStatus("manual"); return; }
         canvas.width = 100;
         canvas.height = 100;
         ctx.drawImage(img, 0, 0, 100, 100);
@@ -421,10 +326,13 @@ export function OnboardingForm() {
           ...prev,
           brandColors: { primary, secondary, accent },
         }));
+        setColorStatus(sorted.length ? "ready" : "manual");
       } catch (e) {
+        setColorStatus("manual");
         console.warn("Color extraction error:", e);
       }
     };
+    img.onerror = () => { if (colorPreviewRef.current === imageSrc) setColorStatus("manual"); };
     img.src = imageSrc;
   };
 
@@ -472,6 +380,8 @@ export function OnboardingForm() {
   };
 
   const removeLogo = () => {
+    colorPreviewRef.current = null;
+    setColorStatus("idle");
     setData((prev) => ({ ...prev, logoFile: null }));
     setLogoPreview(null);
     if (logoInputRef.current) {
@@ -578,6 +488,10 @@ export function OnboardingForm() {
     setError(null);
 
     if (currentStep === 1) {
+      try { normalizePhone(data.phone, data.country); } catch (err) {
+        setError(err instanceof Error ? err.message : "Mobile number is required.");
+        return false;
+      }
       if (!data.businessName.trim()) {
         setError("Please enter your business name.");
         return false;
@@ -656,173 +570,24 @@ export function OnboardingForm() {
     }
   };
 
-  // Complete onboarding with selected plan
+  // Save every required step before checkout; no partial setup is presented as complete.
   const handleCompleteWithPlan = async () => {
-    setError(null);
-    setIsSubmitting(true);
-
-    const activePlan = plans.find((p) => p.plan_code === selectedPlanCode) || plans[0];
-
+    if (isSubmitting) return;
+    setError(null); setIsSubmitting(true);
     try {
-      // If paid plan, trigger checkout order & payment
-      if (activePlan && activePlan.price > 0) {
-        try {
-          const order = await apiRequest<{ order_id: string; amount: number }>(
-            "/payments/create-order",
-            {
-              method: "POST",
-              body: JSON.stringify({
-                plan_code: activePlan.plan_code,
-                provider: "razorpay",
-              }),
-            }
-          );
-
-          await new Promise((resolve) => setTimeout(resolve, 1500));
-
-          await apiRequest("/payments/verify-payment", {
-            method: "POST",
-            body: JSON.stringify({
-              order_id: order.order_id,
-              payment_id: `pay_${activePlan.plan_code}_${Date.now()}`,
-              provider: "razorpay",
-            }),
-          });
-          setPaymentDone(true);
-        } catch (paymentErr: any) {
-          console.warn("Payment order creation failed, activating with fallback:", paymentErr);
-        }
-      }
-
-      await completeOnboarding();
-    } catch (err: any) {
-      setError(err?.detail || err?.message || "Could not complete setup. Please try again.");
-      setIsSubmitting(false);
-    }
-  };
-
-  const completeOnboarding = async () => {
-    try {
-      setIsSubmitting(true);
-      let businessAccountId = getBusinessAccountId();
-      let tenantId = getTenantId();
-
-      if (!businessAccountId) {
-        try {
-          const businessAccount = await createBusinessAccount({
-            name: data.businessName.trim() || "My Business",
-          });
-          businessAccountId = businessAccount.id;
-          tenantId = businessAccount.tenant_id;
-          saveTenantContext(businessAccount.tenant_id, businessAccountId);
-        } catch (e) {
-          console.warn("Could not create business account in onboarding, continuing:", e);
-        }
-      }
-
-      if (businessAccountId) {
-        try {
-          await createBusinessProfile({
-            business_account_id: businessAccountId,
-            business_name: data.businessName.trim() || "My Business",
-            category: data.industry.trim() || "General",
-            description: data.description.trim() || "Business description",
-            website: data.website.trim() || undefined,
-            country: data.country.trim() || "India",
-            city: data.city.trim() || undefined,
-          });
-        } catch (e) {
-          console.warn("Could not create business profile, continuing:", e);
-        }
-
-        const locations = data.targetLocations.length > 0
-          ? data.targetLocations
-          : [data.city, data.country].filter(Boolean);
-
-        const ageDesc = data.ageGroups.length > 0 ? `Age: ${data.ageGroups.join(", ")}` : "";
-        const genderDesc = data.genders.length > 0 ? `Gender: ${data.genders.join(", ")}` : "";
-        const finalAudienceDesc = [
-          data.targetAudience.trim(),
-          ageDesc,
-          genderDesc,
-        ].filter(Boolean).join(" | ");
-
-        try {
-          await createAudience({
-            business_account_id: businessAccountId,
-            name: `${data.businessName || "My Business"} Audience`,
-            description: finalAudienceDesc || "General Audience",
-            locations: locations.length > 0 ? locations : ["India"],
-            genders: data.genders,
-          });
-        } catch (e) {
-          console.warn("Could not create audience, continuing:", e);
-        }
-
-        // Upload Logo Asset if provided
-        let logoAssetId: string | undefined = undefined;
-        if (data.logoFile && tenantId) {
-          try {
-            const uploadedAsset = await uploadCatalogueAsset(
-              businessAccountId,
-              tenantId,
-              data.logoFile
-            );
-            logoAssetId = uploadedAsset.id;
-          } catch (e) {
-            console.warn("Could not upload brand logo asset, continuing:", e);
-          }
-        }
-
-        try {
-          await createBrand({
-            business_account_id: businessAccountId,
-            brand_name: data.businessName.trim() || "My Brand",
-            brand_description: data.description.trim() || "Brand description",
-            industry: data.industry.trim() || "General",
-            tone: data.brandTone.trim() || "Professional",
-            website: data.website.trim() || undefined,
-            logo_asset_id: logoAssetId,
-            primary_color: data.brandColors?.primary,
-            secondary_color: data.brandColors?.secondary,
-            phone: data.phone.trim() || undefined,
-          });
-        } catch (e) {
-          console.warn("Could not create brand, continuing:", e);
-        }
-
-        try {
-          await createMarketingPreferences({
-            business_account_id: businessAccountId,
-            primary_goal: data.goals[0] || "Increase sales",
-            secondary_goals: data.goals.slice(1),
-            content_types: [],
-            approval_mode: "autonomous",
-            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
-            preferred_posting_time: "10:00",
-            posting_frequency: "daily",
-          });
-        } catch (e) {
-          console.warn("Could not create marketing preferences, continuing:", e);
-        }
-      }
-
+      const plan = plans.find(item => item.plan_code === selectedPlanCode);
+      if (!plan) throw new Error("Select an available subscription plan. Reload if plans failed to load.");
+      await saveOnboarding(data);
+      if (plan.price > 0) { await checkoutSubscription(plan.plan_code); }
       router.push("/dashboard");
-      window.location.href = "/dashboard";
-    } catch (submissionError) {
-      if (submissionError instanceof ApiError) {
-        setError(submissionError.detail);
-      } else if (submissionError instanceof Error) {
-        setError(submissionError.message);
-      } else {
-        setError("We could not complete your setup. Please try again.");
-      }
-    } finally {
-      setIsSubmitting(false);
-    }
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Setup failed. Please retry.");
+    } finally { setIsSubmitting(false); }
   };
 
   const resetForm = () => {
+    colorPreviewRef.current = null;
+    setColorStatus("idle");
     if (isSubmitting) {
       return;
     }
@@ -845,7 +610,7 @@ export function OnboardingForm() {
       <div className="mb-8 flex items-center justify-between">
         <Link
           href="/"
-          className="flex shrink-0 items-center gap-2.5 font-bold text-zinc-900"
+          className="flex shrink-0 items-center gap-2.5 font-bold text-foreground"
         >
           <img
             src="/logo/app logo.png"
@@ -859,7 +624,7 @@ export function OnboardingForm() {
           type="button"
           onClick={resetForm}
           disabled={isSubmitting}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-600 transition hover:bg-zinc-50 disabled:pointer-events-none disabled:opacity-50"
+          className="ui-button-secondary inline-flex items-center gap-1.5 border border-border px-3 py-1.5 text-xs font-medium transition disabled:pointer-events-none disabled:opacity-50"
         >
           <RotateCcw className="h-3.5 w-3.5" />
           Reset
@@ -868,6 +633,7 @@ export function OnboardingForm() {
 
       {/* STEP PROGRESS BAR */}
       <div className="mb-10">
+        <p className="mb-3 text-sm font-medium text-muted-foreground sm:hidden">Step {currentStep} of {steps.length} · {steps[currentStep - 1].title}</p>
         <div className="flex items-center justify-between">
           {steps.map((step, index) => {
             const Icon = step.icon;
@@ -880,6 +646,8 @@ export function OnboardingForm() {
                   <button
                     type="button"
                     disabled={isSubmitting}
+                    aria-label={`Step ${step.number}: ${step.title}`}
+                    aria-current={active ? "step" : undefined}
                     onClick={() => {
                       if (step.number < currentStep) {
                         setCurrentStep(step.number);
@@ -891,7 +659,7 @@ export function OnboardingForm() {
                         ? "flex h-11 w-11 items-center justify-center rounded-full border border-purple-600 bg-purple-600 text-white transition hover:scale-105 disabled:pointer-events-none"
                         : active
                         ? "flex h-11 w-11 items-center justify-center rounded-full border-2 border-purple-600 bg-purple-600 text-white shadow-md shadow-purple-200 transition hover:scale-105"
-                        : "flex h-11 w-11 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-400 transition"
+                        : "flex h-11 w-11 items-center justify-center rounded-full border border-border bg-card text-zinc-400 transition"
                     }
                   >
                     {completed ? (
@@ -904,7 +672,7 @@ export function OnboardingForm() {
                   <span
                     className={
                       active || completed
-                        ? "mt-2 hidden text-xs font-bold text-zinc-900 sm:block"
+                        ? "mt-2 hidden text-xs font-bold text-foreground sm:block"
                         : "mt-2 hidden text-xs font-medium text-zinc-400 sm:block"
                     }
                   >
@@ -927,17 +695,17 @@ export function OnboardingForm() {
         </div>
       </div>
 
-      <div className="rounded-3xl border border-purple-100/80 bg-white p-6 shadow-xl shadow-purple-500/5 sm:p-10">
+      <div className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-8">
         <div className="mb-8 border-b border-zinc-100 pb-6">
           <p className="mb-1.5 text-xs font-bold uppercase tracking-wider text-purple-600">
             Step {currentStep} of {steps.length}
           </p>
 
-          <h1 className="text-2xl font-extrabold tracking-tight text-zinc-900 sm:text-3xl">
+          <h1 className="text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
             {steps[currentStep - 1].title}
           </h1>
 
-          <p className="mt-1.5 text-sm text-zinc-500">
+          <p className="mt-1.5 text-sm text-muted-foreground">
             {steps[currentStep - 1].description}
           </p>
         </div>
@@ -945,6 +713,7 @@ export function OnboardingForm() {
         {error && (
           <div
             role="alert"
+            aria-live="assertive"
             className="mb-6 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
           >
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
@@ -958,87 +727,95 @@ export function OnboardingForm() {
         {currentStep === 1 && (
           <div className="space-y-6">
             <div>
-              <label className="mb-2 block text-sm font-semibold text-zinc-900">
+              <label className="mb-2 block text-sm font-semibold text-foreground">
                 Business name <span className="text-red-500">*</span>
               </label>
               <input
+                aria-label="Business name"
                 value={data.businessName}
                 disabled={isSubmitting}
                 onChange={(e) => updateField("businessName", e.target.value)}
                 placeholder="e.g. Aveda Technologies"
-                className="h-12 w-full rounded-xl border border-zinc-200 bg-white px-4 text-sm text-zinc-900 outline-none transition focus:border-purple-600 focus:ring-2 focus:ring-purple-100 placeholder:text-zinc-400 disabled:bg-zinc-50"
+                className="h-12 w-full rounded-xl border border-border bg-card px-4 text-sm text-foreground outline-none transition focus:border-purple-600 focus:ring-2 focus:ring-purple-100 placeholder:text-zinc-400 disabled:bg-zinc-50"
               />
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-semibold text-zinc-900">
+              <label className="mb-2 block text-sm font-semibold text-foreground">
                 Industry <span className="text-red-500">*</span>
               </label>
               <input
+                aria-label="Industry"
                 value={data.industry}
                 disabled={isSubmitting}
                 onChange={(e) => updateField("industry", e.target.value)}
                 placeholder="e.g. Technology, Fashion, Restaurant, Healthcare, Retail..."
-                className="h-12 w-full rounded-xl border border-zinc-200 bg-white px-4 text-sm text-zinc-900 outline-none transition focus:border-purple-600 focus:ring-2 focus:ring-purple-100 placeholder:text-zinc-400 disabled:bg-zinc-50"
+                className="h-12 w-full rounded-xl border border-border bg-card px-4 text-sm text-foreground outline-none transition focus:border-purple-600 focus:ring-2 focus:ring-purple-100 placeholder:text-zinc-400 disabled:bg-zinc-50"
               />
             </div>
 
             {/* 2X2 GRID: COUNTRY, CITY, PHONE NUMBER, PIN CODE */}
             <div className="grid gap-6 sm:grid-cols-2">
               <div>
-                <label className="mb-2 block text-sm font-semibold text-zinc-900">
+                <label className="mb-2 block text-sm font-semibold text-foreground">
                   Country <span className="text-red-500">*</span>
                 </label>
                 <input
-                  value={data.country}
+                  aria-label="Country"
+                value={data.country}
                   disabled={isSubmitting}
                   onChange={(e) => updateField("country", e.target.value)}
                   placeholder="e.g. India"
-                  className="h-12 w-full rounded-xl border border-zinc-200 bg-white px-4 text-sm text-zinc-900 outline-none transition focus:border-purple-600 focus:ring-2 focus:ring-purple-100 placeholder:text-zinc-400 disabled:bg-zinc-50"
+                  className="h-12 w-full rounded-xl border border-border bg-card px-4 text-sm text-foreground outline-none transition focus:border-purple-600 focus:ring-2 focus:ring-purple-100 placeholder:text-zinc-400 disabled:bg-zinc-50"
                 />
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-semibold text-zinc-900">
+                <label className="mb-2 block text-sm font-semibold text-foreground">
                   City
                 </label>
                 <input
-                  value={data.city}
+                  aria-label="City"
+                value={data.city}
                   disabled={isSubmitting}
                   onChange={(e) => updateField("city", e.target.value)}
                   placeholder="e.g. Lucknow, Delhi, Mumbai"
-                  className="h-12 w-full rounded-xl border border-zinc-200 bg-white px-4 text-sm text-zinc-900 outline-none transition focus:border-purple-600 focus:ring-2 focus:ring-purple-100 placeholder:text-zinc-400 disabled:bg-zinc-50"
+                  className="h-12 w-full rounded-xl border border-border bg-card px-4 text-sm text-foreground outline-none transition focus:border-purple-600 focus:ring-2 focus:ring-purple-100 placeholder:text-zinc-400 disabled:bg-zinc-50"
                 />
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-semibold text-zinc-900 flex items-center gap-1.5">
+                <label className="mb-2 block text-sm font-semibold text-foreground flex items-center gap-1.5">
                   <Phone className="h-4 w-4 text-purple-600" />
-                  Phone Number
+                  Mobile Number <span className="text-red-600">*</span>
                 </label>
                 <input
                   type="tel"
-                  value={data.phone}
+                  aria-label="Mobile number"
+                  required
+                  autoComplete="tel"
+                value={data.phone}
                   disabled={isSubmitting}
                   onChange={(e) => updateField("phone", e.target.value)}
                   placeholder="+91 98765 43210"
-                  className="h-12 w-full rounded-xl border border-zinc-200 bg-white px-4 text-sm text-zinc-900 outline-none transition focus:border-purple-600 focus:ring-2 focus:ring-purple-100 placeholder:text-zinc-400 disabled:bg-zinc-50"
+                  className="h-12 w-full rounded-xl border border-border bg-card px-4 text-sm text-foreground outline-none transition focus:border-purple-600 focus:ring-2 focus:ring-purple-100 placeholder:text-zinc-400 disabled:bg-zinc-50"
                 />
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-semibold text-zinc-900 flex items-center gap-1.5">
+                <label className="mb-2 block text-sm font-semibold text-foreground flex items-center gap-1.5">
                   <MapPin className="h-4 w-4 text-purple-600" />
                   PIN Code / Postal Code
                 </label>
                 <input
                   type="text"
-                  value={data.pincode}
+                  aria-label="PIN code"
+                value={data.pincode}
                   disabled={isSubmitting}
                   onChange={(e) => updateField("pincode", e.target.value)}
                   placeholder="e.g. 226001 / 110001"
                   maxLength={10}
-                  className="h-12 w-full rounded-xl border border-zinc-200 bg-white px-4 text-sm text-zinc-900 outline-none transition focus:border-purple-600 focus:ring-2 focus:ring-purple-100 placeholder:text-zinc-400 disabled:bg-zinc-50"
+                  className="h-12 w-full rounded-xl border border-border bg-card px-4 text-sm text-foreground outline-none transition focus:border-purple-600 focus:ring-2 focus:ring-purple-100 placeholder:text-zinc-400 disabled:bg-zinc-50"
                 />
               </div>
             </div>
@@ -1046,7 +823,7 @@ export function OnboardingForm() {
             {/* WEBSITE - OPTIONAL */}
             <div>
               <div className="mb-2 flex items-center justify-between">
-                <label className="text-sm font-semibold text-zinc-900">
+                <label className="text-sm font-semibold text-foreground">
                   Website
                 </label>
                 <span className="text-xs font-medium text-zinc-400">
@@ -1055,30 +832,31 @@ export function OnboardingForm() {
               </div>
               <input
                 type="url"
+                aria-label="Website"
                 value={data.website}
                 disabled={isSubmitting}
                 onChange={(e) => updateField("website", e.target.value)}
                 placeholder="https://example.com (optional)"
-                className="h-12 w-full rounded-xl border border-zinc-200 bg-white px-4 text-sm text-zinc-900 outline-none transition focus:border-purple-600 focus:ring-2 focus:ring-purple-100 placeholder:text-zinc-400 disabled:bg-zinc-50"
+                className="h-12 w-full rounded-xl border border-border bg-card px-4 text-sm text-foreground outline-none transition focus:border-purple-600 focus:ring-2 focus:ring-purple-100 placeholder:text-zinc-400 disabled:bg-zinc-50"
               />
             </div>
 
             {/* ABOUT YOUR BUSINESS - WITH VOICE TYPING */}
             <div>
               <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                <label className="text-sm font-semibold text-zinc-900">
+                <label className="text-sm font-semibold text-foreground">
                   About Your Business <span className="text-red-500">*</span>
                 </label>
 
                 <div className="flex items-center gap-2">
-                  <div className="inline-flex rounded-lg border border-zinc-200 bg-zinc-50 p-0.5 text-xs font-medium">
+                  <div className="inline-flex rounded-lg border border-border bg-zinc-50 p-0.5 text-xs font-medium">
                     <button
                       type="button"
                       onClick={() => setSpeechLang("hi-IN")}
                       className={`rounded-md px-2 py-0.5 transition ${
                         speechLang === "hi-IN"
-                          ? "bg-white font-semibold text-purple-600 shadow-sm"
-                          : "text-zinc-500 hover:text-zinc-800"
+                          ? "bg-card font-semibold text-purple-600 shadow-sm"
+                          : "text-muted-foreground hover:text-zinc-800"
                       }`}
                     >
                       हिंदी / Hinglish
@@ -1088,8 +866,8 @@ export function OnboardingForm() {
                       onClick={() => setSpeechLang("en-IN")}
                       className={`rounded-md px-2 py-0.5 transition ${
                         speechLang === "en-IN"
-                          ? "bg-white font-semibold text-purple-600 shadow-sm"
-                          : "text-zinc-500 hover:text-zinc-800"
+                          ? "bg-card font-semibold text-purple-600 shadow-sm"
+                          : "text-muted-foreground hover:text-zinc-800"
                       }`}
                     >
                       English
@@ -1127,12 +905,13 @@ export function OnboardingForm() {
               </div>
 
               <textarea
+                aria-label="Business description"
                 value={data.description}
                 disabled={isSubmitting}
                 onChange={(e) => updateField("description", e.target.value)}
                 placeholder="What does your business do? What products or services do you offer? (Type or click 'Speak' to speak in Hindi/English)"
                 rows={5}
-                className="w-full resize-none rounded-xl border border-zinc-200 bg-white p-4 text-sm text-zinc-900 outline-none transition focus:border-purple-600 focus:ring-2 focus:ring-purple-100 placeholder:text-zinc-400 disabled:bg-zinc-50"
+                className="w-full resize-none rounded-xl border border-border bg-card p-4 text-sm text-foreground outline-none transition focus:border-purple-600 focus:ring-2 focus:ring-purple-100 placeholder:text-zinc-400 disabled:bg-zinc-50"
               />
               {isListening && (
                 <p className="mt-1 flex items-center gap-1.5 text-xs text-red-500 font-medium">
@@ -1151,10 +930,10 @@ export function OnboardingForm() {
           <div className="space-y-7">
             {/* TARGET AGE GROUPS CHIPS */}
             <div>
-              <label className="mb-2 block text-sm font-semibold text-zinc-900">
+              <label className="mb-2 block text-sm font-semibold text-foreground">
                 Target Age Groups <span className="text-red-500">*</span>
               </label>
-              <p className="mb-3 text-xs text-zinc-500">
+              <p className="mb-3 text-xs text-muted-foreground">
                 Select the age groups most likely to buy your products or services.
               </p>
               <div className="flex flex-wrap gap-2.5">
@@ -1169,7 +948,7 @@ export function OnboardingForm() {
                       className={`inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold transition ${
                         isSelected
                           ? "border-2 border-purple-600 bg-purple-600 text-white shadow-sm"
-                          : "border border-zinc-200 bg-white text-zinc-700 hover:border-purple-300 hover:bg-purple-50/50"
+                          : "border border-border bg-card text-zinc-700 hover:border-purple-300 hover:bg-purple-50/50"
                       }`}
                     >
                       {isSelected && <Check className="h-3.5 w-3.5 stroke-[3]" />}
@@ -1182,7 +961,7 @@ export function OnboardingForm() {
 
             {/* TARGET GENDER CHIPS */}
             <div>
-              <label className="mb-2 block text-sm font-semibold text-zinc-900">
+              <label className="mb-2 block text-sm font-semibold text-foreground">
                 Target Gender <span className="text-red-500">*</span>
               </label>
               <div className="flex flex-wrap gap-2.5">
@@ -1197,7 +976,7 @@ export function OnboardingForm() {
                       className={`inline-flex items-center gap-1.5 rounded-xl px-5 py-2 text-sm font-semibold transition ${
                         isSelected
                           ? "border-2 border-purple-600 bg-purple-600 text-white shadow-sm"
-                          : "border border-zinc-200 bg-white text-zinc-700 hover:border-purple-300 hover:bg-purple-50/50"
+                          : "border border-border bg-card text-zinc-700 hover:border-purple-300 hover:bg-purple-50/50"
                       }`}
                     >
                       {isSelected && <Check className="h-3.5 w-3.5 stroke-[3]" />}
@@ -1210,10 +989,10 @@ export function OnboardingForm() {
 
             {/* TARGET LOCATIONS (DEFAULT CHIPS + MULTI-ADD) */}
             <div>
-              <label className="mb-2 block text-sm font-semibold text-zinc-900">
+              <label className="mb-2 block text-sm font-semibold text-foreground">
                 Target Locations <span className="text-red-500">*</span>
               </label>
-              <p className="mb-3 text-xs text-zinc-500">
+              <p className="mb-3 text-xs text-muted-foreground">
                 Default location is pre-filled from Step 1. You can add more cities or regions.
               </p>
 
@@ -1251,12 +1030,12 @@ export function OnboardingForm() {
                     }
                   }}
                   placeholder="Type another city, state, or area (e.g. Delhi NCR, Mumbai, Bangalore)"
-                  className="h-11 flex-1 rounded-xl border border-zinc-200 bg-white px-4 text-sm text-zinc-900 outline-none transition focus:border-purple-600 focus:ring-2 focus:ring-purple-100 placeholder:text-zinc-400"
+                  className="h-11 flex-1 rounded-xl border border-border bg-card px-4 text-sm text-foreground outline-none transition focus:border-purple-600 focus:ring-2 focus:ring-purple-100 placeholder:text-zinc-400"
                 />
                 <button
                   type="button"
                   onClick={addLocationTag}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-purple-200 bg-purple-50 px-4 text-xs font-bold text-purple-700 hover:bg-purple-100 transition"
+                  className="ui-button-secondary inline-flex items-center gap-1.5 border border-purple-200 px-4 text-xs font-bold text-purple-700 transition"
                 >
                   <Plus className="h-4 w-4" />
                   Add
@@ -1266,16 +1045,17 @@ export function OnboardingForm() {
 
             {/* AUDIENCE DETAILS / NOTES (OPTIONAL) */}
             <div>
-              <label className="mb-2 block text-sm font-semibold text-zinc-900">
+              <label className="mb-2 block text-sm font-semibold text-foreground">
                 Ideal Customer Persona (Optional)
               </label>
               <textarea
+                aria-label="Target audience"
                 value={data.targetAudience}
                 disabled={isSubmitting}
                 onChange={(e) => updateField("targetAudience", e.target.value)}
                 placeholder="Describe specific customer habits, interests, or professions (e.g. College students, gym freaks, corporate employees, small business owners)"
                 rows={3}
-                className="w-full resize-none rounded-xl border border-zinc-200 bg-white p-4 text-sm text-zinc-900 outline-none transition focus:border-purple-600 focus:ring-2 focus:ring-purple-100 placeholder:text-zinc-400 disabled:bg-zinc-50"
+                className="w-full resize-none rounded-xl border border-border bg-card p-4 text-sm text-foreground outline-none transition focus:border-purple-600 focus:ring-2 focus:ring-purple-100 placeholder:text-zinc-400 disabled:bg-zinc-50"
               />
             </div>
           </div>
@@ -1287,7 +1067,7 @@ export function OnboardingForm() {
         {currentStep === 3 && (
           <div className="space-y-8">
             <div>
-              <h2 className="mb-3 text-sm font-semibold text-zinc-900">
+              <h2 className="mb-3 text-sm font-semibold text-foreground">
                 What are your marketing goals? <span className="text-red-500">*</span>
               </h2>
               <div className="grid gap-3 sm:grid-cols-2">
@@ -1302,7 +1082,7 @@ export function OnboardingForm() {
                       className={
                         selected
                           ? "rounded-2xl border-2 border-purple-600 bg-purple-600 p-4 text-left text-sm font-semibold text-white shadow-sm transition disabled:opacity-60"
-                          : "rounded-2xl border border-zinc-200 bg-white p-4 text-left text-sm font-medium text-zinc-800 transition hover:border-purple-300 hover:bg-purple-50/50 disabled:opacity-60"
+                          : "rounded-2xl border border-border bg-card p-4 text-left text-sm font-medium text-zinc-800 transition hover:border-purple-300 hover:bg-purple-50/50 disabled:opacity-60"
                       }
                     >
                       <div className="flex items-center justify-between">
@@ -1325,15 +1105,15 @@ export function OnboardingForm() {
             {/* MANDATORY BRAND LOGO */}
             <div>
               <div className="mb-1.5 flex items-center justify-between">
-                <label className="text-sm font-bold text-zinc-900">
+                <label className="text-sm font-bold text-foreground">
                   Brand Logo <span className="text-red-600 font-extrabold">* (Mandatory)</span>
                 </label>
                 <span className="text-[11px] font-bold text-red-600 bg-red-50 px-2.5 py-0.5 rounded-full border border-red-200 uppercase tracking-wider">
                   Mandatory
                 </span>
               </div>
-              <p className="mb-3 text-xs text-zinc-500">
-                Upload your official brand logo. Brand colors will be automatically extracted.
+              <p className="mb-3 text-xs text-muted-foreground">
+                Upload your business logo, separate from product photos. We will try to read its colors; you can edit them below.
               </p>
 
               <input
@@ -1347,7 +1127,7 @@ export function OnboardingForm() {
               {logoPreview ? (
                 <div className="flex items-center justify-between rounded-2xl border-2 border-purple-200 bg-purple-50/40 p-4 shadow-sm">
                   <div className="flex items-center gap-4 min-w-0">
-                    <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl border border-purple-200 bg-white p-1.5 shadow-sm overflow-hidden">
+                    <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl border border-purple-200 bg-card p-1.5 shadow-sm overflow-hidden">
                       <img
                         src={logoPreview}
                         alt="Brand Logo"
@@ -1355,16 +1135,16 @@ export function OnboardingForm() {
                       />
                     </div>
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-bold text-zinc-900">
+                      <p className="truncate text-sm font-bold text-foreground">
                         {data.logoFile?.name || "Brand Logo"}
                       </p>
-                      <p className="text-xs text-zinc-500">
+                      <p className="text-xs text-muted-foreground">
                         {data.logoFile
                           ? `${(data.logoFile.size / 1024).toFixed(1)} KB • Ready for AI branding`
                           : "Logo attached"}
                       </p>
                       <span className="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600">
-                        <Check className="h-3 w-3" /> Logo ready & Colors extracted
+                        <Check className="h-3 w-3" /> Logo selected
                       </span>
                     </div>
                   </div>
@@ -1373,14 +1153,14 @@ export function OnboardingForm() {
                     <button
                       type="button"
                       onClick={() => logoInputRef.current?.click()}
-                      className="rounded-lg border border-purple-200 bg-white px-3 py-1.5 text-xs font-semibold text-purple-700 hover:bg-purple-50 transition"
+                      className="ui-button-secondary border border-purple-200 px-3 py-1.5 text-xs font-semibold text-purple-700 transition"
                     >
                       Change
                     </button>
                     <button
                       type="button"
                       onClick={removeLogo}
-                      className="rounded-lg border border-red-200 bg-white p-1.5 text-red-600 hover:bg-red-50 transition"
+                      className="rounded-lg border border-red-200 bg-card p-1.5 text-red-600 hover:bg-red-50 transition"
                       title="Remove logo"
                     >
                       <X className="h-4 w-4" />
@@ -1389,6 +1169,10 @@ export function OnboardingForm() {
                 </div>
               ) : (
                 <div
+                  role="button"
+                  tabIndex={isSubmitting ? -1 : 0}
+                  aria-label="Upload business logo"
+                  onKeyDown={(e) => { if (!isSubmitting && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); logoInputRef.current?.click(); } }}
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={handleLogoDrop}
                   onClick={() => logoInputRef.current?.click()}
@@ -1397,10 +1181,10 @@ export function OnboardingForm() {
                   <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-purple-100 text-purple-600">
                     <UploadCloud className="h-6 w-6" />
                   </div>
-                  <p className="text-sm font-bold text-zinc-900">
+                  <p className="text-sm font-bold text-foreground">
                     Click to upload your Brand Logo <span className="text-red-500">*</span>
                   </p>
-                  <p className="mt-1 text-xs text-zinc-500">
+                  <p className="mt-1 text-xs text-muted-foreground">
                     or drag and drop your logo file here
                   </p>
                   <p className="mt-2 text-[11px] font-semibold text-purple-700 bg-purple-100/70 px-3 py-0.5 rounded-full">
@@ -1413,21 +1197,21 @@ export function OnboardingForm() {
             {/* EXTRACTED BRAND COLORS PALETTE */}
             <div>
               <div className="mb-2 flex items-center justify-between">
-                <label className="text-sm font-bold text-zinc-900 flex items-center gap-1.5">
+                <label className="text-sm font-bold text-foreground flex items-center gap-1.5">
                   <Palette className="h-4 w-4 text-purple-600" />
                   Brand Color Palette
                 </label>
                 <span className="text-xs text-purple-600 font-semibold bg-purple-50 px-2 py-0.5 rounded-md">
-                  Auto-extracted from Logo
+                  {colorStatus === "ready" ? "Colors extracted" : colorStatus === "pending" ? "Reading logo colors…" : "Editable colors"}
                 </span>
               </div>
-              <p className="mb-3 text-xs text-zinc-500">
-                These colors will style your social media banners, captions, and creative posters. Click any swatch to adjust.
+              <p className="mb-3 text-xs text-muted-foreground">
+                Choose the colors for your posters. If logo colors cannot be read, keep or edit the palette below.
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {/* Primary Color */}
-                <div className="rounded-xl border border-zinc-200 bg-white p-3 flex items-center gap-3">
+                <div className="rounded-xl border border-border bg-card p-3 flex items-center gap-3">
                   <input
                     type="color"
                     value={data.brandColors.primary}
@@ -1440,15 +1224,15 @@ export function OnboardingForm() {
                     className="h-10 w-10 cursor-pointer rounded-lg border-0 bg-transparent p-0"
                   />
                   <div>
-                    <span className="text-[11px] font-medium text-zinc-500 block">Primary Color</span>
-                    <span className="text-xs font-bold text-zinc-900 uppercase">
+                    <span className="text-[11px] font-medium text-muted-foreground block">Primary Color</span>
+                    <span className="text-xs font-bold text-foreground uppercase">
                       {data.brandColors.primary}
                     </span>
                   </div>
                 </div>
 
                 {/* Secondary Color */}
-                <div className="rounded-xl border border-zinc-200 bg-white p-3 flex items-center gap-3">
+                <div className="rounded-xl border border-border bg-card p-3 flex items-center gap-3">
                   <input
                     type="color"
                     value={data.brandColors.secondary}
@@ -1461,15 +1245,15 @@ export function OnboardingForm() {
                     className="h-10 w-10 cursor-pointer rounded-lg border-0 bg-transparent p-0"
                   />
                   <div>
-                    <span className="text-[11px] font-medium text-zinc-500 block">Secondary Color</span>
-                    <span className="text-xs font-bold text-zinc-900 uppercase">
+                    <span className="text-[11px] font-medium text-muted-foreground block">Secondary Color</span>
+                    <span className="text-xs font-bold text-foreground uppercase">
                       {data.brandColors.secondary}
                     </span>
                   </div>
                 </div>
 
                 {/* Accent Color */}
-                <div className="rounded-xl border border-zinc-200 bg-white p-3 flex items-center gap-3">
+                <div className="rounded-xl border border-border bg-card p-3 flex items-center gap-3">
                   <input
                     type="color"
                     value={data.brandColors.accent}
@@ -1482,8 +1266,8 @@ export function OnboardingForm() {
                     className="h-10 w-10 cursor-pointer rounded-lg border-0 bg-transparent p-0"
                   />
                   <div>
-                    <span className="text-[11px] font-medium text-zinc-500 block">Accent Color</span>
-                    <span className="text-xs font-bold text-zinc-900 uppercase">
+                    <span className="text-[11px] font-medium text-muted-foreground block">Accent Color</span>
+                    <span className="text-xs font-bold text-foreground uppercase">
                       {data.brandColors.accent}
                     </span>
                   </div>
@@ -1494,15 +1278,15 @@ export function OnboardingForm() {
             {/* BRAND TONE - DRAG AND DROP & CLICKABLE TILES */}
             <div>
               <div className="mb-2 flex items-center justify-between">
-                <label className="text-sm font-bold text-zinc-900 flex items-center gap-1.5">
+                <label className="text-sm font-bold text-foreground flex items-center gap-1.5">
                   <Sparkles className="h-4 w-4 text-purple-600" />
                   Brand Tone & Voice <span className="text-red-500">*</span>
                 </label>
                 <span className="text-xs text-zinc-400">
-                  (Click or Drag to Select)
+                  Select one tone
                 </span>
               </div>
-              <p className="mb-3 text-xs text-zinc-500">
+              <p className="mb-3 text-xs text-muted-foreground">
                 Choose the personality your AI agent should use when writing captions, offers, and replies.
               </p>
 
@@ -1521,7 +1305,7 @@ export function OnboardingForm() {
                   <span className="text-xs font-bold uppercase tracking-wider text-purple-600">
                     Selected Brand Tone:
                   </span>
-                  <p className="text-base font-extrabold text-zinc-900">
+                  <p className="text-base font-extrabold text-foreground">
                     {data.brandTone || "None selected (click or drop a tone below)"}
                   </p>
                 </div>
@@ -1537,21 +1321,25 @@ export function OnboardingForm() {
                   return (
                     <div
                       key={tone.id}
+                      role="button"
+                      tabIndex={isSubmitting ? -1 : 0}
+                      aria-pressed={isSelected}
+                      onKeyDown={(e) => { if (!isSubmitting && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); updateField("brandTone", tone.label); } }}
                       draggable
                       onDragStart={() => setDraggedTone(tone.label)}
                       onClick={() => updateField("brandTone", tone.label)}
                       className={`cursor-pointer rounded-2xl border p-4 transition select-none ${
                         isSelected
                           ? "border-2 border-purple-600 bg-purple-50/80 shadow-md ring-2 ring-purple-200"
-                          : "border-zinc-200 bg-white hover:border-purple-300 hover:bg-zinc-50/80"
+                          : "border-border bg-card hover:border-purple-300 hover:bg-zinc-50/80"
                       }`}
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex items-center gap-2.5">
                           <span className="text-2xl">{tone.icon}</span>
                           <div>
-                            <p className="text-sm font-bold text-zinc-900">{tone.label}</p>
-                            <p className="text-xs text-zinc-500">{tone.desc}</p>
+                            <p className="text-sm font-bold text-foreground">{tone.label}</p>
+                            <p className="text-xs text-muted-foreground">{tone.desc}</p>
                           </div>
                         </div>
                         {isSelected && (
@@ -1569,7 +1357,7 @@ export function OnboardingForm() {
             {/* BRAND WEBSITE - OPTIONAL */}
             <div>
               <div className="mb-2 flex items-center justify-between">
-                <label className="text-sm font-semibold text-zinc-900">
+                <label className="text-sm font-semibold text-foreground">
                   Website
                 </label>
                 <span className="text-xs font-medium text-zinc-400">
@@ -1578,11 +1366,12 @@ export function OnboardingForm() {
               </div>
               <input
                 type="url"
+                aria-label="Website"
                 value={data.website}
                 disabled={isSubmitting}
                 onChange={(e) => updateField("website", e.target.value)}
                 placeholder="https://example.com (optional)"
-                className="h-12 w-full rounded-xl border border-zinc-200 bg-white px-4 text-sm text-zinc-900 outline-none transition focus:border-purple-600 focus:ring-2 focus:ring-purple-100 placeholder:text-zinc-400 disabled:bg-zinc-50"
+                className="h-12 w-full rounded-xl border border-border bg-card px-4 text-sm text-foreground outline-none transition focus:border-purple-600 focus:ring-2 focus:ring-purple-100 placeholder:text-zinc-400 disabled:bg-zinc-50"
               />
             </div>
           </div>
@@ -1594,10 +1383,10 @@ export function OnboardingForm() {
         {currentStep === 5 && (
           <div className="space-y-6">
             <div className="text-center max-w-xl mx-auto mb-6">
-              <h2 className="text-xl font-extrabold text-zinc-900 sm:text-2xl">
+              <h2 className="text-xl font-extrabold text-foreground sm:text-2xl">
                 Select Your Subscription Plan
               </h2>
-              <p className="mt-1.5 text-sm text-zinc-500">
+              <p className="mt-1.5 text-sm text-muted-foreground">
                 Choose the best plan for your marketing needs. Upgrade or cancel anytime.
               </p>
             </div>
@@ -1611,11 +1400,16 @@ export function OnboardingForm() {
                 return (
                   <div
                     key={plan.id}
+                    role="button"
+                    tabIndex={isSubmitting ? -1 : 0}
+                    aria-pressed={isSelected}
+                    aria-label={`${plan.name}: ${plan.price} ${plan.currency}, ${plan.billing_interval}`}
+                    onKeyDown={(e) => { if (!isSubmitting && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); setSelectedPlanCode(plan.plan_code); } }}
                     onClick={() => setSelectedPlanCode(plan.plan_code)}
                     className={`relative cursor-pointer rounded-2xl border-2 p-5 transition flex flex-col justify-between ${
                       isSelected
                         ? "border-purple-600 bg-purple-50/40 shadow-lg shadow-purple-500/10 ring-2 ring-purple-200"
-                        : "border-zinc-200 bg-white hover:border-purple-300 hover:bg-zinc-50/50"
+                        : "border-border bg-card hover:border-purple-300 hover:bg-zinc-50/50"
                     }`}
                   >
                     {/* BADGE */}
@@ -1628,19 +1422,19 @@ export function OnboardingForm() {
                     <div>
                       {/* HEADER */}
                       <div className="flex items-center justify-between mb-2">
-                        <h3 className="text-lg font-bold text-zinc-900">{plan.name}</h3>
+                        <h3 className="text-lg font-bold text-foreground">{plan.name}</h3>
                         <div
                           className={`flex h-5 w-5 items-center justify-center rounded-full border ${
                             isSelected
                               ? "border-purple-600 bg-purple-600 text-white"
-                              : "border-zinc-300 bg-white"
+                              : "border-zinc-300 bg-card"
                           }`}
                         >
                           {isSelected && <Check className="h-3 w-3 stroke-[3]" />}
                         </div>
                       </div>
 
-                      <p className="text-xs text-zinc-500 mb-4 min-h-[32px]">
+                      <p className="text-xs text-muted-foreground mb-4 min-h-[32px]">
                         {plan.description || "Marketing plan"}
                       </p>
 
@@ -1650,7 +1444,7 @@ export function OnboardingForm() {
                           {isFree ? "Free" : `₹${plan.price.toLocaleString("en-IN")}`}
                         </span>
                         {!isFree && (
-                          <span className="text-xs font-medium text-zinc-500 ml-1">
+                          <span className="text-xs font-medium text-muted-foreground ml-1">
                             / {plan.billing_interval || "month"}
                           </span>
                         )}
@@ -1687,20 +1481,20 @@ export function OnboardingForm() {
               })}
             </div>
 
-            <div className="mt-4 flex items-center justify-center gap-2 text-xs text-zinc-500">
+            <div className="mt-4 flex items-center justify-center gap-2 text-xs text-muted-foreground">
               <Lock className="h-3.5 w-3.5 text-zinc-400" />
-              <span>Safe & Secure Checkout. Instant Activation. Cancel Anytime.</span>
+              <span>Your subscription activates after payment verification.</span>
             </div>
           </div>
         )}
 
         {/* BOTTOM ACTION BUTTONS */}
-        <div className="mt-10 flex items-center justify-between border-t border-zinc-100 pt-6">
+        <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-5">
           <button
             type="button"
             onClick={previousStep}
             disabled={currentStep === 1 || isSubmitting}
-            className="inline-flex h-11 items-center gap-2 rounded-xl border border-zinc-200 bg-white px-5 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-50 disabled:pointer-events-none disabled:opacity-40"
+            className="ui-button-secondary inline-flex h-11 items-center gap-2 border border-border px-5 text-sm font-semibold transition disabled:pointer-events-none disabled:opacity-40"
           >
             <ArrowLeft className="h-4 w-4" />
             Back
@@ -1711,7 +1505,7 @@ export function OnboardingForm() {
               type="button"
               onClick={nextStep}
               disabled={isSubmitting}
-              className="inline-flex h-11 items-center gap-2 rounded-xl bg-purple-600 px-6 text-sm font-semibold text-white shadow-md shadow-purple-200 transition hover:bg-purple-700 disabled:pointer-events-none disabled:opacity-60"
+              className="ui-button-primary inline-flex h-11 items-center gap-2 px-6 text-sm font-semibold transition disabled:pointer-events-none disabled:opacity-60"
             >
               Continue
               <ArrowRight className="h-4 w-4" />
@@ -1721,7 +1515,7 @@ export function OnboardingForm() {
               type="button"
               onClick={handleCompleteWithPlan}
               disabled={isSubmitting}
-              className="inline-flex h-12 items-center gap-2 rounded-xl bg-purple-600 px-8 text-sm font-bold text-white shadow-lg shadow-purple-200 transition hover:bg-purple-700 disabled:pointer-events-none disabled:opacity-60"
+              className="ui-button-primary inline-flex h-12 items-center gap-2 px-8 text-sm font-bold transition disabled:pointer-events-none disabled:opacity-60"
             >
               {isSubmitting ? (
                 <>

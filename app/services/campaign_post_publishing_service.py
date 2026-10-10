@@ -266,11 +266,7 @@ class CampaignPostPublishingService:
             business_account_id=(
                 business_account_id
             ),
-            timezone=getattr(
-                campaign,
-                "timezone",
-                "UTC",
-            ),
+            timezone="UTC",
             posts=scheduled_posts,
         )
 

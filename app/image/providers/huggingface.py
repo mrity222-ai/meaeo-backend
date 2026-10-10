@@ -5,6 +5,7 @@ from huggingface_hub import InferenceClient
 from app.image.base import BaseImageProvider
 from app.image.schemas import GeneratedImageResult
 from app.models.config import settings
+from app.services.admin_settings_service import provider_api_key
 
 
 class HuggingFaceImageProvider(BaseImageProvider):
@@ -25,7 +26,7 @@ class HuggingFaceImageProvider(BaseImageProvider):
                 model = "black-forest-labs/FLUX.1-schnell"
 
             image = InferenceClient(
-                api_key=settings.HF_TOKEN.get_secret_value(),
+                api_key=provider_api_key("image", "huggingface"),
             ).text_to_image(
                 prompt=prompt,
                 model=model,
@@ -44,8 +45,7 @@ class HuggingFaceImageProvider(BaseImageProvider):
                 prompt=prompt,
             )
         except Exception:
-            from app.image.providers.mock import MockImageProvider
-            return MockImageProvider().generate(prompt, output_path)
+            raise RuntimeError("Hugging Face image generation failed. Check provider configuration and retry.") from None
 
     async def agenerate(
         self,

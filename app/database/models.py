@@ -520,6 +520,8 @@ class BusinessProfile(DatabaseBase):
         nullable=True,
     )
 
+    pincode: Mapped[str | None] = mapped_column(String(32), nullable=True)
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
@@ -603,6 +605,8 @@ class BrandProfile(DatabaseBase):
         String(32),
         nullable=True,
     )
+
+    accent_color: Mapped[str | None] = mapped_column(String(32), nullable=True)
 
     logo_asset_id: Mapped[str | None] = mapped_column(
         ForeignKey(
@@ -812,6 +816,8 @@ class TargetAudience(DatabaseBase):
         String(5000),
         nullable=True,
     )
+
+    age_groups: Mapped[list | None] = mapped_column(JSON, nullable=True)
 
     age_min: Mapped[int | None] = mapped_column(
         Integer,
@@ -1249,6 +1255,10 @@ class CampaignPost(DatabaseBase):
     publishing_error: Mapped[str | None] = mapped_column(
         String(10000),
         nullable=True,
+    )
+
+    publications: Mapped[list["CampaignPostPublication"]] = relationship(
+        "CampaignPostPublication", lazy="selectin",
     )
 
     __table_args__ = (

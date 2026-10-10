@@ -1,11 +1,8 @@
+import { marketingMetadata } from "@/lib/marketing-metadata";
 import { MarketingLayout } from "@/components/layout/marketing-layout";
 import { ExamplesGallery } from "@/components/marketing/examples-gallery";
 
-export const metadata = {
-  title: "Examples & Showcase - maeaco AI Marketing",
-  description:
-    "Explore real reels, posts, and marketing campaigns created by maeaco AI for businesses across 20+ industries.",
-};
+export const metadata = marketingMetadata("/examples", "Examples & Showcase - maeaco AI Marketing", "Explore illustrative marketing image posts, captions and layout formats across business categories.");
 
 export default function ExamplesPage() {
   return (

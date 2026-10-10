@@ -1,6 +1,5 @@
-"use client";
-
 import Link from "next/link";
+import { HeroSignalBackground } from "./hero-signal-background";
 import {
   ArrowRight,
   Play,
@@ -30,62 +29,32 @@ export function HeroSection() {
       <div className="pointer-events-none absolute -right-28 top-12 h-[550px] w-[550px] rounded-full bg-gradient-to-bl from-purple-300/40 via-indigo-100/30 to-transparent blur-3xl" />
       <div className="pointer-events-none absolute left-1/2 bottom-0 h-[480px] w-[950px] -translate-x-1/2 rounded-full bg-gradient-to-t from-purple-200/40 via-fuchsia-100/25 to-transparent blur-3xl" />
 
-      {/* Floating Sparkle Stars */}
-      <div className="pointer-events-none absolute left-[12%] top-24 select-none text-purple-400/80 text-xl font-bold">
-        ✦
-      </div>
-      <div className="pointer-events-none absolute left-[7%] top-[52%] select-none text-purple-400/80 text-lg font-bold">
-        ✦
-      </div>
-      <div className="pointer-events-none absolute right-[15%] top-28 select-none text-purple-400/80 text-lg font-bold">
-        ✦
-      </div>
-      <div className="pointer-events-none absolute right-[11%] top-[56%] select-none text-purple-400/80 text-2xl font-bold">
-        ✦
-      </div>
+      <HeroSignalBackground />
 
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         
         {/* ========================================================================= */}
         {/* HERO HEADER: Headline, Subtitle, Buttons, App Store Badges */}
         {/* ========================================================================= */}
-        <div className="mx-auto max-w-4xl text-center">
+        <div className="marketing-hero-copy mx-auto max-w-4xl text-center">
           
           {/* Main Headline (Strictly 2 lines) */}
           <h1 className="tracking-tight text-center">
-            <span className="block text-[26px] min-[420px]:text-3xl sm:text-5xl md:text-6xl lg:text-[70px] font-black text-zinc-950 leading-tight sm:leading-[1.1] whitespace-nowrap">
-              Dominate Local SEO & Social.
+            <span className="block text-[26px] min-[420px]:text-3xl sm:text-5xl md:text-6xl lg:text-[60px] font-black text-zinc-950 leading-tight sm:leading-[1.1] break-words">
+              Your AI marketing team.
             </span>
-            <span className="mt-1 sm:mt-2 block text-[26px] min-[420px]:text-3xl sm:text-5xl md:text-6xl lg:text-[70px] font-black leading-tight sm:leading-[1.1] bg-gradient-to-r from-[#3B07B4] via-[#7B2CBF] to-[#D925A3] bg-clip-text text-transparent whitespace-nowrap">
-              Outrank Competitors Automatically.
+            <span className="mt-1 sm:mt-2 block text-[26px] min-[420px]:text-3xl sm:text-5xl md:text-6xl lg:text-[60px] font-black leading-tight sm:leading-[1.1] bg-gradient-to-r from-[#3B07B4] via-[#7B2CBF] to-[#D925A3] bg-clip-text text-transparent break-words">
+              Built for local businesses.
             </span>
           </h1>
 
           {/* Subtitle */}
           <p className="mx-auto mt-5 max-w-2xl text-base sm:text-lg font-normal text-zinc-600 leading-relaxed">
-            maeaco AI analyzes your top competitors, designs daily branded posts with your logo, optimizes your Google Business Profile, auto-replies to reviews 24/7, and boosts your organic reach.
+            Create posts with your catalogue and logo, schedule approved content across connected channels, and track available business performance.
           </p>
 
-          {/* 7 Core Feature Pills Bar */}
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
-            <span className="rounded-full bg-emerald-100 border border-emerald-200 px-3 py-1 text-[11px] font-bold text-emerald-800">
-              🔍 Local SEO #1 Ranking
-            </span>
-            <span className="rounded-full bg-amber-100 border border-amber-200 px-3 py-1 text-[11px] font-bold text-amber-800">
-              ⚔️ AI Competitor Intelligence
-            </span>
-            <span className="rounded-full bg-purple-100 border border-purple-200 px-3 py-1 text-[11px] font-bold text-purple-800">
-              🎨 Daily Post Design & Logo
-            </span>
-            <span className="rounded-full bg-blue-100 border border-blue-200 px-3 py-1 text-[11px] font-bold text-blue-800">
-              ⭐ 24/7 GMB Review Auto-Responder
-            </span>
-            <span className="rounded-full bg-indigo-100 border border-indigo-200 px-3 py-1 text-[11px] font-bold text-indigo-800">
-              📊 Analytics Optimization
-            </span>
-            <span className="rounded-full bg-teal-100 border border-teal-200 px-3 py-1 text-[11px] font-bold text-teal-800">
-              🚀 Organic Reach Growth
-            </span>
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-2 text-xs font-semibold text-purple-800">
+            {["Your catalogue & logo", "Scheduled publishing", "Platform analytics"].map((feature) => <span key={feature} className="rounded-full border border-purple-200 bg-purple-50 px-3 py-1.5">{feature}</span>)}
           </div>
 
           {/* CTA Buttons */}
@@ -94,7 +63,7 @@ export function HeroSection() {
               href="/signup"
               className="group inline-flex items-center gap-2.5 rounded-full bg-gradient-to-r from-[#6929E8] via-[#8527D6] to-[#D925A3] px-8 py-3.5 text-base font-semibold text-white shadow-lg shadow-purple-600/30 transition-all hover:opacity-95 hover:shadow-purple-600/45 hover:scale-[1.02]"
             >
-              <span>Start Free Trial</span>
+              <span>Get Started</span>
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </Link>
 
@@ -105,40 +74,18 @@ export function HeroSection() {
               <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[#6929E8] text-white shadow-sm">
                 <Play className="h-3 w-3 fill-current ml-0.5" />
               </div>
-              <span>Watch Demo</span>
+              <span>Explore Sample Preview</span>
             </a>
           </div>
 
-          {/* App Store & Google Play Badges */}
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
-            <a
-              href="#app-store"
-              className="inline-block transition-transform hover:scale-105"
-            >
-              <img
-                src="/badges/app-store.png"
-                alt="Download on the App Store"
-                className="h-10 sm:h-11 w-auto object-contain drop-shadow-sm"
-              />
-            </a>
-
-            <a
-              href="#google-play"
-              className="inline-block transition-transform hover:scale-105"
-            >
-              <img
-                src="/badges/google-play.png"
-                alt="GET IT ON Google Play"
-                className="h-10 sm:h-11 w-auto object-contain drop-shadow-sm"
-              />
-            </a>
-          </div>
+          <p className="mt-5 text-sm text-zinc-500">Use maeaco in your browser. Premium starts at ₹999/month.</p>
         </div>
 
         {/* ========================================================================= */}
         {/* CENTERPIECE: LAPTOP + SMARTPHONE + FLOATING CARDS & ARROWS */}
         {/* ========================================================================= */}
-        <div className="relative mt-12 sm:mt-16 pb-6">
+        <div className="relative mt-12 sm:mt-16 pb-6" aria-label="Illustrative product dashboard">
+          <p className="mb-6 text-center text-xs text-zinc-500">Sample dashboard · Illustrative numbers, not actual customer results</p>
 
           {/* ------------------------------------------------------------- */}
           {/* FLOATING CARD 1: TOP-LEFT ("Create branded content") */}

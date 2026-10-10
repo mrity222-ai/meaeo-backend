@@ -17,6 +17,7 @@ from app.database.models import (
     UserTenant,
 )
 from app.database.session import get_db
+from app.api.dependencies import get_current_admin
 from app.security.authentication import AuthenticationService, AuthenticatedUser
 
 router = APIRouter(
@@ -47,77 +48,60 @@ def resolve_support_user_and_tenant(
     db: Session,
 ) -> tuple[int, str]:
     """
-    Resolves (user_id, tenant_id) using:
-    1. Bearer JWT token in Authorization header.
-    2. X-Tenant-Id header if provided.
-    3. Active tenant and user in database as fallback.
+    Resolves authenticated (user_id, tenant_id) requiring valid JWT token.
     """
     auth_header = request.headers.get("Authorization")
-    if auth_header and auth_header.strip().lower().startswith("bearer "):
-        token = auth_header.strip().split(" ", 1)[1]
-        try:
-            user_id = AuthenticationService.decode_access_token(token)
-            user = db.scalar(select(User).where(User.id == user_id))
-            if user:
-                membership = db.scalar(
-                    select(UserTenant)
-                    .where(UserTenant.user_id == user.id, UserTenant.is_active == True)
-                    .order_by(UserTenant.id.asc())
-                )
-                if membership and membership.tenant:
-                    return (user.id, membership.tenant.tenant_id)
-                elif membership:
-                    t = db.scalar(select(Tenant).where(Tenant.id == membership.tenant_id))
-                    if t:
-                        return (user.id, t.tenant_id)
-                # If no membership record, try first tenant
-                t = db.scalar(select(Tenant).order_by(Tenant.id.asc()))
-                if t:
-                    return (user.id, t.tenant_id)
-        except Exception:
-            pass
+    if not auth_header or not auth_header.strip().lower().startswith("bearer "):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication required.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
-    # Check X-Tenant-Id header
-    x_tenant_id = request.headers.get("X-Tenant-Id")
+    token = auth_header.strip().split(" ", 1)[1]
+    try:
+        user_id = AuthenticationService.decode_access_token(token)
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    user = db.scalar(select(User).where(User.id == user_id))
+    if not user or not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User account inactive or not found.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    x_tenant_id = request.headers.get("X-Tenant-Id") or request.headers.get("x-tenant-id")
     if x_tenant_id:
-        t = db.scalar(select(Tenant).where(Tenant.tenant_id == x_tenant_id.strip()))
-        if t:
-            membership = db.scalar(
-                select(UserTenant)
-                .where(UserTenant.tenant_id == t.id, UserTenant.is_active == True)
-                .order_by(UserTenant.id.asc())
+        membership = db.scalar(
+            select(UserTenant)
+            .join(Tenant, Tenant.id == UserTenant.tenant_id)
+            .where(
+                UserTenant.user_id == user.id,
+                UserTenant.is_active == True,
+                Tenant.tenant_id == x_tenant_id.strip(),
             )
-            if membership:
-                return (membership.user_id, t.tenant_id)
-            u = db.scalar(select(User).order_by(User.id.asc()))
-            if u:
-                return (u.id, t.tenant_id)
-
-    # Fallback to first active tenant and user in DB
-    t = db.scalar(select(Tenant).order_by(Tenant.id.asc()))
-    if not t:
-        # Create a default tenant if empty
-        t = Tenant(
-            tenant_id="tenant_default_001",
-            name="Default Workspace",
-            is_active=True,
         )
-        db.add(t)
-        db.commit()
-        db.refresh(t)
+        if membership and membership.tenant:
+            return (user.id, membership.tenant.tenant_id)
 
-    u = db.scalar(select(User).order_by(User.id.asc()))
-    if not u:
-        u = User(
-            email="support-user@workspace.local",
-            hashed_password="hashed_placeholder_pwd",
-            is_active=True,
-        )
-        db.add(u)
-        db.commit()
-        db.refresh(u)
+    membership = db.scalar(
+        select(UserTenant)
+        .where(UserTenant.user_id == user.id, UserTenant.is_active == True)
+        .order_by(UserTenant.id.asc())
+    )
+    if membership and membership.tenant:
+        return (user.id, membership.tenant.tenant_id)
 
-    return (u.id, t.tenant_id)
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="User does not have an active workspace tenant.",
+    )
 
 
 @router.post("/tickets")
@@ -177,22 +161,12 @@ def list_user_tickets(
         .order_by(SupportTicket.id.desc())
     ).all()
 
-    # If tenant has no tickets, also return all if single tenant or demo
-    if not tickets:
-        tickets = db.scalars(
-            select(SupportTicket).order_by(SupportTicket.id.desc())
-        ).all()
-
     result = []
     for t in tickets:
         last_msg = db.scalar(
             select(SupportMessage)
             .where(SupportMessage.ticket_id == t.id)
             .order_by(SupportMessage.id.desc())
-        )
-        msg_count = db.scalar(
-            select(SupportMessage)
-            .where(SupportMessage.ticket_id == t.id)
         )
         result.append(
             {
@@ -216,7 +190,8 @@ def get_ticket_details(
     request: Request,
     db: Session = Depends(get_db),
 ) -> dict[str, Any]:
-    # Support lookup by integer ID or ticket_number
+    user_id, tenant_id = resolve_support_user_and_tenant(request, db)
+
     query = select(SupportTicket)
     if ticket_id.isdigit():
         query = query.where(SupportTicket.id == int(ticket_id))
@@ -225,7 +200,7 @@ def get_ticket_details(
 
     ticket = db.scalar(query)
 
-    if not ticket:
+    if not ticket or (ticket.tenant_id != tenant_id and ticket.user_id != user_id):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Support ticket '{ticket_id}' not found.",
@@ -284,7 +259,7 @@ def reply_to_ticket(
     request: Request,
     db: Session = Depends(get_db),
 ) -> dict[str, Any]:
-    user_id, _ = resolve_support_user_and_tenant(request, db)
+    user_id, tenant_id = resolve_support_user_and_tenant(request, db)
 
     query = select(SupportTicket)
     if ticket_id.isdigit():
@@ -294,7 +269,7 @@ def reply_to_ticket(
 
     ticket = db.scalar(query)
 
-    if not ticket:
+    if not ticket or (ticket.tenant_id != tenant_id and ticket.user_id != user_id):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Support ticket '{ticket_id}' not found.",
@@ -331,6 +306,7 @@ def reply_to_ticket(
 @router.get("/admin/all-tickets")
 def admin_list_all_tickets(
     status_filter: str | None = None,
+    admin: AuthenticatedUser = Depends(get_current_admin),
     db: Session = Depends(get_db),
 ) -> list[dict[str, Any]]:
     query = select(SupportTicket).order_by(SupportTicket.id.desc())
@@ -386,6 +362,7 @@ def admin_update_ticket(
     ticket_id: str,
     body: AdminUpdateTicketRequest,
     request: Request,
+    admin: AuthenticatedUser = Depends(get_current_admin),
     db: Session = Depends(get_db),
 ) -> dict[str, Any]:
     query = select(SupportTicket)

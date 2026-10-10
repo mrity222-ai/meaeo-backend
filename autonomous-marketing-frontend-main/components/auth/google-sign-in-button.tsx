@@ -58,6 +58,18 @@ export function GoogleSignInButton({
   const buttonRef = useRef<HTMLDivElement>(null);
   const callbackRef = useRef(handler);
   const [scriptReady, setScriptReady] = useState(false);
+  const [buttonWidth, setButtonWidth] = useState(320);
+
+  useEffect(() => {
+    const element = buttonRef.current;
+    if (!element) return;
+    const observer = new ResizeObserver(([entry]) => {
+      const width = Math.floor(entry.contentRect.width);
+      if (width > 0) setButtonWidth(Math.min(320, width));
+    });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
   const [clientId, setClientId] = useState<string>(
     process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "",
   );
@@ -148,17 +160,16 @@ export function GoogleSignInButton({
       text: "continue_with",
       shape: "rectangular",
       logo_alignment: "left",
-      width: 320,
+      width: buttonWidth,
     });
-  }, [scriptReady, clientId]);
+  }, [scriptReady, clientId, buttonWidth]);
 
   return (
     <div
-      className={
-        disabled ? "pointer-events-none opacity-60" : "flex justify-center"
-      }
+      aria-disabled={disabled}
+      className={`auth-google-button flex justify-center ${disabled ? "pointer-events-none opacity-60" : ""}`}
     >
-      <div ref={buttonRef} className="flex min-h-[44px] justify-center" />
+      <div ref={buttonRef} className="flex w-full min-w-0 min-h-[44px] justify-center" />
     </div>
   );
 }

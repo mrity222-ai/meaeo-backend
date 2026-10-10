@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import time
+from typing import Literal
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 
@@ -128,6 +129,7 @@ def upload_catalogue_asset(
         gt=0,
     ),
     file: UploadFile = File(...),
+    source: Literal["catalogue", "logo"] = Query(default="catalogue"),
     tenant: TenantContext = Depends(
         get_current_tenant
     ),
@@ -155,27 +157,6 @@ def upload_catalogue_asset(
             tenant_id=tenant.tenant_id,
             business_account_id=business_account_id,
         )
-
-        # Enforce the catalogue image count.
-        current_count = db.scalar(
-            select(func.count(Asset.id)).where(
-                Asset.tenant_id == tenant.tenant_id,
-                Asset.business_account_id
-                == business_account_id,
-                Asset.status != "deleted",
-            )
-        ) or 0
-
-        if current_count >= settings.ASSET_MAX_IMAGES:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=(
-                    "This Business Account has reached "
-                    f"the maximum of "
-                    f"{settings.ASSET_MAX_IMAGES} "
-                    "catalogue images."
-                ),
-            )
 
         with NamedTemporaryFile(
             suffix=suffix,
@@ -210,11 +191,20 @@ def upload_catalogue_asset(
 
                 temp.write(chunk)
 
+        if source == "catalogue":
+            # Count only products. A retry of an existing image is allowed at the limit.
+            product_query = service.catalogue_statement(tenant.tenant_id, business_account_id)
+            duplicate = db.scalar(product_query.where(Asset.sha256 == service._hash_file(temp_path)))
+            current_count = db.scalar(select(func.count()).select_from(product_query.subquery())) or 0
+            if duplicate is None and current_count >= settings.ASSET_MAX_IMAGES:
+                raise HTTPException(409, "This Business Account has reached its catalogue image limit.")
+
         asset = service.register_file(
             tenant_id=tenant.tenant_id,
             business_account_id=business_account_id,
             source_path=temp_path,
-            source="catalogue",
+            source=source,
+            original_filename=filename,
         )
 
         image_url = service.build_signed_url(
@@ -282,21 +272,12 @@ def list_assets(
 ):
     service = AssetService(db)
 
-    assets = list(
-        db.scalars(
-            select(Asset)
-            .where(
-                Asset.tenant_id
-                == tenant.tenant_id,
-                Asset.business_account_id
-                == business_account_id,
-                Asset.status != "deleted",
-            )
-            .order_by(
-                Asset.created_at.desc()
-            )
-        ).all()
-    )
+    try:
+        service.validate_business_account_access(tenant_id=tenant.tenant_id, business_account_id=business_account_id)
+    except ValueError:
+        raise HTTPException(404, "Active business not found for this tenant") from None
+    assets = list(db.scalars(service.catalogue_statement(tenant.tenant_id, business_account_id)
+        .order_by(Asset.created_at.desc())).all())
 
     return [
         AssetResponse(

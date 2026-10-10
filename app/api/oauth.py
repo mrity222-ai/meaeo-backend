@@ -17,7 +17,7 @@ from sqlalchemy.orm import Session
 
 from app.security.oauth.meta import parse_signed_request
 
-from app.database.models import BusinessChannel
+from app.database.models import BusinessChannel, StorageDocument
 from app.database.session import get_db
 from app.models.config import settings
 from app.repositories.business_account_repository import (
@@ -1763,6 +1763,57 @@ async def get_business_account_channels(
     }
 
 
+@business_account_router.post(
+    "/{business_account_id}/channels/{platform}/disconnect"
+)
+@business_account_router.delete(
+    "/{business_account_id}/channels/{platform}"
+)
+async def disconnect_business_account_channel(
+    business_account_id: int,
+    platform: str,
+    db: Session = Depends(get_db),
+    current_tenant: TenantContext = Depends(get_current_tenant),
+):
+    """
+    Disconnect a publishing channel for a BusinessAccount.
+    """
+    platform = platform.strip().lower().replace("-", "_")
+
+    stmt = select(BusinessChannel).where(
+        BusinessChannel.tenant_id == current_tenant.tenant_id,
+        BusinessChannel.business_account_id == business_account_id,
+        BusinessChannel.platform == platform,
+    )
+    channel = db.scalar(stmt)
+
+    if not channel:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No connected {platform} channel found.",
+        )
+
+    channel.status = "disconnected"
+    channel.is_enabled = False
+    db.commit()
+
+    try:
+        credential_service = build_credential_service()
+        credential_service.delete(
+            context=current_tenant,
+            platform=platform,
+        )
+    except Exception:
+        pass
+
+    return {
+        "success": True,
+        "business_account_id": business_account_id,
+        "platform": platform,
+        "message": f"{platform.title()} channel disconnected successfully.",
+    }
+
+
 # ---------------------------------------------------------
 # LinkedIn pending account selection
 # ---------------------------------------------------------
@@ -2084,9 +2135,16 @@ async def meta_data_deletion_callback(
     for channel in channels:
         if channel.platform_metadata and channel.platform_metadata.get("meta_user_id") == user_id:
             channel.status = "deleted"
+            channel.is_enabled = False
+    # Disconnection alone does not prove all tokens and cached assets were purged.
+    db.add(StorageDocument(storage_key=f"oauth/deletion/{confirmation_code}", data={
+        "confirmation_code": confirmation_code,
+        "status": "PROCESSING",
+        "message": "Request received. Connected channels have been disabled; complete data cleanup has not yet been verified.",
+    }))
     db.commit()
 
-    status_url = f"{FRONTEND_APP_URL}/oauth/deletion-status?code={confirmation_code}"
+    status_url = f"{FRONTEND_APP_URL}/data-deletion?code={confirmation_code}"
 
     return {
         "url": status_url,
@@ -2095,17 +2153,15 @@ async def meta_data_deletion_callback(
 
 
 @oauth_router.get("/deletion-status")
-async def meta_deletion_status(code: str = Query(...)):
+async def meta_deletion_status(code: str = Query(..., min_length=1, max_length=100), db: Session = Depends(get_db)):
     """
     Public Endpoint to inspect data deletion request status.
     Required by Meta App Review compliance guidelines.
     """
-    return {
-        "success": True,
-        "confirmation_code": code,
-        "status": "COMPLETED",
-        "message": "All user tokens, channel connections, and cached assets for this Meta account have been successfully deleted.",
-    }
+    record = db.get(StorageDocument, f"oauth/deletion/{code.strip()}")
+    if not record:
+        raise HTTPException(404, "No deletion request was found for this confirmation code.")
+    return {"success": True, **record.data}
 
 
 # ---------------------------------------------------------

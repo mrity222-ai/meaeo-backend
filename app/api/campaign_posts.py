@@ -36,6 +36,16 @@ router = APIRouter(
 )
 
 
+class PostPublicationResponse(BaseModel):
+    platform: str
+    business_channel_id: int
+    status: str
+    attempts: int
+    external_id: str | None = None
+    last_error: str | None = None
+    model_config = {"from_attributes": True}
+
+
 class CampaignPostResponse(BaseModel):
 
     id: int
@@ -61,6 +71,14 @@ class CampaignPostResponse(BaseModel):
     image_url: str | None = None
 
     review_status: str
+    publications: list[PostPublicationResponse] = Field(default_factory=list)
+    publish_status: str
+    scheduled_for: datetime | None = None
+    published_at: datetime | None = None
+    next_retry_at: datetime | None = None
+    publish_attempts: int
+    publishing_error: str | None = None
+    external_ids: dict[str, str] | None = None
     rejection_reason: str | None = None
 
     created_at: datetime
@@ -468,7 +486,7 @@ def generate_preview_posts(
         select(BusinessProfile).where(BusinessProfile.tenant_id == tenant.tenant_id)
     )
     biz_name = (bp.business_name if bp and bp.business_name else "maeaco Client Business")
-    biz_industry = (bp.industry_type if bp and bp.industry_type else "Retail & Services")
+    biz_industry = (bp.category if bp and hasattr(bp, "category") and bp.category else (getattr(bp, "industry_type", None) or "Retail & Services"))
 
     # 3. Generate 2 AI Posts using Gemini Provider / Registry fallback
     user_prompt = payload.prompt_override or f"Generate 2 high-converting social media posts for brand '{biz_name}' in '{biz_industry}'."

@@ -54,6 +54,14 @@ export type CampaignPostResponse = {
   image_path: string | null;
   image_url: string | null;
 
+  publish_status: "pending" | "processing" | "published" | "failed" | "reconciliation_required";
+  scheduled_for: string | null;
+  published_at: string | null;
+  next_retry_at: string | null;
+  publish_attempts: number;
+  publishing_error: string | null;
+  external_ids: Record<string, string> | null;
+  publications: { platform: string; business_channel_id: number; status: string; attempts: number; external_id: string | null; last_error: string | null }[];
   review_status: string;
   rejection_reason: string | null;
 
@@ -432,4 +440,15 @@ export async function scheduleCampaignPost(
       body: JSON.stringify(data),
     },
   );
+}
+export function postDisplayStatus(post: CampaignPostResponse, executionMode?: ExecutionMode): string {
+  if (post.publish_status === "published") return "Published";
+  if (post.publish_status === "processing") return "Processing";
+  if (post.publish_status === "failed") return "Failed";
+  if (post.publish_status === "reconciliation_required") return "Reconciliation required";
+  if (post.review_status === "rejected") return "Rejected";
+  if (post.review_status === "draft") return "Draft";
+  if (post.review_status !== "approved" && executionMode !== "autonomous") return "Pending approval";
+  if (post.next_retry_at) return "Retry scheduled";
+  return post.scheduled_for ? "Scheduled" : "Approved";
 }

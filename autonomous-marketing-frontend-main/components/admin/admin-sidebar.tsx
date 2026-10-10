@@ -34,7 +34,7 @@ export function AdminSidebar({ open = false, onClose = () => {} }: AdminSidebarP
       <aside
         className={[
           "fixed inset-y-0 left-0 z-50 flex w-[260px] flex-col",
-          "border-r border-neutral-200 bg-neutral-950 text-white",
+          "border-r border-border bg-neutral-950 text-white",
           "transition-transform duration-200",
           open ? "translate-x-0" : "-translate-x-full",
           "md:translate-x-0",
@@ -110,18 +110,10 @@ export function AdminSidebar({ open = false, onClose = () => {} }: AdminSidebarP
           ))}
         </div>
 
-        {/* Bottom System Status */}
         <div className="border-t border-neutral-800 p-4">
-          <div className="flex items-center gap-3 rounded-xl bg-neutral-900 p-3 border border-neutral-800">
-            <div className="relative flex h-2.5 w-2.5 items-center justify-center">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
-            </div>
-            <div className="min-w-0">
-              <p className="truncate text-xs font-semibold text-neutral-200">System Healthy</p>
-              <p className="truncate text-[10px] text-neutral-400">FastAPI & Workers Online</p>
-            </div>
-          </div>
+          <Link href="/admin/system/health" onClick={onClose} className="ui-button-primary block border border-neutral-800 p-3 text-sm">
+            View system health <span aria-hidden="true">→</span>
+          </Link>
         </div>
       </aside>
     </>

@@ -1,35 +1,23 @@
+import { marketingMetadata } from "@/lib/marketing-metadata";
+import { MarketingPageHero } from "@/components/marketing/marketing-page-hero";
 import { MarketingLayout } from "@/components/layout/marketing-layout";
 import { RefreshCw, CreditCard, Clock, HelpCircle, CheckCircle2, Building2 } from "lucide-react";
 
-export const metadata = {
-  title: "Refund & Cancellation Policy - maeaco by Aveda Technologies",
-  description: "Refund Policy and Subscription Cancellation terms for maeaco platform, operated by Aveda Technologies.",
-};
+export const metadata = marketingMetadata("/refund-policy", "Refund & Cancellation Policy - maeaco by Aveda Technologies", "Refund Policy and Subscription Cancellation terms for maeaco platform, operated by Aveda Technologies.");
 
 export default function RefundPolicyPage() {
   return (
     <MarketingLayout>
-      <div className="bg-gradient-to-b from-purple-50/50 to-white py-16 lg:py-24">
-        <div className="mx-auto max-w-4xl px-6 lg:px-8">
-          {/* Header */}
-          <div className="text-center">
-            <div className="inline-flex items-center gap-2 rounded-full border border-purple-200 bg-purple-50 px-3 py-1 text-xs font-semibold text-purple-700">
-              <RefreshCw className="h-4 w-4" />
-              <span>Billing & Payments</span>
-            </div>
-            <h1 className="mt-4 text-3xl font-black tracking-tight text-zinc-900 sm:text-5xl">
-              Refund & Cancellation Policy
-            </h1>
-            <p className="mt-3 text-base text-zinc-600">
-              Transparent rules regarding subscription cancellations, money-back guarantees, and refund processing for <strong>maeaco</strong> services operated by{" "}
+      <MarketingPageHero label="Billing & Payments" title="Refund & Cancellation Policy" description={<>Transparent rules regarding subscription cancellations, money-back guarantees, and refund processing for <strong>maeaco</strong> services operated by{" "}
               <a href="https://www.avedatechnologies.com" target="_blank" rel="noopener noreferrer" className="text-purple-600 font-bold underline">
                 Aveda Technologies
-              </a>.
-            </p>
-          </div>
+              </a>.</>} />
+      <div className="marketing-public-content bg-white py-12 lg:py-16">
+        <div className="mx-auto max-w-4xl px-6 lg:px-8">
+
 
           {/* Policy Content */}
-          <div className="mt-12 space-y-10 text-zinc-700 leading-relaxed text-sm lg:text-base">
+          <div className="space-y-6 text-zinc-700 leading-relaxed text-sm lg:text-base">
 
             {/* Merchant Entity Statement */}
             <section className="rounded-2xl border-2 border-purple-200 bg-purple-50/50 p-6 shadow-sm sm:p-8">

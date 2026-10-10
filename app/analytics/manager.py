@@ -3,21 +3,12 @@ from datetime import date
 from app.analytics.aggregator import (
     AnalyticsAggregator,
 )
-from app.analytics.providers.mock import (
-    MockAnalyticsProvider,
-)
-from app.analytics.registry import (
-    AnalyticsRegistry,
-)
-from app.analytics.result import (
-    AnalyticsResult,
-)
-from app.repositories.analytics_repository import (
-    AnalyticsRepository,
-)
-from app.schemas.publishing import (
-    PublishingResult,
-)
+from app.analytics.providers.live import LiveAnalyticsProvider
+from app.analytics.providers.mock import MockAnalyticsProvider
+from app.analytics.registry import AnalyticsRegistry
+from app.analytics.result import AnalyticsResult
+from app.repositories.analytics_repository import AnalyticsRepository
+from app.schemas.publishing import PublishingResult
 
 
 class AnalyticsManager:
@@ -27,30 +18,29 @@ class AnalyticsManager:
 
     @classmethod
     def _initialize(cls):
-
         if cls._initialized:
             return
 
-        provider = MockAnalyticsProvider()
+        AnalyticsRegistry.register(MockAnalyticsProvider())
+        AnalyticsRegistry.register(LiveAnalyticsProvider())
 
-        AnalyticsRegistry.register(
-            provider
-        )
-
-        cls._repository = (
-            AnalyticsRepository()
-        )
-
+        cls._repository = AnalyticsRepository()
         cls._initialized = True
 
     @classmethod
-    def get_provider(cls):
-
+    def get_provider(cls, name: str | None = None):
         cls._initialize()
+        if name:
+            try:
+                return AnalyticsRegistry.get(name)
+            except (KeyError, ValueError):
+                pass
 
-        return AnalyticsRegistry.get(
-            "mock"
-        )
+        from app.models.config import settings
+        publish_provider = getattr(settings, "PUBLISH_PROVIDER", "mock").lower()
+        if publish_provider in ("live", "production", "real", "facebook", "meta", "google", "instagram", "linkedin"):
+            return AnalyticsRegistry.get("live")
+        return AnalyticsRegistry.get("mock")
 
     @classmethod
     def get_repository(
@@ -86,6 +76,8 @@ class AnalyticsManager:
             )
 
         provider = cls.get_provider()
+        if isinstance(provider, LiveAnalyticsProvider):
+            provider = LiveAnalyticsProvider(tenant_id=tenant_id)
 
         result = provider.collect(
             campaign_name,
@@ -143,6 +135,8 @@ class AnalyticsManager:
             )
 
         provider = cls.get_provider()
+        if isinstance(provider, LiveAnalyticsProvider):
+            provider = LiveAnalyticsProvider(tenant_id=tenant_id)
 
         result = await provider.acollect(
             campaign_name,

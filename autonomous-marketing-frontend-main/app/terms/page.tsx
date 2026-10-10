@@ -1,35 +1,23 @@
+import { marketingMetadata } from "@/lib/marketing-metadata";
+import { MarketingPageHero } from "@/components/marketing/marketing-page-hero";
 import { MarketingLayout } from "@/components/layout/marketing-layout";
 import { FileCheck, ShieldAlert, CreditCard, Scale, CheckCircle2, Building2 } from "lucide-react";
 
-export const metadata = {
-  title: "Terms of Service - maeaco by Aveda Technologies",
-  description: "Terms of Service and Acceptable Use Policy for maeaco Autonomous AI Marketing System, a product of Aveda Technologies.",
-};
+export const metadata = marketingMetadata("/terms", "Terms of Service - maeaco by Aveda Technologies", "Terms of Service and Acceptable Use Policy for maeaco Autonomous AI Marketing System, a product of Aveda Technologies.");
 
 export default function TermsOfServicePage() {
   return (
     <MarketingLayout>
-      <div className="bg-gradient-to-b from-purple-50/50 to-white py-16 lg:py-24">
-        <div className="mx-auto max-w-4xl px-6 lg:px-8">
-          {/* Header */}
-          <div className="text-center">
-            <div className="inline-flex items-center gap-2 rounded-full border border-purple-200 bg-purple-50 px-3 py-1 text-xs font-semibold text-purple-700">
-              <FileCheck className="h-4 w-4" />
-              <span>Legal Agreement</span>
-            </div>
-            <h1 className="mt-4 text-3xl font-black tracking-tight text-zinc-900 sm:text-5xl">
-              Terms of Service
-            </h1>
-            <p className="mt-3 text-base text-zinc-600">
-              Effective Date: September 29, 2026. <strong>maeaco</strong> is owned and operated by{" "}
+      <MarketingPageHero label="Legal Agreement" title="Terms of Service" description={<>Effective Date: September 29, 2026. <strong>maeaco</strong> is owned and operated by{" "}
               <a href="https://www.avedatechnologies.com" target="_blank" rel="noopener noreferrer" className="text-purple-600 font-bold underline">
                 Aveda Technologies
-              </a>.
-            </p>
-          </div>
+              </a>.</>} />
+      <div className="marketing-public-content bg-white py-12 lg:py-16">
+        <div className="mx-auto max-w-4xl px-6 lg:px-8">
+
 
           {/* Policy Content */}
-          <div className="mt-12 space-y-10 text-zinc-700 leading-relaxed text-sm lg:text-base">
+          <div className="space-y-6 text-zinc-700 leading-relaxed text-sm lg:text-base">
 
             {/* Corporate Entity Notice */}
             <section className="rounded-2xl border-2 border-purple-200 bg-purple-50/50 p-6 shadow-sm sm:p-8">

@@ -3,6 +3,7 @@ from typing import Any
 
 from app.models.base import BaseProvider
 from app.models.config import settings
+from app.services.admin_settings_service import provider_api_key
 
 
 class AnthropicTextResponse:
@@ -14,11 +15,7 @@ class AnthropicTextResponse:
 class AnthropicProvider(BaseProvider):
 
     def __init__(self, model: str):
-        self.api_key = (
-            settings.ANTHROPIC_API_KEY.get_secret_value()
-            if hasattr(settings.ANTHROPIC_API_KEY, "get_secret_value")
-            else str(settings.ANTHROPIC_API_KEY or "")
-        )
+        self.api_key = provider_api_key("text", "anthropic")
         self.model = model or "claude-3-5-sonnet-20241022"
         self.base_url = "https://api.anthropic.com/v1/messages"
 

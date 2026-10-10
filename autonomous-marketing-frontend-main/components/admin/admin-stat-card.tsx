@@ -9,15 +9,15 @@ export function AdminStatCard({
   icon: Icon,
 }: AdminStatCardProps) {
   return (
-    <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm transition hover:shadow-md">
+    <div className="rounded-2xl border border-border bg-card p-5 shadow-sm transition hover:shadow-md">
       <div className="flex items-center justify-between">
-        <p className="text-xs font-medium text-neutral-500">{title}</p>
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-purple-50 text-purple-700 border border-purple-100">
+        <p className="text-xs font-medium text-muted-foreground">{title}</p>
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-purple-50 text-purple-700 border border-border">
           <Icon size={18} />
         </div>
       </div>
 
-      <p className="mt-3 text-2xl font-bold tracking-tight text-neutral-950 sm:text-3xl">
+      <p className="mt-3 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
         {value}
       </p>
 
@@ -36,7 +36,7 @@ export function AdminStatCard({
               {change}
             </span>
           )}
-          {description && <span className="text-neutral-500">{description}</span>}
+          {description && <span className="text-muted-foreground">{description}</span>}
         </div>
       )}
     </div>

@@ -63,6 +63,9 @@ def run_campaign(
             )
         )
 
+        if request.brand_name is not None and request.brand_name != onboarding.brand.brand_name:
+            raise ValueError("brand_name must match the selected business brand.")
+
         state = {
             "tenant_id": tenant.tenant_id,
 
@@ -71,8 +74,9 @@ def run_campaign(
             ),
 
             "user_input": request.user_input,
+            "image_strategy": request.image_strategy,
 
-            "brand_name": request.brand_name,
+            "brand_name": onboarding.brand.brand_name,
 
             "campaign_context": (
                 campaign_context

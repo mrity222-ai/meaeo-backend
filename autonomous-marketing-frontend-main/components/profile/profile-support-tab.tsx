@@ -171,8 +171,8 @@ export function ProfileSupportTab() {
       {/* Top Header & Actions */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-base font-semibold text-neutral-950">Help & Support Desk</h2>
-          <p className="text-xs text-neutral-500">
+          <h2 className="text-base font-semibold text-foreground">Help & Support Desk</h2>
+          <p className="text-xs text-muted-foreground">
             Submit inquiries, track existing tickets, and get assistance from our team.
           </p>
         </div>
@@ -181,14 +181,14 @@ export function ProfileSupportTab() {
           <button
             onClick={() => fetchTickets(true)}
             disabled={refreshing}
-            className="inline-flex h-9 items-center gap-2 rounded-xl border border-neutral-200 bg-white px-3.5 text-xs font-semibold text-neutral-800 hover:bg-neutral-50 transition"
+            className="ui-button-secondary inline-flex h-9 items-center gap-2 border border-border px-3.5 text-xs font-semibold transition"
           >
             <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} />
             Sync
           </button>
           <button
             onClick={() => setIsCreateOpen(true)}
-            className="inline-flex h-9 items-center gap-2 rounded-xl bg-neutral-950 px-4 text-xs font-semibold text-white hover:bg-neutral-800 transition shadow-xs"
+            className="ui-button-primary inline-flex h-9 items-center gap-2 px-4 text-xs font-semibold transition"
           >
             <Plus size={15} />
             Raise New Ticket
@@ -205,7 +205,7 @@ export function ProfileSupportTab() {
 
       {/* Support Direct Contact Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="rounded-xl border border-neutral-200 bg-white p-4 shadow-xs">
+        <div className="rounded-xl border border-border bg-card p-4 shadow-xs">
           <div className="flex items-center gap-2 text-neutral-900 font-semibold text-xs">
             <Headphones size={15} className="text-blue-600" />
             Direct Support Email
@@ -214,7 +214,7 @@ export function ProfileSupportTab() {
           <p className="text-[11px] text-neutral-400 mt-0.5">Average response time: &lt; 2 hours</p>
         </div>
 
-        <div className="rounded-xl border border-neutral-200 bg-white p-4 shadow-xs">
+        <div className="rounded-xl border border-border bg-card p-4 shadow-xs">
           <div className="flex items-center gap-2 text-neutral-900 font-semibold text-xs">
             <Clock3 size={15} className="text-emerald-600" />
             Support Hours
@@ -223,7 +223,7 @@ export function ProfileSupportTab() {
           <p className="text-[11px] text-neutral-400 mt-0.5">Critical tickets handled 24/7</p>
         </div>
 
-        <div className="rounded-xl border border-neutral-200 bg-white p-4 shadow-xs">
+        <div className="rounded-xl border border-border bg-card p-4 shadow-xs">
           <div className="flex items-center gap-2 text-neutral-900 font-semibold text-xs">
             <LifeBuoy size={15} className="text-purple-600" />
             System Status
@@ -237,11 +237,11 @@ export function ProfileSupportTab() {
       </div>
 
       {/* Tickets Management Section */}
-      <div className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-xs">
+      <div className="rounded-2xl border border-border bg-card p-6 shadow-xs">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
             <Ticket size={18} className="text-neutral-900" />
-            <h3 className="text-sm font-bold text-neutral-950">Your Tickets History</h3>
+            <h3 className="text-sm font-bold text-foreground">Your Tickets History</h3>
             <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-[11px] font-semibold text-neutral-700">
               {filteredTickets.length}
             </span>
@@ -255,14 +255,14 @@ export function ProfileSupportTab() {
                 placeholder="Search ticket..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-8 w-44 rounded-lg border border-neutral-200 pl-8 pr-3 text-xs focus:border-neutral-950 focus:outline-none"
+                className="h-8 w-44 rounded-lg border border-border pl-8 pr-3 text-xs focus:border-neutral-950 focus:outline-none"
               />
             </div>
 
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="h-8 rounded-lg border border-neutral-200 px-2.5 text-xs text-neutral-700 focus:border-neutral-950 focus:outline-none"
+              className="h-8 rounded-lg border border-border px-2.5 text-xs text-neutral-700 focus:border-neutral-950 focus:outline-none"
             >
               <option value="all">All Status</option>
               <option value="open">Open</option>
@@ -278,7 +278,7 @@ export function ProfileSupportTab() {
             <Loader2 className="animate-spin text-neutral-400" size={24} />
           </div>
         ) : filteredTickets.length === 0 ? (
-          <div className="mt-6 rounded-xl border border-dashed border-neutral-200 p-8 text-center">
+          <div className="mt-6 rounded-xl border border-dashed border-border p-8 text-center">
             <MessageSquare className="mx-auto text-neutral-300" size={32} />
             <p className="mt-2 text-xs font-semibold text-neutral-700">No support tickets found</p>
             <p className="text-[11px] text-neutral-400">
@@ -295,12 +295,12 @@ export function ProfileSupportTab() {
               >
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
-                    <span className="font-mono text-xs font-semibold text-neutral-500">#{t.id}</span>
+                    <span className="font-mono text-xs font-semibold text-muted-foreground">#{t.id}</span>
                     <p className="text-xs font-bold text-neutral-900 hover:text-blue-600 transition">
                       {t.subject}
                     </p>
                   </div>
-                  <div className="flex items-center gap-2 text-[11px] text-neutral-500">
+                  <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
                     <span>Category: {t.category}</span>
                     <span>•</span>
                     <span>Priority: {t.priority.toUpperCase()}</span>
@@ -334,11 +334,11 @@ export function ProfileSupportTab() {
       {/* CREATE TICKET MODAL */}
       {isCreateOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs">
-          <div className="w-full max-w-lg rounded-2xl border border-neutral-200 bg-white p-6 shadow-xl animate-in fade-in zoom-in-95">
+          <div className="w-full max-w-lg rounded-2xl border border-border bg-card p-6 shadow-xl animate-in fade-in zoom-in-95">
             <div className="flex items-center justify-between border-b border-neutral-100 pb-3">
               <div className="flex items-center gap-2">
                 <LifeBuoy className="text-neutral-900" size={18} />
-                <h3 className="text-base font-bold text-neutral-950">Submit Support Ticket</h3>
+                <h3 className="text-base font-bold text-foreground">Submit Support Ticket</h3>
               </div>
               <button
                 onClick={() => setIsCreateOpen(false)}
@@ -351,8 +351,8 @@ export function ProfileSupportTab() {
             {createSuccess ? (
               <div className="py-8 text-center">
                 <CheckCircle2 className="mx-auto text-emerald-600" size={40} />
-                <p className="mt-3 text-sm font-bold text-neutral-950">Ticket Created Successfully!</p>
-                <p className="mt-1 text-xs text-neutral-500">Our engineering team has received your ticket.</p>
+                <p className="mt-3 text-sm font-bold text-foreground">Ticket Created Successfully!</p>
+                <p className="mt-1 text-xs text-muted-foreground">Our engineering team has received your ticket.</p>
               </div>
             ) : (
               <form onSubmit={handleCreateTicket} className="mt-4 space-y-4">
@@ -370,7 +370,7 @@ export function ProfileSupportTab() {
                     placeholder="Brief description of the issue"
                     value={createSubject}
                     onChange={(e) => setCreateSubject(e.target.value)}
-                    className="mt-1.5 h-10 w-full rounded-xl border border-neutral-200 px-3 text-xs text-neutral-900 focus:border-neutral-950 focus:outline-none"
+                    className="mt-1.5 h-10 w-full rounded-xl border border-border px-3 text-xs text-neutral-900 focus:border-neutral-950 focus:outline-none"
                   />
                 </div>
 
@@ -380,7 +380,7 @@ export function ProfileSupportTab() {
                     <select
                       value={createCategory}
                       onChange={(e) => setCreateCategory(e.target.value as TicketCategory)}
-                      className="mt-1.5 h-10 w-full rounded-xl border border-neutral-200 px-2.5 text-xs text-neutral-900 focus:border-neutral-950 focus:outline-none"
+                      className="mt-1.5 h-10 w-full rounded-xl border border-border px-2.5 text-xs text-neutral-900 focus:border-neutral-950 focus:outline-none"
                     >
                       {CATEGORIES.map((c) => (
                         <option key={c} value={c}>
@@ -395,7 +395,7 @@ export function ProfileSupportTab() {
                     <select
                       value={createPriority}
                       onChange={(e) => setCreatePriority(e.target.value as TicketPriority)}
-                      className="mt-1.5 h-10 w-full rounded-xl border border-neutral-200 px-2.5 text-xs text-neutral-900 focus:border-neutral-950 focus:outline-none"
+                      className="mt-1.5 h-10 w-full rounded-xl border border-border px-2.5 text-xs text-neutral-900 focus:border-neutral-950 focus:outline-none"
                     >
                       {PRIORITIES.map((p) => (
                         <option key={p.value} value={p.value}>
@@ -414,7 +414,7 @@ export function ProfileSupportTab() {
                     placeholder="Explain what happened, expected behavior, or steps to reproduce..."
                     value={createDescription}
                     onChange={(e) => setCreateDescription(e.target.value)}
-                    className="mt-1.5 w-full rounded-xl border border-neutral-200 p-3 text-xs text-neutral-900 focus:border-neutral-950 focus:outline-none"
+                    className="mt-1.5 w-full rounded-xl border border-border p-3 text-xs text-neutral-900 focus:border-neutral-950 focus:outline-none"
                   />
                 </div>
 
@@ -422,14 +422,14 @@ export function ProfileSupportTab() {
                   <button
                     type="button"
                     onClick={() => setIsCreateOpen(false)}
-                    className="h-9 rounded-xl border border-neutral-200 px-4 text-xs font-semibold text-neutral-700 hover:bg-neutral-50"
+                    className="ui-button-secondary h-9 border border-border px-4 text-xs font-semibold"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={createLoading}
-                    className="h-9 rounded-xl bg-neutral-950 px-5 text-xs font-semibold text-white hover:bg-neutral-800 transition flex items-center gap-1.5"
+                    className="ui-button-primary h-9 px-5 text-xs font-semibold transition flex items-center gap-1.5"
                   >
                     {createLoading && <Loader2 className="animate-spin" size={13} />}
                     Submit Ticket
@@ -444,11 +444,11 @@ export function ProfileSupportTab() {
       {/* TICKET DETAILS MODAL */}
       {selectedTicketId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs">
-          <div className="flex h-[80vh] w-full max-w-2xl flex-col rounded-2xl border border-neutral-200 bg-white p-6 shadow-xl">
+          <div className="flex h-[80vh] w-full max-w-2xl flex-col rounded-2xl border border-border bg-card p-6 shadow-xl">
             <div className="flex items-center justify-between border-b border-neutral-100 pb-3">
               <div>
-                <span className="font-mono text-xs font-bold text-neutral-500">#{selectedTicketId}</span>
-                <h3 className="text-base font-bold text-neutral-950">
+                <span className="font-mono text-xs font-bold text-muted-foreground">#{selectedTicketId}</span>
+                <h3 className="text-base font-bold text-foreground">
                   {ticketDetail?.subject || "Ticket Details"}
                 </h3>
               </div>
@@ -473,7 +473,7 @@ export function ProfileSupportTab() {
                 <div className="flex-1 space-y-3 overflow-y-auto py-4">
                   {/* Original description message */}
                   <div className="rounded-xl border border-neutral-100 bg-neutral-50 p-4">
-                    <p className="text-[11px] font-semibold text-neutral-500">
+                    <p className="text-[11px] font-semibold text-muted-foreground">
                       Original Request • {ticketDetail?.created_at ? new Date(ticketDetail.created_at).toLocaleString() : ""}
                     </p>
                     <p className="mt-1 text-xs text-neutral-800 whitespace-pre-wrap">
@@ -486,11 +486,11 @@ export function ProfileSupportTab() {
                       key={m.id}
                       className={`rounded-xl p-3.5 text-xs ${
                         m.sender_type === "user"
-                          ? "border border-neutral-200 bg-white ml-6"
+                          ? "border border-border bg-card ml-6"
                           : "border border-blue-100 bg-blue-50/50 mr-6"
                       }`}
                     >
-                      <div className="flex items-center justify-between text-[10px] text-neutral-500 mb-1">
+                      <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1">
                         <span className="font-bold text-neutral-800">
                           {m.sender_type === "user" ? "You" : "Support Team"}
                         </span>
@@ -515,12 +515,12 @@ export function ProfileSupportTab() {
                       value={replyText}
                       onChange={(e) => setReplyText(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && handleSendReply()}
-                      className="h-10 flex-1 rounded-xl border border-neutral-200 px-3 text-xs text-neutral-900 focus:border-neutral-950 focus:outline-none"
+                      className="h-10 flex-1 rounded-xl border border-border px-3 text-xs text-neutral-900 focus:border-neutral-950 focus:outline-none"
                     />
                     <button
                       onClick={handleSendReply}
                       disabled={replyLoading || !replyText.trim()}
-                      className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl bg-neutral-950 px-4 text-xs font-semibold text-white hover:bg-neutral-800 transition disabled:opacity-50"
+                      className="ui-button-primary inline-flex h-10 items-center justify-center gap-1.5 px-4 text-xs font-semibold transition disabled:opacity-50"
                     >
                       {replyLoading ? <Loader2 className="animate-spin" size={14} /> : <Send size={14} />}
                       Reply

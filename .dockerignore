@@ -1,8 +1,24 @@
+# Git & Meta
 .git
 .gitignore
-.env*.local
-node_modules
-.next
+.dockerignore
+README.md
+
+# Environment & Secrets (CRITICAL SECURITY EXCLUSIONS)
+.env
+.env*
+!.env.example
+
+# Local SQLite Databases & Data Files
+app.db
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Python Build & Cache
 __pycache__
 *.pyc
 *.pyo
@@ -16,7 +32,34 @@ venv.bak/
 .pytest_cache/
 .coverage
 htmlcov/
-*.sqlite3
+
+# Node & Frontend Build
+node_modules
+.next
+out/
+build/
+
+# Runtime Generated Files & Assets
+generated/
+data/assets/
 scratch/
+
+# IDE & OS Files
 .vscode/
 .idea/
+.DS_Store
+Thumbs.db
+
+# OAuth credentials and encrypted backups
+data/credentials/
+data/credential-backups/
+
+# Runtime API settings are mounted, never baked into an image.
+data/settings/
+
+.next-marketing-verify
+*.tsbuildinfo
+*.before-business-profile-edit.bak
+backups/
+data/analytics/
+docs/

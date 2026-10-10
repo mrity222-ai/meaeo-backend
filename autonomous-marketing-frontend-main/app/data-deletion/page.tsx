@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { MarketingPageHero } from "@/components/marketing/marketing-page-hero";
 import { MarketingLayout } from "@/components/layout/marketing-layout";
 import { Trash2, ShieldAlert, CheckCircle2, Search, Loader2, Building2 } from "lucide-react";
 
@@ -14,6 +15,7 @@ export default function DataDeletionPage() {
     message?: string;
   } | null>(null);
 
+  useEffect(() => { setConfirmationCode(new URLSearchParams(window.location.search).get("code") || ""); }, []);
   const handleCheckStatus = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!confirmationCode.trim()) return;
@@ -22,27 +24,13 @@ export default function DataDeletionPage() {
     setStatusResult(null);
 
     try {
-      const res = await fetch(
-        `/api/v1/oauth/deletion-status?code=${encodeURIComponent(confirmationCode.trim())}`
-      );
-      if (res.ok) {
-        const data = await res.json();
-        setStatusResult(data);
-      } else {
-        setStatusResult({
-          success: true,
-          confirmation_code: confirmationCode.trim(),
-          status: "COMPLETED",
-          message: "All requested tokens, channel connections, and cached media records for this code have been completely purged by Aveda Technologies Data Operations.",
-        });
-      }
-    } catch {
-      setStatusResult({
-        success: true,
-        confirmation_code: confirmationCode.trim(),
-        status: "COMPLETED",
-        message: "All requested tokens, channel connections, and cached media records for this code have been completely purged by Aveda Technologies Data Operations.",
-      });
+      const base = (process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000").replace(/\/$/, "");
+      const res = await fetch(`${base}/oauth/deletion-status?code=${encodeURIComponent(confirmationCode.trim())}`, { signal: AbortSignal.timeout(15000) });
+      const data = await res.json();
+      if (!res.ok || data.success !== true) throw new Error(typeof data.detail === "string" ? data.detail : "Unable to verify deletion status.");
+      setStatusResult(data);
+    } catch (error) {
+      setStatusResult({ success: false, status: "UNVERIFIED", message: error instanceof Error ? error.message : "Unable to verify status. Please try again or contact support." });
     } finally {
       setLoading(false);
     }
@@ -50,24 +38,13 @@ export default function DataDeletionPage() {
 
   return (
     <MarketingLayout>
-      <div className="bg-gradient-to-b from-purple-50/50 to-white py-16 lg:py-24">
+      <MarketingPageHero label="Connected Account Data" title="User Data Deletion Policy" description={<>Complete guide and tool to manage, revoke, or permanently delete your connected account data from <strong>maeaco</strong> (Aveda Technologies).</>} />
+      <div className="marketing-public-content bg-white py-12 lg:py-16">
         <div className="mx-auto max-w-4xl px-6 lg:px-8">
-          {/* Header */}
-          <div className="text-center">
-            <div className="inline-flex items-center gap-2 rounded-full border border-purple-200 bg-purple-50 px-3 py-1 text-xs font-semibold text-purple-700">
-              <Trash2 className="h-4 w-4" />
-              <span>Meta & Google Compliance</span>
-            </div>
-            <h1 className="mt-4 text-3xl font-black tracking-tight text-zinc-900 sm:text-5xl">
-              User Data Deletion Policy
-            </h1>
-            <p className="mt-3 text-base text-zinc-600">
-              Complete guide and tool to manage, revoke, or permanently delete your connected account data from <strong>maeaco</strong> (Aveda Technologies).
-            </p>
-          </div>
+
 
           {/* Policy & Instructions */}
-          <div className="mt-12 space-y-10 text-zinc-700 leading-relaxed text-sm lg:text-base">
+          <div className="space-y-6 text-zinc-700 leading-relaxed text-sm lg:text-base">
 
             {/* Check Deletion Status Box */}
             <section className="rounded-2xl border-2 border-purple-200 bg-purple-50/60 p-6 shadow-sm sm:p-8">
@@ -84,6 +61,8 @@ export default function DataDeletionPage() {
                   type="text"
                   value={confirmationCode}
                   onChange={(e) => setConfirmationCode(e.target.value)}
+                  aria-label="Data deletion confirmation code"
+                  maxLength={100}
                   placeholder="Enter Confirmation Code (e.g. DEL-META-12345)"
                   className="flex-1 rounded-xl border border-purple-300 bg-white px-4 py-2.5 text-sm font-mono text-zinc-900 placeholder:text-zinc-400 focus:border-purple-600 focus:outline-none"
                 />
@@ -97,12 +76,12 @@ export default function DataDeletionPage() {
               </form>
 
               {statusResult && (
-                <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-xs sm:text-sm text-emerald-900">
-                  <div className="flex items-center gap-2 font-bold text-emerald-800">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                <div role={statusResult.success ? "status" : "alert"} className={`mt-4 rounded-xl border p-4 text-xs sm:text-sm ${statusResult.status === "COMPLETED" ? "border-emerald-200 bg-emerald-50 text-emerald-900" : "border-amber-200 bg-amber-50 text-amber-900"}`}>
+                  <div className="flex items-center gap-2 font-bold text-current">
+                    <CheckCircle2 className="h-4 w-4 text-current" />
                     Status: {statusResult.status}
                   </div>
-                  <p className="mt-1 text-emerald-700">{statusResult.message}</p>
+                  <p className="mt-1 text-current">{statusResult.message}</p>
                 </div>
               )}
             </section>
@@ -119,7 +98,7 @@ export default function DataDeletionPage() {
                 <li>Log in to your <strong>maeaco Dashboard</strong>.</li>
                 <li>Navigate to the <strong>Connections</strong> tab in the sidebar.</li>
                 <li>Find the connected channel (Google Business Profile, Facebook Page, Instagram, or LinkedIn).</li>
-                <li>Click <strong>Disconnect</strong>. All active tokens for that channel will be immediately invalidated and deleted from our database.</li>
+                <li>Click <strong>Disconnect</strong>. This disconnects the channel from publishing. Contact support to confirm any additional account-data cleanup.</li>
               </ol>
             </section>
 
@@ -135,7 +114,7 @@ export default function DataDeletionPage() {
                 <li>Log into your Facebook account and go to <strong>Settings & Privacy ➔ Settings</strong>.</li>
                 <li>Select <strong>Business Integrations</strong> or <strong>Apps and Websites</strong>.</li>
                 <li>Find <strong>maeaco Autonomous Marketing</strong> in the list.</li>
-                <li>Click <strong>Remove</strong>. Meta will automatically send a Deauthorize & Data Deletion callback to Aveda Technologies servers, which instantly purges your tokens and channel connections.</li>
+                <li>Click <strong>Remove</strong>. Meta may notify maeaco about revoked access or a deletion request. The recorded request status is shown above; removing an integration is not a confirmation that all stored data has been purged.</li>
               </ol>
             </section>
 
@@ -152,7 +131,7 @@ export default function DataDeletionPage() {
               </p>
               <div className="mt-4 flex items-start gap-2 rounded-xl bg-amber-50 p-4 text-xs sm:text-sm text-amber-900 border border-amber-200">
                 <ShieldAlert className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
-                <span>Account deletion requests are processed by Aveda Technologies Data Operations within <strong>24 to 48 hours</strong>. Once deleted, all stored credentials, campaign histories, and generated assets are unrecoverable.</span>
+                <span>Contact support to confirm the scope and progress of your deletion request. A request remains processing until cleanup is verified; permanent deletion cannot be undone.</span>
               </div>
             </section>
 

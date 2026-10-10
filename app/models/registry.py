@@ -56,8 +56,7 @@ class ModelRegistry:
     def get_provider(cls, provider: str):
         provider_key = (provider or "huggingface").strip().lower()
         if provider_key not in cls.PROVIDERS:
-            # Fallback to huggingface if unknown
-            return cls.PROVIDERS.get("huggingface")
+            raise ValueError("Configured text provider is not supported.")
         return cls.PROVIDERS[provider_key]
 
     @classmethod

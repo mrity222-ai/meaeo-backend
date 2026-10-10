@@ -1,4 +1,5 @@
 "use client";
+import { checkoutSubscription } from "@/lib/api/onboarding";
 
 import { useEffect, useState } from "react";
 import {
@@ -61,12 +62,6 @@ interface TransactionItem {
   created_at: string | null;
 }
 
-declare global {
-  interface Window {
-    Razorpay?: any;
-  }
-}
-
 export function ProfileSubscriptionTab() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -82,9 +77,9 @@ export function ProfileSubscriptionTab() {
     setError(null);
     try {
       const [plansData, subData, txData] = await Promise.all([
-        apiRequest<SubscriptionPlan[]>("/payments/plans").catch(() => []),
-        apiRequest<CurrentSubscription>("/payments/my-subscription").catch(() => null),
-        apiRequest<TransactionItem[]>("/payments/transactions").catch(() => []),
+        apiRequest<SubscriptionPlan[]>("/payments/plans"),
+        apiRequest<CurrentSubscription>("/payments/my-subscription"),
+        apiRequest<TransactionItem[]>("/payments/transactions"),
       ]);
 
       setPlans(Array.isArray(plansData) ? plansData : []);
@@ -102,81 +97,17 @@ export function ProfileSubscriptionTab() {
     loadData();
   }, []);
 
-  const loadRazorpayScript = (): Promise<boolean> => {
-    return new Promise((resolve) => {
-      if (window.Razorpay) {
-        resolve(true);
-        return;
-      }
-      const script = document.createElement("script");
-      script.src = "https://checkout.razorpay.com/v1/checkout.js";
-      script.onload = () => resolve(true);
-      script.onerror = () => resolve(false);
-      document.body.appendChild(script);
-    });
-  };
-
   const handleSubscribe = async (plan: SubscriptionPlan) => {
-    setCheckoutLoading(plan.plan_code);
-    setError(null);
-    setSuccessMsg(null);
-
+    if (checkoutLoading) return;
+    setCheckoutLoading(plan.plan_code); setError(null); setSuccessMsg(null);
     try {
-      if (plan.price === 0) {
-        setSuccessMsg(`You are currently on the ${plan.name}.`);
-        setCheckoutLoading(null);
-        return;
-      }
-
-      const isScriptLoaded = await loadRazorpayScript();
-      if (!isScriptLoaded) {
-        throw new Error("Razorpay SDK failed to load. Please check your connection.");
-      }
-
-      const orderData = await apiRequest<{
-        order_id: string;
-        amount: number;
-        currency: string;
-        key_id: string;
-      }>("/payments/create-order", {
-        method: "POST",
-        body: JSON.stringify({ plan_code: plan.plan_code }),
-      });
-
-      const options = {
-        key: orderData.key_id,
-        amount: orderData.amount,
-        currency: orderData.currency,
-        name: "Autonomous Marketing AI",
-        description: `Upgrade to ${plan.name}`,
-        order_id: orderData.order_id,
-        handler: async function (response: any) {
-          try {
-            await apiRequest("/payments/verify-payment", {
-              method: "POST",
-              body: JSON.stringify({
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
-                plan_code: plan.plan_code,
-              }),
-            });
-            setSuccessMsg(`Payment successful! Upgraded to ${plan.name}.`);
-            loadData();
-          } catch (verErr: any) {
-            setError(verErr?.message || "Payment verification failed.");
-          }
-        },
-        theme: { color: "#09090b" },
-      };
-
-      const rzp = new window.Razorpay(options);
-      rzp.open();
-    } catch (err: any) {
-      setError(err?.message || "Failed to initiate payment.");
-    } finally {
-      setCheckoutLoading(null);
-    }
+      if (plan.price === 0) { setSuccessMsg("The free plan does not require payment."); return; }
+      await checkoutSubscription(plan.plan_code);
+      setSuccessMsg(`Payment verified. Your ${plan.name} plan is active.`);
+      await loadData();
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Payment failed. Please retry.");
+    } finally { setCheckoutLoading(null); }
   };
 
   if (loading) {
@@ -208,7 +139,7 @@ export function ProfileSubscriptionTab() {
       )}
 
       {/* Current Active Plan Overview */}
-      <section className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-xs">
+      <section className="rounded-2xl border border-border bg-card p-6 shadow-xs">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div className="flex items-center gap-2">
@@ -220,8 +151,8 @@ export function ProfileSubscriptionTab() {
                 {currentSub?.status === "active" ? "Active" : "Active Subscription"}
               </span>
             </div>
-            <h2 className="mt-2 text-xl font-bold text-neutral-950">{activePlanName}</h2>
-            <p className="text-xs text-neutral-500">
+            <h2 className="mt-2 text-xl font-bold text-foreground">{activePlanName}</h2>
+            <p className="text-xs text-muted-foreground">
               {currentSub?.current_period_end
                 ? `Renews on ${new Date(currentSub.current_period_end).toLocaleDateString()}`
                 : "Active marketing tier with monthly renewal"}
@@ -231,7 +162,7 @@ export function ProfileSubscriptionTab() {
           <button
             onClick={() => loadData(true)}
             disabled={refreshing}
-            className="inline-flex h-9 items-center gap-2 rounded-xl border border-neutral-200 bg-white px-3.5 text-xs font-semibold text-neutral-800 hover:bg-neutral-50 transition"
+            className="ui-button-secondary inline-flex h-9 items-center gap-2 border border-border px-3.5 text-xs font-semibold transition"
           >
             <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} />
             Sync Status
@@ -240,21 +171,21 @@ export function ProfileSubscriptionTab() {
 
         <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div className="rounded-xl border border-neutral-100 bg-neutral-50/50 p-4">
-            <p className="text-xs text-neutral-500">Brand Profiles</p>
-            <p className="mt-1 text-lg font-bold text-neutral-950">
+            <p className="text-xs text-muted-foreground">Brand Profiles</p>
+            <p className="mt-1 text-lg font-bold text-foreground">
               {currentSub?.plan?.max_brands || 1} Brands
             </p>
           </div>
 
           <div className="rounded-xl border border-neutral-100 bg-neutral-50/50 p-4">
-            <p className="text-xs text-neutral-500">Campaigns Limit</p>
-            <p className="mt-1 text-lg font-bold text-neutral-950">
+            <p className="text-xs text-muted-foreground">Campaigns Limit</p>
+            <p className="mt-1 text-lg font-bold text-foreground">
               {currentSub?.plan?.max_campaigns_per_month || 10} / Month
             </p>
           </div>
 
           <div className="rounded-xl border border-neutral-100 bg-neutral-50/50 p-4">
-            <p className="text-xs text-neutral-500">AI Autopilot Mode</p>
+            <p className="text-xs text-muted-foreground">AI Autopilot Mode</p>
             <p className="mt-1 text-lg font-bold text-emerald-600 flex items-center gap-1.5">
               <Zap size={16} />
               Enabled
@@ -266,8 +197,8 @@ export function ProfileSubscriptionTab() {
       {/* Available Plans */}
       <section>
         <div>
-          <h2 className="text-lg font-bold text-neutral-950">Available Subscription Plans</h2>
-          <p className="text-xs text-neutral-500">Choose the best plan to supercharge your marketing campaigns.</p>
+          <h2 className="text-lg font-bold text-foreground">Available Subscription Plans</h2>
+          <p className="text-xs text-muted-foreground">Choose the best plan to supercharge your marketing campaigns.</p>
         </div>
 
         <div className="mt-5 grid grid-cols-1 gap-6 md:grid-cols-3">
@@ -345,7 +276,7 @@ export function ProfileSubscriptionTab() {
                 className={`flex flex-col justify-between rounded-2xl border p-6 transition ${
                   isCurrent
                     ? "border-neutral-950 bg-neutral-950 text-white shadow-md"
-                    : "border-neutral-200 bg-white text-neutral-950 shadow-xs hover:border-neutral-300"
+                    : "border-border bg-card text-foreground shadow-xs hover:border-neutral-300"
                 }`}
               >
                 <div>
@@ -363,7 +294,7 @@ export function ProfileSubscriptionTab() {
                       {plan.currency === "INR" || plan.currency === "₹" ? "₹" : "$"}
                       {plan.price.toLocaleString()}
                     </span>
-                    <span className={`text-xs ${isCurrent ? "text-neutral-400" : "text-neutral-500"}`}>
+                    <span className={`text-xs ${isCurrent ? "text-neutral-400" : "text-muted-foreground"}`}>
                       /{plan.billing_interval}
                     </span>
                   </div>
@@ -406,12 +337,12 @@ export function ProfileSubscriptionTab() {
       </section>
 
       {/* Payment & Invoices History */}
-      <section className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-xs">
-        <h2 className="text-base font-semibold text-neutral-950">Billing & Payment History</h2>
-        <p className="text-xs text-neutral-500">Past invoices and transaction records.</p>
+      <section className="rounded-2xl border border-border bg-card p-6 shadow-xs">
+        <h2 className="text-base font-semibold text-foreground">Billing & Payment History</h2>
+        <p className="text-xs text-muted-foreground">Past invoices and transaction records.</p>
 
         {transactions.length === 0 ? (
-          <div className="mt-5 rounded-xl border border-dashed border-neutral-200 p-8 text-center">
+          <div className="mt-5 rounded-xl border border-dashed border-border p-8 text-center">
             <CreditCard className="mx-auto text-neutral-300" size={32} />
             <p className="mt-2 text-xs font-medium text-neutral-600">No past transactions found</p>
             <p className="text-[11px] text-neutral-400">When you upgrade or renew, your invoices will appear here.</p>
@@ -419,7 +350,7 @@ export function ProfileSubscriptionTab() {
         ) : (
           <div className="mt-4 overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="border-b border-neutral-100 bg-neutral-50 text-neutral-500">
+              <thead className="border-b border-neutral-100 bg-neutral-50 text-muted-foreground">
                 <tr>
                   <th className="p-3 font-medium">Order ID</th>
                   <th className="p-3 font-medium">Amount</th>
@@ -439,7 +370,7 @@ export function ProfileSubscriptionTab() {
                         {tx.status}
                       </span>
                     </td>
-                    <td className="p-3 text-neutral-500">
+                    <td className="p-3 text-muted-foreground">
                       {tx.created_at ? new Date(tx.created_at).toLocaleDateString() : "—"}
                     </td>
                   </tr>

@@ -200,7 +200,7 @@ export default function AdminBusinessDetailPage() {
             <button
               type="button"
               onClick={loadBusiness}
-              className="inline-flex h-9 items-center gap-2 rounded-lg border border-border px-3 text-sm font-medium hover:bg-muted"
+              className="ui-button-secondary inline-flex h-9 items-center gap-2 border border-border px-3 text-sm font-medium"
             >
               <RefreshCw className="h-4 w-4" />
               Refresh
@@ -209,7 +209,7 @@ export default function AdminBusinessDetailPage() {
             <button
               type="button"
               onClick={toggleSuspend}
-              className="inline-flex h-9 items-center gap-2 rounded-lg border border-border px-3 text-sm font-medium hover:bg-muted"
+              className="ui-button-secondary inline-flex h-9 items-center gap-2 border border-border px-3 text-sm font-medium"
             >
               {status === "Suspended" ? (
                 <>
@@ -361,7 +361,7 @@ export default function AdminBusinessDetailPage() {
               {business.owner_user_id && (
                 <Link
                   href={`/admin/users/USR-${String(business.owner_user_id).padStart(4, "0")}`}
-                  className="mt-5 flex h-9 w-full items-center justify-center gap-2 rounded-lg border border-border text-sm font-medium hover:bg-muted"
+                  className="ui-button-secondary mt-5 flex h-9 w-full items-center justify-center gap-2 border border-border text-sm font-medium"
                 >
                   View User Profile
                   <ChevronRight className="h-4 w-4" />

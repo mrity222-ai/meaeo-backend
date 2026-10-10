@@ -169,7 +169,7 @@ export default function AdminCampaignDetailPage() {
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
-              className="inline-flex h-9 items-center gap-2 rounded-lg border border-border px-3 text-sm font-medium hover:bg-muted"
+              className="ui-button-secondary inline-flex h-9 items-center gap-2 border border-border px-3 text-sm font-medium"
             >
               <Edit3 className="h-4 w-4" />
               Edit
@@ -180,7 +180,7 @@ export default function AdminCampaignDetailPage() {
               onClick={() =>
                 setStatus(isPaused ? "Active" : "Paused")
               }
-              className="inline-flex h-9 items-center gap-2 rounded-lg border border-border px-3 text-sm font-medium hover:bg-muted"
+              className="ui-button-secondary inline-flex h-9 items-center gap-2 border border-border px-3 text-sm font-medium"
             >
               {isPaused ? (
                 <>
@@ -197,7 +197,7 @@ export default function AdminCampaignDetailPage() {
 
             <button
               type="button"
-              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border hover:bg-muted"
+              className="ui-button-secondary inline-flex h-9 w-9 items-center justify-center border border-border"
               aria-label="More actions"
             >
               <MoreHorizontal className="h-4 w-4" />
@@ -499,7 +499,7 @@ export default function AdminCampaignDetailPage() {
 
           <Link
             href="/admin/campaigns"
-            className="inline-flex h-9 w-full items-center justify-center gap-2 rounded-lg border border-border text-sm font-medium hover:bg-muted"
+            className="ui-button-secondary inline-flex h-9 w-full items-center justify-center gap-2 border border-border text-sm font-medium"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to Campaigns

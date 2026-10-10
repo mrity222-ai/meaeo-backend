@@ -22,7 +22,7 @@ export function SubscriptionPaywallModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-      <div className="relative w-full max-w-lg overflow-hidden rounded-3xl border border-purple-300/40 bg-gradient-to-b from-white via-purple-50/50 to-purple-100/40 p-6 shadow-2xl dark:from-zinc-900 dark:via-purple-950/40 dark:to-zinc-950 dark:border-purple-800/40 card-3d">
+      <div className="ui-card relative w-full max-w-lg overflow-hidden p-6">
         {/* Close Button */}
         <button
           onClick={onClose}
@@ -69,7 +69,7 @@ export function SubscriptionPaywallModal({
               onClose();
               router.push("/profile?tab=subscription");
             }}
-            className="flex-1 btn-purple-gradient inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3.5 text-sm font-bold text-white shadow-lg transition active:scale-[0.98]"
+            className="ui-button-primary flex-1"
           >
             <Zap className="h-4 w-4" />
             Upgrade Plan Now
@@ -77,7 +77,7 @@ export function SubscriptionPaywallModal({
 
           <button
             onClick={onClose}
-            className="rounded-2xl border border-zinc-200 bg-white px-4 py-3.5 text-sm font-semibold text-zinc-700 hover:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 transition"
+            className="ui-button-secondary"
           >
             Continue Preview
           </button>

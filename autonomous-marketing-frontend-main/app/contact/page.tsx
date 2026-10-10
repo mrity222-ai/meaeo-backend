@@ -1,10 +1,17 @@
 "use client";
 
+import { submitPublicForm } from "@/lib/api/public-marketing";
 import { useState } from "react";
+import { MarketingPageHero } from "@/components/marketing/marketing-page-hero";
 import { MarketingLayout } from "@/components/layout/marketing-layout";
 import { Mail, MapPin, MessageSquare, Send, CheckCircle2, Clock, Globe, Building2 } from "lucide-react";
 
 export default function ContactUsPage() {
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [reference, setReference] = useState("");
+  const [consent, setConsent] = useState(false);
+  const [website, setWebsite] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -13,38 +20,32 @@ export default function ContactUsPage() {
     message: "",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitted(true);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault(); if (saving) return;
+    setSaving(true); setError("");
+    try {
+      const result = await submitPublicForm<{ reference: string }>("contact", { ...formData, consent, website });
+      setReference(result.reference); setSubmitted(true);
+    } catch (error) { setError(error instanceof Error ? error.message : "Could not save your message."); }
+    finally { setSaving(false); }
   };
 
   return (
     <MarketingLayout>
-      <div className="bg-gradient-to-b from-purple-50/50 to-white py-16 lg:py-24">
-        <div className="mx-auto max-w-6xl px-6 lg:px-8">
-          
-          {/* Header */}
-          <div className="text-center max-w-3xl mx-auto">
-            <div className="inline-flex items-center gap-2 rounded-full border border-purple-200 bg-purple-50 px-3 py-1 text-xs font-semibold text-purple-700">
-              <MessageSquare className="h-4 w-4" />
-              <span>Get in Touch</span>
-            </div>
-            <h1 className="mt-4 text-3xl font-black tracking-tight text-zinc-900 sm:text-5xl">
-              Contact Support & Sales
-            </h1>
-            <p className="mt-3 text-base text-zinc-600">
-              Have a question about <strong>maeaco</strong> AI marketing automation, enterprise setups, or billing? Contact the team at{" "}
+      <MarketingPageHero label="Get in Touch" title="Contact Support & Sales" description={<>Have a question about <strong>maeaco</strong> AI marketing automation, enterprise setups, or billing? Contact the team at{" "}
               <a href="https://www.avedatechnologies.com" target="_blank" rel="noopener noreferrer" className="text-purple-600 font-bold underline">
                 Aveda Technologies
-              </a>.
-            </p>
-          </div>
+              </a>.</>} />
+      <div className="marketing-public-content bg-white py-12 lg:py-16">
+        <div className="mx-auto max-w-6xl px-6 lg:px-8">
 
-          <div className="mt-16 grid gap-10 lg:grid-cols-12">
-            
+
+
+          <div className="grid gap-8 lg:grid-cols-12">
+
             {/* Contact Info Cards */}
             <div className="lg:col-span-5 space-y-6">
-              
+
               <div className="rounded-2xl border border-purple-100 bg-white p-6 shadow-sm">
                 <div className="flex items-center gap-4">
                   <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-100 text-purple-600 shrink-0">
@@ -68,7 +69,7 @@ export default function ContactUsPage() {
                   </div>
                   <div>
                     <h3 className="text-sm font-bold text-zinc-900">Official Support Emails</h3>
-                    <p className="mt-1 text-xs text-zinc-500">24/7 technical & billing assistance</p>
+                    <p className="mt-1 text-xs text-zinc-500">Technical & billing enquiries</p>
                     <div className="mt-1 space-y-0.5 text-xs sm:text-sm font-semibold text-purple-600">
                       <div>Support: <a href="mailto:support@avedatechnologies.com" className="hover:underline">support@avedatechnologies.com</a></div>
                       <div>Billing: <a href="mailto:billing@avedatechnologies.com" className="hover:underline">billing@avedatechnologies.com</a></div>
@@ -85,7 +86,7 @@ export default function ContactUsPage() {
                   <div>
                     <h3 className="text-sm font-bold text-zinc-900">Response Hours</h3>
                     <p className="mt-1 text-xs text-zinc-500">Monday – Saturday</p>
-                    <p className="mt-1 text-sm font-medium text-zinc-800">9:00 AM – 8:00 PM IST (Under 2h response)</p>
+                    <p className="mt-1 text-sm font-medium text-zinc-800">9:00 AM – 8:00 PM IST</p>
                   </div>
                 </div>
               </div>
@@ -115,18 +116,20 @@ export default function ContactUsPage() {
                 <p className="mt-1 text-xs text-zinc-500">Fill in the details below and the Aveda Technologies support team will get back to you promptly.</p>
 
                 {submitted ? (
-                  <div className="mt-8 rounded-xl border border-emerald-200 bg-emerald-50 p-6 text-center text-emerald-900">
+                  <div role="status" className="mt-8 rounded-xl border border-emerald-200 bg-emerald-50 p-6 text-center text-emerald-900">
                     <CheckCircle2 className="mx-auto h-10 w-10 text-emerald-600" />
                     <h3 className="mt-3 text-lg font-bold">Message Received!</h3>
-                    <p className="mt-1 text-xs text-emerald-700">Thank you for reaching out. An Aveda Technologies support engineer will reply to <strong>{formData.email}</strong> shortly.</p>
+                    <p className="mt-1 text-xs text-emerald-700">Thank you for reaching out. Your enquiry has been saved with reference <strong>{reference}</strong>. Contact <a href="mailto:support@avedatechnologies.com" className="underline">support@avedatechnologies.com</a> for urgent assistance.</p>
                   </div>
                 ) : (
                   <form onSubmit={handleSubmit} className="mt-6 space-y-4">
                     <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-zinc-700">Your Name</label>
+                      <label htmlFor="contact-name" className="block text-xs font-bold uppercase tracking-wider text-zinc-700">Your Name</label>
                       <input
                         type="text"
                         required
+                        id="contact-name"
+                        maxLength={120}
                         value={formData.name}
                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                         placeholder="John Doe"
@@ -135,10 +138,12 @@ export default function ContactUsPage() {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-zinc-700">Work Email</label>
+                      <label htmlFor="contact-email" className="block text-xs font-bold uppercase tracking-wider text-zinc-700">Work Email</label>
                       <input
                         type="email"
                         required
+                        id="contact-email"
+                        maxLength={254}
                         value={formData.email}
                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                         placeholder="john@company.com"
@@ -147,8 +152,9 @@ export default function ContactUsPage() {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-zinc-700">Subject</label>
+                      <label htmlFor="contact-subject" className="block text-xs font-bold uppercase tracking-wider text-zinc-700">Subject</label>
                       <select
+                        id="contact-subject"
                         value={formData.subject}
                         onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
                         className="mt-1.5 w-full rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm text-zinc-900 focus:border-purple-600 focus:outline-none"
@@ -161,10 +167,13 @@ export default function ContactUsPage() {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-zinc-700">Message</label>
+                      <label htmlFor="contact-message" className="block text-xs font-bold uppercase tracking-wider text-zinc-700">Message</label>
                       <textarea
                         required
                         rows={4}
+                        minLength={10}
+                        id="contact-message"
+                        maxLength={5000}
                         value={formData.message}
                         onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                         placeholder="How can Aveda Technologies help your business?"
@@ -172,12 +181,16 @@ export default function ContactUsPage() {
                       />
                     </div>
 
+                    <label className="flex items-start gap-2 text-xs text-zinc-600"><input type="checkbox" required checked={consent} onChange={(e) => setConsent(e.target.checked)} />I agree to be contacted about this enquiry. See our <a href="/privacy" className="underline">Privacy Policy</a>.</label>
+                    <div hidden aria-hidden="true"><label htmlFor="contact-website">Website</label><input id="contact-website" tabIndex={-1} autoComplete="off" value={website} onChange={(e) => setWebsite(e.target.value)} /></div>
+                    {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
                     <button
+                      disabled={saving}
                       type="submit"
                       className="inline-flex items-center gap-2 rounded-xl bg-purple-600 px-6 py-3 text-sm font-semibold text-white hover:bg-purple-700 transition-colors shadow-md shadow-purple-600/20"
                     >
                       <Send className="h-4 w-4" />
-                      <span>Send Message</span>
+                      <span>{saving ? "Saving…" : "Send Message"}</span>
                     </button>
                   </form>
                 )}

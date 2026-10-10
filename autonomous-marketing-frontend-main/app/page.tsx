@@ -1,3 +1,4 @@
+import { marketingMetadata } from "@/lib/marketing-metadata";
 import { MarketingLayout } from "@/components/layout/marketing-layout";
 import { HeroSection } from "@/components/marketing/hero-section";
 import { PlatformsSection } from "@/components/marketing/platforms-section";
@@ -8,6 +9,9 @@ import { FeaturesSection } from "@/components/marketing/features-section";
 import { TestimonialsSection } from "@/components/marketing/testimonials-section";
 import { FAQSection } from "@/components/marketing/faq-section";
 import { CTASection } from "@/components/marketing/cta-section";
+import { AboutSection } from "@/components/marketing/about-section";
+
+export const metadata = marketingMetadata("/", "maeaco | AI Marketing for Your Business", "Plan campaigns, create branded catalogue posts, review content, publish to connected channels and track available analytics. Premium starts at ₹999/month.");
 
 export default function HomePage() {
   return (
@@ -25,13 +29,14 @@ export default function HomePage() {
       <HowItWorksSection />
 
       {/* Position 5: Dual Currency Pricing */}
-      <PricingSection />
 
       {/* Position 6: Bento Grid & Central AI Flow Diagram */}
       <FeaturesSection />
+      <AboutSection />
 
       {/* Position 7: Testimonials */}
       <TestimonialsSection />
+      <PricingSection />
 
       {/* Position 8: FAQ Accordion */}
       <FAQSection />

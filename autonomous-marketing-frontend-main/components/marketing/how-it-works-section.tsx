@@ -37,11 +37,11 @@ export function HowItWorksSection() {
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         
         {/* Section Header */}
-        <div className="mx-auto max-w-3xl text-center">
-          <p className="text-xs font-bold uppercase tracking-widest text-purple-600">
+        <div className="marketing-section-intro">
+          <p className="marketing-eyebrow">
             How It Works
           </p>
-          <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-zinc-900 sm:text-4xl lg:text-5xl">
+          <h2 className="marketing-section-title">
             From{" "}
             <span className="text-purple-600">strategy</span> to real results.
           </h2>

@@ -27,10 +27,12 @@ from app.database.models import (
     UserTenant,
 )
 from app.database.session import get_db
+from app.api.dependencies import get_current_admin
 
 router = APIRouter(
     prefix="/admin",
     tags=["admin"],
+    dependencies=[Depends(get_current_admin)],
 )
 
 
@@ -777,31 +779,53 @@ def update_env_file(updates: dict[str, str], env_path: str = DEFAULT_ENV_PATH) -
 
 
 @router.post("/login")
-def admin_login(request: AdminLoginRequest) -> dict[str, Any]:
+def admin_login(
+    request: AdminLoginRequest,
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
     from app.models.config import settings
+    from app.security.authentication import AuthenticationService
+    from app.security.password import PasswordService
 
-    admin_email = getattr(settings, "SUPER_ADMIN_EMAIL", "admin@marketingsystem.com")
-    admin_pass = getattr(settings, "SUPER_ADMIN_PASSWORD", "Admin@12345")
-    admin_pin = getattr(settings, "SUPER_ADMIN_PIN", "984102")
+    raw_email = getattr(settings, "SUPER_ADMIN_EMAIL", "admin@marketingsystem.com")
+    raw_pass = getattr(settings, "SUPER_ADMIN_PASSWORD", "Admin@12345")
+    raw_pin = getattr(settings, "SUPER_ADMIN_PIN", "984102")
+
+    admin_email = str(raw_email).strip().lower()
+    admin_pass = raw_pass.get_secret_value() if hasattr(raw_pass, "get_secret_value") else str(raw_pass)
+    admin_pin = raw_pin.get_secret_value() if hasattr(raw_pin, "get_secret_value") else str(raw_pin)
 
     if (
-        request.email.strip().lower() != admin_email.strip().lower()
+        request.email.strip().lower() != admin_email
         or request.password != admin_pass
-        or request.security_pin.strip() != admin_pin.strip()
+        or request.security_pin.strip() != admin_pin
     ):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid Super Admin credentials or security PIN.",
         )
 
+    admin_user = db.scalar(select(User).where(User.email == admin_email))
+    if not admin_user:
+        admin_user = User(
+            email=admin_email,
+            password_hash=PasswordService.hash(admin_pass),
+            is_active=True,
+        )
+        db.add(admin_user)
+        db.commit()
+        db.refresh(admin_user)
+
+    access_token = AuthenticationService.create_access_token(admin_user)
+
     return {
         "status": "ok",
-        "access_token": f"admin_jwt_{secrets.token_hex(24)}",
+        "access_token": access_token,
         "token_type": "bearer",
         "user": {
-            "id": "admin_super_01",
+            "id": f"USR-{admin_user.id:04d}",
             "name": "Super Administrator",
-            "email": admin_email,
+            "email": admin_user.email,
             "role": "super_admin",
             "permissions": [
                 "all",
@@ -890,57 +914,7 @@ def get_admin_system_settings() -> dict[str, Any]:
 
 @router.post("/settings")
 def update_admin_system_settings(payload: dict[str, Any]) -> dict[str, Any]:
-    from app.models.config import settings
-
-    updates = {}
-    for key, val in payload.items():
-        if val is None:
-            continue
-        val_str = str(val).strip()
-        if "••••" in val_str or "****" in val_str:
-            continue
-        updates[key] = val_str
-
-    if updates:
-        update_env_file(updates, DEFAULT_ENV_PATH)
-        for k, v in updates.items():
-            os.environ[k] = str(v)
-            if hasattr(settings, k):
-                curr = getattr(settings, k)
-                if isinstance(curr, SecretStr):
-                    setattr(settings, k, SecretStr(v))
-                elif isinstance(curr, bool):
-                    setattr(settings, k, v.lower() in ("true", "1", "yes"))
-                elif isinstance(curr, int):
-                    try:
-                        setattr(settings, k, int(v))
-                    except ValueError:
-                        pass
-                else:
-                    setattr(settings, k, v)
-
-        if "GOOGLE_CLIENT_ID" in updates:
-            frontend_env_paths = [
-                os.path.join(BASE_DIR, "autonomous-marketing-frontend-main", ".env.local"),
-                "D:/marketing_system_frontend/.env.local",
-            ]
-            for f_path in frontend_env_paths:
-                try:
-                    update_env_file({"NEXT_PUBLIC_GOOGLE_CLIENT_ID": updates["GOOGLE_CLIENT_ID"]}, f_path)
-                except Exception:
-                    pass
-
-        try:
-            from app.image.provider_factory import ImageProviderFactory
-            ImageProviderFactory.reset()
-        except Exception:
-            pass
-
-    return {
-        "status": "ok",
-        "message": f"Successfully updated {len(updates)} configuration settings.",
-        "updated_keys": list(updates.keys()),
-    }
+    raise HTTPException(410, "Use section-specific settings endpoints. Bulk environment updates are disabled to prevent unrelated key overwrites.")
 
 
 @router.post("/test-email")

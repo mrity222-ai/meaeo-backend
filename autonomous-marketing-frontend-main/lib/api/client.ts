@@ -1,4 +1,4 @@
-import { getAuthorizationHeader } from "@/lib/auth";
+import { getAuthorizationHeader, getTenantId } from "@/lib/auth";
 
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL ||
@@ -77,6 +77,9 @@ export async function apiRequest<T>(
     );
   }
 
+  const tenantId = getTenantId();
+  if (tenantId && !headers.has("X-Tenant-ID")) headers.set("X-Tenant-ID", tenantId);
+
   const response = await fetch(
     `${API_URL}${path}`,
     {
@@ -132,6 +135,17 @@ export async function apiRequest<T>(
       data.trim()
     ) {
       detail = data;
+    }
+
+    if (response.status === 401) {
+      if (typeof window !== "undefined" && !window.location.pathname.includes("/login")) {
+        import("@/lib/auth").then(({ clearAuth }) => {
+          clearAuth();
+          window.location.href = window.location.pathname.startsWith("/admin")
+            ? "/admin/login"
+            : "/login";
+        });
+      }
     }
 
     throw new ApiError(

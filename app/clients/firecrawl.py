@@ -13,7 +13,7 @@ class FirecrawlClient(BaseClient):
 
         return {
             "Authorization": (
-                f"Bearer {settings.FIRECRAWL_API_KEY}"
+                f"Bearer {settings.FIRECRAWL_API_KEY.get_secret_value() if settings.FIRECRAWL_API_KEY else ''}"
             ),
             "Content-Type": "application/json",
         }

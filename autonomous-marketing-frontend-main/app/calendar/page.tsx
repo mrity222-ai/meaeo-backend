@@ -25,6 +25,7 @@ import {
   Zap,
 } from "lucide-react";
 
+import { DashboardTopHeader } from "@/components/navigation/dashboard-top-header";
 import { DashboardSidebar } from "@/components/navigation/dashboard-sidebar";
 import { UserAccountMenu } from "@/components/navigation/user-account-menu";
 import {
@@ -193,57 +194,19 @@ export default function CalendarPage() {
     <div className="min-h-screen bg-background text-foreground">
       <DashboardSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      <div className="lg:pl-72">
-        {/* Mobile Header */}
-        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-background/95 px-4 backdrop-blur lg:hidden">
-          <button
-            onClick={() => setSidebarOpen(true)}
-            aria-label="Open menu"
-            className="rounded-lg p-2 hover:bg-muted"
-          >
-            <Menu className="h-5 w-5" />
-          </button>
-          <div className="flex items-center gap-2">
-            <CalendarDays className="h-5 w-5 text-purple-600" />
-            <span className="font-semibold text-foreground">Content Calendar</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <button
-              type="button"
-              onClick={() => void loadCalendarData()}
-              className="rounded-lg p-2 hover:bg-muted"
-            >
-              <RefreshCw className={`h-5 w-5 ${refreshing ? "animate-spin" : ""}`} />
+      <div className="md:pl-[230px]">
+        <DashboardTopHeader title="Content Calendar" subtitle="Scheduled posts across your connected platforms"
+          onMenuClick={() => setSidebarOpen(true)} actions={<>
+            <span className="hidden lg:inline text-xs text-muted-foreground">{totalWeekPosts} posts this week</span>
+            <button type="button" onClick={() => void loadCalendarData()} disabled={refreshing}
+              aria-label="Refresh content calendar" className="ui-button-secondary inline-flex min-h-11 items-center gap-2 border border-border px-3 text-sm disabled:opacity-50">
+              <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
+              <span className="hidden sm:inline">Refresh</span>
             </button>
-            <UserAccountMenu />
-          </div>
-        </header>
-
-        {/* Desktop Header Bar */}
-        <div className="hidden h-16 items-center justify-between border-b px-8 lg:flex">
-          <div>
-            <p className="text-xs text-muted-foreground">Publishing Roadmap</p>
-            <p className="text-sm font-semibold text-foreground">Content Schedule & Planner</p>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => void loadCalendarData()}
-              disabled={refreshing}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3.5 py-1.5 text-xs font-semibold text-foreground hover:bg-muted transition"
-            >
-              <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
-              Sync Calendar
-            </button>
-            <span className="rounded-xl border border-border bg-muted/60 px-3 py-1.5 text-xs font-bold text-foreground">
-              {totalWeekPosts} Posts This Week
-            </span>
-            <UserAccountMenu />
-          </div>
-        </div>
+          </>} />
 
         {/* Main Content Area */}
-        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl px-4 py-8 pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-8 sm:px-6 lg:px-8">
           {/* Header Title */}
           <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
@@ -260,7 +223,7 @@ export default function CalendarPage() {
 
             <Link
               href="/campaigns"
-              className="inline-flex items-center gap-2 rounded-xl bg-purple-600 px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-purple-200 hover:bg-purple-700 transition"
+              className="ui-button-primary inline-flex items-center gap-2 px-5 py-2.5 text-xs font-bold transition"
             >
               <Plus className="h-4 w-4" />
               Create Campaign
@@ -272,7 +235,7 @@ export default function CalendarPage() {
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setCurrentWeekOffset((prev) => prev - 1)}
-                className="flex h-9 w-9 items-center justify-center rounded-xl border border-border hover:bg-muted transition"
+                className="ui-button-secondary flex h-9 w-9 items-center justify-center border border-border transition"
                 title="Previous Week"
               >
                 <ChevronLeft className="h-4 w-4" />
@@ -287,7 +250,7 @@ export default function CalendarPage() {
 
               <button
                 onClick={() => setCurrentWeekOffset((prev) => prev + 1)}
-                className="flex h-9 w-9 items-center justify-center rounded-xl border border-border hover:bg-muted transition"
+                className="ui-button-secondary flex h-9 w-9 items-center justify-center border border-border transition"
                 title="Next Week"
               >
                 <ChevronRight className="h-4 w-4" />
@@ -298,14 +261,14 @@ export default function CalendarPage() {
               {currentWeekOffset !== 0 && (
                 <button
                   onClick={() => setCurrentWeekOffset(0)}
-                  className="rounded-xl border border-border bg-muted/60 px-3.5 py-1.5 text-xs font-bold text-foreground hover:bg-muted transition"
+                  className="ui-button-secondary border border-border px-3.5 py-1.5 text-xs font-bold transition"
                 >
                   Return to Today
                 </button>
               )}
               <Link
                 href="/content"
-                className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3.5 py-1.5 text-xs font-semibold text-foreground hover:bg-muted transition"
+                className="ui-button-secondary inline-flex items-center gap-1.5 border border-border px-3.5 py-1.5 text-xs font-semibold transition"
               >
                 <Filter className="h-3.5 w-3.5" />
                 Review Queue
@@ -422,7 +385,7 @@ export default function CalendarPage() {
               </p>
               <Link
                 href="/campaigns"
-                className="mt-4 inline-flex items-center gap-2 rounded-xl bg-purple-600 px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-purple-200 hover:bg-purple-700 transition"
+                className="ui-button-primary mt-4 inline-flex items-center gap-2 px-5 py-2.5 text-xs font-bold transition"
               >
                 <Sparkles className="h-4 w-4" />
                 Launch First Campaign
@@ -464,7 +427,7 @@ export default function CalendarPage() {
 
             {/* Post Image Preview */}
             {(selectedPost.image_url || selectedPost.image_path) && (
-              <div className="overflow-hidden rounded-xl border border-purple-100 bg-black/5">
+              <div className="overflow-hidden rounded-xl border border-border bg-black/5">
                 <img
                   src={selectedPost.image_url || selectedPost.image_path || ""}
                   alt={selectedPost.title}
@@ -532,13 +495,13 @@ export default function CalendarPage() {
             <div className="flex justify-end gap-2 pt-2 border-t border-border">
               <Link
                 href="/content"
-                className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-4 py-2 text-xs font-bold text-foreground hover:bg-muted transition"
+                className="ui-button-secondary inline-flex items-center gap-1.5 border border-border px-4 py-2 text-xs font-bold transition"
               >
                 Go to Review Queue
               </Link>
               <button
                 onClick={() => setSelectedPost(null)}
-                className="rounded-xl bg-purple-600 px-5 py-2 text-xs font-bold text-white hover:bg-purple-700 transition"
+                className="ui-button-primary px-5 py-2 text-xs font-bold transition"
               >
                 Close Preview
               </button>

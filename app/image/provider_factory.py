@@ -69,25 +69,21 @@ class ImageProviderFactory:
                 MockImageProvider()
             )
         else:
-            # Fallback to huggingface if unknown
-            ImageProviderRegistry.register(
-                HuggingFaceImageProvider()
-            )
+            raise ValueError(f"Unsupported image provider: {mode}")
 
         cls._initialized = True
         cls._initialized_mode = mode
 
     @classmethod
     def get(cls):
-        cls._initialize()
-
-        provider_name = (
-            getattr(settings, "IMAGE_MODEL_PROVIDER", "huggingface")
-            .strip()
-            .lower()
-        )
-
-        try:
-            return ImageProviderRegistry.get(provider_name)
-        except Exception:
-            return HuggingFaceImageProvider()
+        if settings.APP_ENV.strip().lower() in {"production", "prod"} and settings.IMAGE_MODEL_PROVIDER.strip().lower() == "mock":
+            raise ValueError("Mock image generation is disabled in production.")
+        provider_name = settings.IMAGE_MODEL_PROVIDER.strip().lower()
+        provider_classes = {
+            "huggingface": HuggingFaceImageProvider, "openai": OpenAIImageProvider,
+            "gemini": GeminiImageProvider, "stability": StabilityImageProvider,
+            "mock": MockImageProvider,
+        }
+        if provider_name not in provider_classes:
+            raise ValueError("Configured image provider is not implemented.")
+        return provider_classes[provider_name]()

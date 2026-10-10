@@ -98,6 +98,14 @@ def register(
     """
     email = EmailVerificationService._normalize_email(str(request.email))
 
+    from app.models.config import settings
+    admin_email = str(getattr(settings, "SUPER_ADMIN_EMAIL", "admin@marketingsystem.com")).strip().lower()
+    if email == admin_email:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This email address is reserved for system administration.",
+        )
+
     existing_user = db.scalar(
         select(User).where(User.email == email)
     )

@@ -2,16 +2,13 @@ from openai import AsyncOpenAI, OpenAI
 
 from app.models.base import BaseProvider
 from app.models.config import settings
+from app.services.admin_settings_service import provider_api_key
 
 
 class OpenAIProvider(BaseProvider):
 
     def __init__(self, model: str):
-        api_key = (
-            settings.OPENAI_API_KEY.get_secret_value()
-            if hasattr(settings.OPENAI_API_KEY, "get_secret_value")
-            else str(settings.OPENAI_API_KEY or "")
-        )
+        api_key = provider_api_key("text", "openai")
 
         self.client = OpenAI(api_key=api_key)
         self.async_client = AsyncOpenAI(api_key=api_key)

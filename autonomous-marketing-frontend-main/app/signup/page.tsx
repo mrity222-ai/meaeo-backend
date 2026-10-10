@@ -213,14 +213,14 @@ export default function SignupPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#F9FAFC] font-sans antialiased text-zinc-900">
+    <main className="auth-page min-h-screen bg-[#F9FAFC] font-sans antialiased text-zinc-900">
       <div className="grid min-h-screen lg:grid-cols-2">
         {/* ========================================================================= */}
         {/* LEFT COLUMN: VIBRANT PURPLE BRAND SHOWCASE WITH SOCIAL TILES & WAVES */}
         {/* ========================================================================= */}
-        <div className="relative hidden overflow-hidden bg-gradient-to-br from-[#6929E8] via-[#7B2CBF] to-[#511696] text-white lg:flex lg:flex-col lg:justify-between p-10 xl:p-14 select-none">
+        <div className="auth-brand-panel relative hidden overflow-hidden bg-gradient-to-br from-[#6929E8] via-[#7B2CBF] to-[#511696] text-white lg:flex lg:flex-col lg:justify-between p-10 xl:p-14 select-none">
           {/* Top Bar: Back Button, Logo, Social Icons */}
-          <div className="flex items-center justify-between z-10">
+          <div className="auth-brand-top flex items-center justify-between z-10">
             <div className="flex items-center gap-4">
               <Link
                 href="/"
@@ -234,7 +234,7 @@ export default function SignupPage() {
                 <img
                   src="/logo/app logo.png"
                   alt="maeaco logo"
-                  className="h-10 w-10 object-contain rounded-xl"
+                  className="auth-logo h-14 w-14 object-contain"
                 />
                 <span className="text-2xl font-black tracking-tight text-white">
                   maeaco
@@ -296,14 +296,14 @@ export default function SignupPage() {
         {/* RIGHT COLUMN: CLEAN CANVAS WITH FLOATING WHITE CARD */}
         {/* ========================================================================= */}
         <div className="flex items-center justify-center bg-[#F9FAFC] px-4 py-12 sm:px-8">
-          <div className="w-full max-w-[440px]">
+          <div className="w-full max-w-[480px]">
             {/* Mobile Header (Back + Logo) */}
             <div className="mb-6 flex items-center justify-between lg:hidden">
               <Link href="/" className="flex items-center gap-2">
                 <img
                   src="/logo/app logo.png"
                   alt="maeaco logo"
-                  className="h-8 w-8 object-contain"
+                  className="auth-logo h-12 w-12 object-contain"
                 />
                 <span className="text-xl font-black text-zinc-950">maeaco</span>
               </Link>
@@ -317,22 +317,22 @@ export default function SignupPage() {
             </div>
 
             {/* Floating Card Container */}
-            <div className="rounded-[28px] border border-zinc-200/80 bg-white p-7 sm:p-9 shadow-xl shadow-purple-950/5">
+            <div className="auth-form-card rounded-[28px] border border-zinc-200/80 bg-white p-7 sm:p-9 shadow-xl shadow-purple-950/5">
               {!verificationStep ? (
                 /* Step 1: Signup Details */
                 <div>
                   <div>
-                    <h2 className="text-2xl sm:text-[26px] font-black tracking-tight text-zinc-950">
+                    <h2 className="text-[28px] sm:text-[32px] font-bold tracking-tight text-zinc-950">
                       Create an account
                     </h2>
-                    <p className="mt-1 text-sm text-zinc-500 font-normal">
+                    <p className="mt-2 text-[15px] leading-relaxed text-zinc-600 font-normal">
                       Start your autonomous marketing journey today.
                     </p>
                   </div>
 
                   {/* Error message */}
                   {error && (
-                    <div className="mt-5 rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-medium text-red-600">
+                    <div role="alert" className="mt-5 rounded-xl border border-red-200 bg-red-50 p-3 text-sm leading-relaxed font-medium text-red-700">
                       {error}
                     </div>
                   )}
@@ -341,11 +341,11 @@ export default function SignupPage() {
                   <form onSubmit={handleSubmit} className="mt-6 space-y-3.5">
                     {/* Full Name Field */}
                     <div>
-                      <label className="block text-xs font-bold text-zinc-800 mb-1.5">
+                      <label className="block text-[13px] font-semibold text-zinc-800 mb-1.5">
                         Full Name
                       </label>
                       <div className="relative">
-                        <User className="absolute left-3.5 top-3 h-4 w-4 text-zinc-400" />
+                        <User className="absolute left-3.5 top-4 h-4 w-4 text-zinc-400" />
                         <input
                           type="text"
                           required
@@ -353,18 +353,18 @@ export default function SignupPage() {
                           onChange={(e) => setName(e.target.value)}
                           placeholder="Your full name"
                           disabled={authenticationLoading}
-                          className="h-11 w-full rounded-xl border border-zinc-200 bg-white pl-10 pr-3.5 text-sm text-zinc-900 placeholder:text-zinc-400 outline-none transition focus:border-purple-600 focus:ring-2 focus:ring-purple-600/20"
+                          className="h-12 w-full rounded-xl border border-zinc-200 bg-white pl-10 pr-3.5 text-base text-zinc-900 placeholder:text-zinc-500 outline-none transition focus:border-purple-600 focus:ring-2 focus:ring-purple-600/20"
                         />
                       </div>
                     </div>
 
                     {/* Email Field */}
                     <div>
-                      <label className="block text-xs font-bold text-zinc-800 mb-1.5">
+                      <label className="block text-[13px] font-semibold text-zinc-800 mb-1.5">
                         Email Address
                       </label>
                       <div className="relative">
-                        <Mail className="absolute left-3.5 top-3 h-4 w-4 text-zinc-400" />
+                        <Mail className="absolute left-3.5 top-4 h-4 w-4 text-zinc-400" />
                         <input
                           type="email"
                           required
@@ -372,18 +372,18 @@ export default function SignupPage() {
                           onChange={(e) => setEmail(e.target.value)}
                           placeholder="you@company.com"
                           disabled={authenticationLoading}
-                          className="h-11 w-full rounded-xl border border-zinc-200 bg-white pl-10 pr-3.5 text-sm text-zinc-900 placeholder:text-zinc-400 outline-none transition focus:border-purple-600 focus:ring-2 focus:ring-purple-600/20"
+                          className="h-12 w-full rounded-xl border border-zinc-200 bg-white pl-10 pr-3.5 text-base text-zinc-900 placeholder:text-zinc-500 outline-none transition focus:border-purple-600 focus:ring-2 focus:ring-purple-600/20"
                         />
                       </div>
                     </div>
 
                     {/* Password Field */}
                     <div>
-                      <label className="block text-xs font-bold text-zinc-800 mb-1.5">
+                      <label className="block text-[13px] font-semibold text-zinc-800 mb-1.5">
                         Password
                       </label>
                       <div className="relative">
-                        <Lock className="absolute left-3.5 top-3 h-4 w-4 text-zinc-400" />
+                        <Lock className="absolute left-3.5 top-4 h-4 w-4 text-zinc-400" />
                         <input
                           type={showPassword ? "text" : "password"}
                           required
@@ -391,12 +391,14 @@ export default function SignupPage() {
                           onChange={(e) => setPassword(e.target.value)}
                           placeholder="At least 8 characters"
                           disabled={authenticationLoading}
-                          className="h-11 w-full rounded-xl border border-zinc-200 bg-white pl-10 pr-10 text-sm text-zinc-900 placeholder:text-zinc-400 outline-none transition focus:border-purple-600 focus:ring-2 focus:ring-purple-600/20"
+                          className="h-12 w-full rounded-xl border border-zinc-200 bg-white pl-10 pr-10 text-base text-zinc-900 placeholder:text-zinc-500 outline-none transition focus:border-purple-600 focus:ring-2 focus:ring-purple-600/20"
                         />
                         <button
                           type="button"
-                          onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-3.5 top-3 text-zinc-400 hover:text-zinc-600"
+                          aria-label={showPassword ? "Hide password" : "Show password"}
+                      aria-pressed={showPassword}
+                      onClick={() => setShowPassword(!showPassword)}
+                          className="auth-password-toggle absolute right-2 top-1.5 flex h-9 w-9 items-center justify-center rounded-lg text-zinc-500 hover:text-purple-700"
                         >
                           {showPassword ? (
                             <EyeOff className="h-4 w-4" />
@@ -409,11 +411,11 @@ export default function SignupPage() {
 
                     {/* Confirm Password Field */}
                     <div>
-                      <label className="block text-xs font-bold text-zinc-800 mb-1.5">
+                      <label className="block text-[13px] font-semibold text-zinc-800 mb-1.5">
                         Confirm Password
                       </label>
                       <div className="relative">
-                        <Lock className="absolute left-3.5 top-3 h-4 w-4 text-zinc-400" />
+                        <Lock className="absolute left-3.5 top-4 h-4 w-4 text-zinc-400" />
                         <input
                           type={showConfirmPassword ? "text" : "password"}
                           required
@@ -421,14 +423,16 @@ export default function SignupPage() {
                           onChange={(e) => setConfirmPassword(e.target.value)}
                           placeholder="Repeat your password"
                           disabled={authenticationLoading}
-                          className="h-11 w-full rounded-xl border border-zinc-200 bg-white pl-10 pr-10 text-sm text-zinc-900 placeholder:text-zinc-400 outline-none transition focus:border-purple-600 focus:ring-2 focus:ring-purple-600/20"
+                          className="h-12 w-full rounded-xl border border-zinc-200 bg-white pl-10 pr-10 text-base text-zinc-900 placeholder:text-zinc-500 outline-none transition focus:border-purple-600 focus:ring-2 focus:ring-purple-600/20"
                         />
                         <button
                           type="button"
+                          aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+                          aria-pressed={showConfirmPassword}
                           onClick={() =>
                             setShowConfirmPassword(!showConfirmPassword)
                           }
-                          className="absolute right-3.5 top-3 text-zinc-400 hover:text-zinc-600"
+                          className="auth-password-toggle absolute right-2 top-1.5 flex h-9 w-9 items-center justify-center rounded-lg text-zinc-500 hover:text-purple-700"
                         >
                           {showConfirmPassword ? (
                             <EyeOff className="h-4 w-4" />
@@ -443,7 +447,7 @@ export default function SignupPage() {
                     <button
                       type="submit"
                       disabled={authenticationLoading}
-                      className="mt-2 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#5B3DF5] hover:bg-[#4E2DE6] text-sm font-bold text-white shadow-md shadow-purple-600/25 transition-all hover:shadow-lg disabled:opacity-50"
+                      className="auth-primary-button mt-2 inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#5B3DF5] hover:bg-[#4E2DE6] text-sm font-bold text-white shadow-md shadow-purple-600/25 transition-all hover:shadow-lg disabled:opacity-50"
                     >
                       {loading ? (
                         <>
@@ -468,7 +472,7 @@ export default function SignupPage() {
                   </div>
 
                   {/* Continue with Google */}
-                  <div className="flex justify-center">
+                  <div className="flex w-full min-w-0 justify-center">
                     <GoogleSignInButton
                       onSuccess={handleGoogleCredential}
                       disabled={authenticationLoading}
@@ -476,7 +480,7 @@ export default function SignupPage() {
                   </div>
 
                   {/* Login Link */}
-                  <div className="mt-5 text-center text-xs text-zinc-600">
+                  <div className="mt-6 text-center text-sm text-zinc-600">
                     <span>Already have an account? </span>
                     <Link
                       href="/login"
@@ -496,21 +500,21 @@ export default function SignupPage() {
                     <h2 className="mt-4 text-2xl font-black tracking-tight text-zinc-950">
                       Verify your email
                     </h2>
-                    <p className="mt-1.5 text-xs text-zinc-500 font-normal">
+                    <p className="mt-2 text-sm leading-relaxed text-zinc-600 font-normal">
                       We sent a 6-digit code to{" "}
                       <span className="font-semibold text-zinc-800">{email}</span>.
                     </p>
                   </div>
 
                   {error && (
-                    <div className="mt-5 rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-medium text-red-600">
+                    <div role="alert" className="mt-5 rounded-xl border border-red-200 bg-red-50 p-3 text-sm leading-relaxed font-medium text-red-700">
                       {error}
                     </div>
                   )}
 
                   <form onSubmit={handleVerifyEmail} className="mt-6 space-y-4">
                     <div>
-                      <label className="block text-xs font-bold text-zinc-800 mb-1.5 text-center">
+                      <label className="block text-[13px] font-semibold text-zinc-800 mb-1.5 text-center">
                         6-Digit Verification Code
                       </label>
                       <input
@@ -528,7 +532,7 @@ export default function SignupPage() {
                     <button
                       type="submit"
                       disabled={authenticationLoading}
-                      className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#5B3DF5] hover:bg-[#4E2DE6] text-sm font-bold text-white shadow-md shadow-purple-600/25 transition-all hover:shadow-lg disabled:opacity-50"
+                      className="auth-primary-button inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#5B3DF5] hover:bg-[#4E2DE6] text-sm font-bold text-white shadow-md shadow-purple-600/25 transition-all hover:shadow-lg disabled:opacity-50"
                     >
                       {verificationLoading ? (
                         <>
@@ -569,13 +573,13 @@ export default function SignupPage() {
             </div>
 
             {/* Bottom Disclaimer */}
-            <p className="mt-5 text-center text-[11px] text-zinc-400">
+            <p className="mt-5 text-center text-xs leading-relaxed text-zinc-600">
               By continuing, you agree to our{" "}
-              <a href="#terms" className="underline hover:text-zinc-600">
+              <a href="/terms" className="underline hover:text-zinc-600">
                 Terms
               </a>{" "}
               and{" "}
-              <a href="#privacy" className="underline hover:text-zinc-600">
+              <a href="/privacy" className="underline hover:text-zinc-600">
                 Privacy Policy
               </a>
               .

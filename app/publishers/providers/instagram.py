@@ -9,6 +9,7 @@ from app.repositories.local_credential_repository import (
 )
 from app.schemas.publishing import (
     PublishedPost,
+    publication_failure_flags,
     PublishingResult,
 )
 from app.schemas.schedule import PublishingSchedule
@@ -439,6 +440,7 @@ class InstagramPublisherProvider:
             image_path=post.image_path,
             image_source=post.image_source,
             errors=[str(exc)],
+            **publication_failure_flags(exc),
         )
 
     def _build_result(

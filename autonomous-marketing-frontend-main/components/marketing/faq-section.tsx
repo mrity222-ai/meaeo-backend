@@ -5,14 +5,14 @@ import { ChevronDown, HelpCircle } from "lucide-react";
 
 const faqs = [
   {
-    question: "How does the 14-day free trial work?",
+    question: "How do I get started?",
     answer:
-      "You get full access to maeaco's AI Marketing Engine for 14 days without entering credit card details. You can connect your social media handles, generate AI posts, and test auto-scheduling completely free.",
+      "Create an account, set up your business profile and review the available plans. Premium starts at ₹999/month. The current plan limits are shown in Pricing and confirmed at checkout.",
   },
   {
     question: "Can I use maeaco for multiple businesses or brands?",
     answer:
-      "Yes! maeaco supports multi-brand management. Depending on your subscription plan (Starter, Premium, or Enterprise), you can add and manage multiple business profiles and social media accounts from a single dashboard.",
+      "Yes! maeaco supports multi-brand management. Depending on your subscription plan (Basic, Premium, or Enterprise), you can add and manage multiple business profiles and social media accounts from a single dashboard.",
   },
   {
     question: "How does the AI generate branded images and captions?",
@@ -27,7 +27,7 @@ const faqs = [
   {
     question: "What payment methods are supported?",
     answer:
-      "We support both INR (₹) and USD ($) billing via Razorpay and Stripe. You can pay using UPI, Debit/Credit Cards, Net Banking, Apple Pay, and international cards.",
+      "Payments are handled through Razorpay. Available methods, such as UPI, cards and net banking, are shown at checkout. The checkout amount and currency are authoritative.",
   },
   {
     question: "Can I review or edit posts before they are published?",
@@ -44,15 +44,15 @@ export function FAQSection() {
   };
 
   return (
-    <section className="bg-[#FAF8FF] py-20 lg:py-28 text-zinc-900 border-t border-purple-100/70">
+    <section id="faq" className="bg-[#FAF8FF] py-20 lg:py-28 text-zinc-900 border-t border-purple-100/70">
       <div className="mx-auto max-w-4xl px-6 lg:px-8">
         {/* Header */}
-        <div className="text-center mx-auto max-w-2xl mb-14">
-          <div className="inline-flex items-center gap-2 rounded-full bg-purple-100/80 px-4 py-1.5 text-xs font-bold text-purple-700 uppercase tracking-widest mb-3">
+        <div className="marketing-section-intro marketing-section-spaced">
+          <div className="marketing-eyebrow">
             <HelpCircle className="h-3.5 w-3.5" />
             <span>Got Questions?</span>
           </div>
-          <h2 className="text-3xl font-extrabold tracking-tight text-zinc-950 sm:text-4xl lg:text-5xl">
+          <h2 className="marketing-section-title">
             Frequently Asked Questions
           </h2>
           <p className="mt-3 text-base text-zinc-500 font-normal">
@@ -72,6 +72,9 @@ export function FAQSection() {
                 <button
                   type="button"
                   onClick={() => toggle(idx)}
+                  aria-expanded={isOpen}
+                  aria-controls={`faq-answer-${idx}`}
+                  id={`faq-question-${idx}`}
                   className="flex w-full items-center justify-between px-6 py-5 text-left text-base font-semibold text-zinc-900 transition-colors hover:text-purple-700"
                 >
                   <span className="pr-4">{faq.question}</span>
@@ -82,11 +85,9 @@ export function FAQSection() {
                   />
                 </button>
 
-                {isOpen && (
-                  <div className="border-t border-purple-50 px-6 pb-6 pt-3 text-sm text-zinc-600 leading-relaxed">
-                    {faq.answer}
-                  </div>
-                )}
+                <div id={`faq-answer-${idx}`} role="region" aria-labelledby={`faq-question-${idx}`} inert={!isOpen} className={`marketing-accordion ${isOpen ? "is-open" : ""}`}>
+                  <div className="overflow-hidden"><p className="border-t border-purple-50 px-6 pb-6 pt-3 text-sm text-zinc-600 leading-relaxed">{faq.answer}</p></div>
+                </div>
               </div>
             );
           })}

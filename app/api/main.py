@@ -114,7 +114,9 @@ import app.database.models
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    settings.validate_production_config()
+    from app.services.admin_settings_service import settings_scope
+    with settings_scope():
+        settings.validate_production_config()
     DatabaseBase.metadata.create_all(bind=engine)
     yield
 
@@ -154,7 +156,12 @@ app.add_middleware(
 # Admin Management
 # ---------------------------------------------------------
 
+from app.api.public_marketing import router as public_marketing_router
+
+app.include_router(public_marketing_router)
 app.include_router(admin_router)
+from app.api.admin_settings import router as admin_settings_router
+app.include_router(admin_settings_router)
 
 
 # ---------------------------------------------------------
@@ -322,3 +329,24 @@ async def health():
     return {
         "status": "ok"
     }
+
+class RuntimeSettingsMiddleware:
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            return await self.app(scope, receive, send)
+        from app.services.admin_settings_service import settings_scope
+        from fastapi import HTTPException
+        from starlette.responses import JSONResponse
+        try:
+            with settings_scope():
+                await self.app(scope, receive, send)
+        except HTTPException as exc:
+            if exc.status_code != 503:
+                raise
+            await JSONResponse({"detail": exc.detail}, status_code=503)(scope, receive, send)
+
+
+app.add_middleware(RuntimeSettingsMiddleware)

@@ -8,7 +8,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-neutral-50 text-neutral-950">
+    <div className="min-h-screen bg-neutral-50 text-foreground">
       {/* Sidebar for Desktop & Mobile */}
       <AdminSidebar open={mobileNavOpen} onClose={() => setMobileNavOpen(false)} />
 

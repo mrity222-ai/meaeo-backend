@@ -24,6 +24,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 
+import { DashboardTopHeader } from "@/components/navigation/dashboard-top-header";
 import { DashboardSidebar } from "@/components/navigation/dashboard-sidebar";
 import { UserAccountMenu } from "@/components/navigation/user-account-menu";
 import { getBusinessAccountId } from "@/lib/auth";
@@ -41,6 +42,7 @@ import {
 } from "@/lib/api/campaigns";
 
 import {
+  aggregateCampaignMetrics,
   getCampaignAnalytics,
   type CampaignAnalytics,
 } from "@/lib/api/analytics";
@@ -183,46 +185,12 @@ export default function CampaignsPage() {
           analytics !== null,
       );
 
-    const totalReach =
-      campaignsWithAnalytics.reduce(
-        (total, item) =>
-          total +
-          (item.analytics
-            ?.total_reach ?? 0),
-        0,
-      );
-
-    const totalPublishedPosts =
-      campaignsWithAnalytics.reduce(
-        (total, item) =>
-          total +
-          (item.analytics?.posts.filter(
-            (post) =>
-              post.published_at !== null,
-          ).length ?? 0),
-        0,
-      );
-
-    const engagementRates =
-      campaignsWithAnalytics
-        .map(
-          (item) =>
-            item.analytics
-              ?.engagement_rate ?? 0,
-        )
-        .filter(
-          (value) =>
-            Number.isFinite(value),
-        );
-
-    const averageEngagement =
-      engagementRates.length > 0
-        ? engagementRates.reduce(
-            (total, value) =>
-              total + value,
-            0,
-          ) / engagementRates.length
-        : 0;
+    const metrics = aggregateCampaignMetrics(campaigns.map(item => item.analytics));
+    const totalReach = metrics.totalReach;
+    const totalPublishedPosts = campaigns.reduce((sum, item) => sum + item.posts.filter(post => post.publish_status === "published").length, 0);
+    const rates = campaigns.map(item => item.analytics?.engagement_rate);
+    const averageEngagement = rates.length && rates.every(value => value != null)
+      ? rates.reduce<number>((sum, value) => sum + (value ?? 0), 0) / rates.length : null;
 
     return {
       activeCampaigns,
@@ -338,7 +306,7 @@ export default function CampaignsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white text-[#09090b]">
+    <div className="min-h-screen bg-card text-[#09090b]">
       <DashboardSidebar
         open={sidebarOpen}
         onClose={() =>
@@ -347,63 +315,10 @@ export default function CampaignsPage() {
       />
 
       <main className="min-h-screen md:pl-[230px]">
-        {/* Mobile Header */}
-        <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-[#e4e4e7] bg-white px-4 md:hidden">
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() =>
-                setSidebarOpen(true)
-              }
-              aria-label="Open menu"
-              className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#e4e4e7] text-neutral-700 hover:bg-[#fafafa]"
-            >
-              <Menu size={19} />
-            </button>
-
-            <div className="flex items-center gap-2">
-              <img
-                src="/logo/app logo.png"
-                alt="maeaco logo"
-                className="h-7 w-7 rounded-lg object-contain"
-              />
-
-              <span className="text-base font-bold tracking-tight text-neutral-950">
-                maeaco
-              </span>
-            </div>
-          </div>
-
-          <UserAccountMenu />
-        </header>
-
-        {/* Desktop Top Bar */}
-        <div className="hidden h-16 items-center justify-between border-b border-[#e4e4e7] px-7 md:flex">
-          <div>
-            <p className="text-xs text-[#71717a]">
-              Workspace
-            </p>
-
-            <p className="text-sm font-medium">
-              Your business workspace
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              aria-label="Search"
-              className="rounded-lg border border-[#e4e4e7] p-2.5 hover:bg-[#fafafa]"
-            >
-              <Search size={17} />
-            </button>
-
-            <UserAccountMenu />
-          </div>
-        </div>
+        <DashboardTopHeader title="Campaigns" subtitle="Manage your marketing campaigns" onMenuClick={() => setSidebarOpen(true)} />
 
         {/* Page Content */}
-        <div className="mx-auto max-w-[1450px] px-4 py-6 sm:px-6 lg:px-7 lg:py-8">
+        <div className="mx-auto max-w-[1450px] px-4 py-6 pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-8 sm:px-6 lg:px-7 lg:py-8">
           {/* Heading */}
           <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
             <div>
@@ -427,7 +342,7 @@ export default function CampaignsPage() {
                 setCreateError(null);
                 setCreateOpen(true);
               }}
-              className="btn-purple-gradient inline-flex h-10 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold transition"
+              className="ui-button-primary inline-flex h-10 items-center justify-center gap-2 px-5 text-sm font-semibold transition"
             >
               <Plus size={17} />
               Create campaign
@@ -452,7 +367,7 @@ export default function CampaignsPage() {
                 onClick={() =>
                   void loadCampaigns()
                 }
-                className="inline-flex shrink-0 items-center justify-center rounded-lg border border-red-200 bg-white px-3 py-2 text-xs font-medium text-red-800 hover:bg-red-100"
+                className="inline-flex shrink-0 items-center justify-center rounded-lg border border-red-200 bg-card px-3 py-2 text-xs font-medium text-red-800 hover:bg-red-100"
               >
                 Try again
               </button>
@@ -475,7 +390,7 @@ export default function CampaignsPage() {
                 stats.totalReach,
               )}
               change={
-                stats.totalReach > 0
+                stats.totalReach != null
                   ? "From available analytics"
                   : "No analytics yet"
               }
@@ -483,20 +398,8 @@ export default function CampaignsPage() {
 
             <StatCard
               label="Engagement"
-              value={
-                stats.averageEngagement >
-                0
-                  ? formatPercentage(
-                      stats.averageEngagement,
-                    )
-                  : "0%"
-              }
-              change={
-                stats.averageEngagement >
-                0
-                  ? "Average campaign rate"
-                  : "No analytics yet"
-              }
+              value={formatPercentage(stats.averageEngagement)}
+              change={stats.averageEngagement != null ? "Average campaign rate" : "Data unavailable"}
             />
 
             <StatCard
@@ -507,7 +410,7 @@ export default function CampaignsPage() {
               change={
                 stats.totalPublishedPosts >
                 0
-                  ? "From campaign analytics"
+                  ? "From publishing status"
                   : "No published posts yet"
               }
             />
@@ -656,7 +559,7 @@ export default function CampaignsPage() {
                   setCreateError(null);
                   setCreateOpen(true);
                 }}
-                className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-lg border border-[#d4d4d8] bg-white px-3 text-sm font-medium hover:bg-[#fafafa]"
+                className="ui-button-secondary inline-flex h-9 shrink-0 items-center justify-center gap-2 border border-[#d4d4d8] px-3 text-sm font-medium"
               >
                 Create campaign
                 <ArrowUpRight size={15} />
@@ -712,7 +615,7 @@ function CreateCampaignModal({
       aria-modal="true"
       aria-labelledby="create-campaign-title"
     >
-      <div className="w-full max-w-xl rounded-2xl border border-[#e4e4e7] bg-white shadow-2xl">
+      <div className="w-full max-w-xl rounded-2xl border border-[#e4e4e7] bg-card shadow-2xl">
         <div className="flex items-start justify-between border-b border-[#e4e4e7] p-5 sm:p-6">
           <div>
             <p className="text-xs font-medium uppercase tracking-[0.14em] text-[#71717a]">
@@ -816,7 +719,7 @@ function CreateCampaignModal({
               type="button"
               onClick={onClose}
               disabled={loading}
-              className="inline-flex h-10 items-center justify-center rounded-lg border border-[#d4d4d8] px-4 text-sm font-medium hover:bg-[#fafafa] disabled:cursor-not-allowed disabled:opacity-50"
+              className="ui-button-secondary inline-flex h-10 items-center justify-center border border-[#d4d4d8] px-4 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50"
             >
               Cancel
             </button>
@@ -853,12 +756,12 @@ function StatCard({
   change: string;
 }) {
   return (
-    <div className="card-3d card-3d-hover p-4 sm:p-5">
-      <p className="text-xs font-semibold text-slate-500 sm:text-sm">
+    <div className="ui-card ui-card-hover p-4 sm:p-5">
+      <p className="text-xs font-semibold text-muted-foreground sm:text-sm">
         {label}
       </p>
 
-      <p className="mt-1 text-xl font-extrabold tracking-tight text-slate-900 sm:text-2xl">
+      <p className="mt-1 text-xl font-extrabold tracking-tight text-foreground sm:text-2xl">
         {value}
       </p>
 
@@ -885,7 +788,7 @@ function FilterButton({
       onClick={onClick}
       className={`whitespace-nowrap rounded-xl px-4 py-2 text-xs font-bold transition ${
         active
-          ? "active-purple-slider"
+          ? "ui-nav-active"
           : "bg-purple-50/60 text-purple-700 hover:bg-purple-100/70"
       }`}
     >
@@ -939,13 +842,13 @@ function CampaignCard({
     campaign.id;
 
   const reach =
-    analytics?.total_reach ?? 0;
+    analytics?.total_reach ?? null;
 
   const engagementRate =
-    analytics?.engagement_rate ?? 0;
+    analytics?.engagement_rate ?? null;
 
   return (
-    <article className="rounded-xl border border-[#e4e4e7] bg-white p-4 transition hover:border-[#a1a1aa] sm:p-5">
+    <article className="rounded-xl border border-[#e4e4e7] bg-card p-4 transition hover:border-[#a1a1aa] sm:p-5">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
@@ -1010,20 +913,14 @@ function CampaignCard({
         <Detail
           label="Reach"
           value={
-            reach > 0
-              ? formatNumber(reach)
-              : "—"
+            formatNumber(reach)
           }
         />
 
         <Detail
           label="Engagement"
           value={
-            engagementRate > 0
-              ? formatPercentage(
-                  engagementRate,
-                )
-              : "—"
+            formatPercentage(engagementRate)
           }
         />
 
@@ -1046,7 +943,7 @@ function CampaignCard({
       <div className="mt-5 flex flex-col gap-2 border-t border-[#f0f0f1] pt-4 sm:flex-row sm:items-center sm:justify-between">
         <Link
           href={`/campaigns/${campaign.id}`}
-          className="inline-flex items-center justify-center gap-2 rounded-lg border border-[#e4e4e7] px-3 py-2 text-sm font-medium hover:bg-[#fafafa]"
+          className="ui-button-secondary inline-flex items-center justify-center gap-2 border border-[#e4e4e7] px-3 py-2 text-sm font-medium"
         >
           View campaign
           <ChevronRight size={15} />
@@ -1270,8 +1167,9 @@ function EmptyCampaignState({
 }
 
 function formatNumber(
-  value: number,
+  value: number | null,
 ): string {
+  if (value == null) return "Data unavailable";
   if (!Number.isFinite(value)) {
     return "0";
   }
@@ -1294,8 +1192,9 @@ function formatNumber(
 }
 
 function formatPercentage(
-  value: number,
+  value: number | null,
 ): string {
+  if (value == null) return "Data unavailable";
   if (!Number.isFinite(value)) {
     return "0%";
   }

@@ -155,22 +155,22 @@ export default function AdminUsersPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <div className="mb-2 flex items-center gap-2 text-sm text-neutral-500">
+          <div className="mb-2 flex items-center gap-2 text-sm text-muted-foreground">
             <Link
               href="/admin/dashboard"
-              className="hover:text-neutral-950 transition"
+              className="hover:text-foreground transition"
             >
               Admin
             </Link>
             <span>/</span>
-            <span className="text-neutral-950 font-medium">Users</span>
+            <span className="text-foreground font-medium">Users</span>
           </div>
 
-          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl text-neutral-950">
+          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl text-foreground">
             User Management
           </h1>
 
-          <p className="mt-1 text-sm text-neutral-500">
+          <p className="mt-1 text-sm text-muted-foreground">
             Manage real-time users, workspaces, plans, and account status from your database.
           </p>
         </div>
@@ -225,8 +225,8 @@ export default function AdminUsersPage() {
       </div>
 
       {/* Filters */}
-      <div className="rounded-2xl border border-neutral-200 bg-white shadow-sm">
-        <div className="flex flex-col gap-3 border-b border-neutral-200 p-4 lg:flex-row lg:items-center">
+      <div className="rounded-2xl border border-border bg-card shadow-sm">
+        <div className="flex flex-col gap-3 border-b border-border p-4 lg:flex-row lg:items-center">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
 
@@ -234,7 +234,7 @@ export default function AdminUsersPage() {
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Search by name, email, company or user ID..."
-              className="h-10 w-full rounded-xl border border-neutral-200 bg-neutral-50 pl-9 pr-4 text-sm outline-none transition focus:border-neutral-400 focus:bg-white"
+              className="h-10 w-full rounded-xl border border-border bg-neutral-50 pl-9 pr-4 text-sm outline-none transition focus:border-neutral-400 focus:bg-card"
             />
           </div>
 
@@ -246,7 +246,7 @@ export default function AdminUsersPage() {
                   event.target.value as "All" | UserStatus,
                 )
               }
-              className="h-10 rounded-xl border border-neutral-200 bg-neutral-50 px-3 text-sm focus:outline-none"
+              className="h-10 rounded-xl border border-border bg-neutral-50 px-3 text-sm focus:outline-none"
             >
               <option value="All">All Statuses</option>
               <option value="Active">Active</option>
@@ -261,7 +261,7 @@ export default function AdminUsersPage() {
                   event.target.value as "All" | UserPlan,
                 )
               }
-              className="h-10 rounded-xl border border-neutral-200 bg-neutral-50 px-3 text-sm focus:outline-none"
+              className="h-10 rounded-xl border border-border bg-neutral-50 px-3 text-sm focus:outline-none"
             >
               <option value="All">All Plans</option>
               <option value="Free">Free</option>
@@ -280,7 +280,7 @@ export default function AdminUsersPage() {
         <div className="hidden overflow-x-auto md:block">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-neutral-200 bg-neutral-50/50 text-left text-xs uppercase tracking-wide text-neutral-500">
+              <tr className="border-b border-border bg-neutral-50/50 text-left text-xs uppercase tracking-wide text-muted-foreground">
                 <th className="px-5 py-3 font-medium">User</th>
                 <th className="px-5 py-3 font-medium">Company</th>
                 <th className="px-5 py-3 font-medium">Plan</th>
@@ -312,7 +312,7 @@ export default function AdminUsersPage() {
                           {user.name}
                         </p>
 
-                        <p className="truncate text-xs text-neutral-500">
+                        <p className="truncate text-xs text-muted-foreground">
                           {user.email}
                         </p>
 
@@ -335,7 +335,7 @@ export default function AdminUsersPage() {
                     </span>
                   </td>
 
-                  <td className="px-5 py-4 text-neutral-500">
+                  <td className="px-5 py-4 text-muted-foreground">
                     {user.role}
                   </td>
 
@@ -351,7 +351,7 @@ export default function AdminUsersPage() {
                     </span>
                   </td>
 
-                  <td className="px-5 py-4 text-neutral-500">
+                  <td className="px-5 py-4 text-muted-foreground">
                     {user.lastActive}
                   </td>
 
@@ -420,7 +420,7 @@ export default function AdminUsersPage() {
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="font-medium text-neutral-900">{user.name}</p>
-                      <p className="truncate text-xs text-neutral-500">
+                      <p className="truncate text-xs text-muted-foreground">
                         {user.email}
                       </p>
                     </div>
@@ -446,7 +446,7 @@ export default function AdminUsersPage() {
                     </span>
                   </div>
 
-                  <div className="mt-3 flex items-center justify-between text-xs text-neutral-500">
+                  <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
                     <span>{user.campaigns} campaigns</span>
                     <span>{user.lastActive}</span>
                   </div>
@@ -500,21 +500,21 @@ export default function AdminUsersPage() {
 
             <h3 className="font-medium text-neutral-900">No users found</h3>
 
-            <p className="mt-1 text-sm text-neutral-500">
+            <p className="mt-1 text-sm text-muted-foreground">
               Try changing your search or filters.
             </p>
           </div>
         )}
 
         {/* Pagination */}
-        <div className="flex flex-col gap-3 border-t border-neutral-200 p-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-xs text-neutral-500">
+        <div className="flex flex-col gap-3 border-t border-border p-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs text-muted-foreground">
             Showing{" "}
-            <span className="font-semibold text-neutral-950">
+            <span className="font-semibold text-foreground">
               {filteredUsers.length}
             </span>{" "}
             of{" "}
-            <span className="font-semibold text-neutral-950">
+            <span className="font-semibold text-foreground">
               {users.length}
             </span>{" "}
             users
@@ -526,7 +526,7 @@ export default function AdminUsersPage() {
               Previous
             </Button>
 
-            <span className="rounded-lg border border-neutral-200 px-3 py-1.5 text-xs font-semibold text-neutral-900 bg-neutral-50">
+            <span className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-neutral-900 bg-neutral-50">
               1
             </span>
 
@@ -539,16 +539,16 @@ export default function AdminUsersPage() {
       </div>
 
       {/* Admin Note */}
-      <div className="rounded-2xl border border-dashed border-neutral-300 p-4 bg-white">
+      <div className="rounded-2xl border border-dashed border-neutral-300 p-4 bg-card">
         <div className="flex gap-3">
           <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-purple-600" />
 
           <div>
-            <p className="text-sm font-semibold text-neutral-950">
+            <p className="text-sm font-semibold text-foreground">
               User actions are currently UI-only
             </p>
 
-            <p className="mt-1 text-xs leading-5 text-neutral-500">
+            <p className="mt-1 text-xs leading-5 text-muted-foreground">
               Account suspension, deletion, plan changes, password
               resets, and role changes will be connected to the backend
               during the Admin API Integration stage.
@@ -560,7 +560,7 @@ export default function AdminUsersPage() {
       {/* Delete User & Business Warning Modal */}
       {userToDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-neutral-200 dark:bg-neutral-900 dark:border-neutral-800">
+          <div className="w-full max-w-md rounded-2xl bg-card p-6 shadow-2xl border border-border dark:bg-neutral-900 dark:border-neutral-800">
             <div className="flex items-start gap-4">
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-600 dark:bg-red-950/60 dark:text-red-400">
                 <AlertTriangle className="h-6 w-6" />
@@ -569,7 +569,7 @@ export default function AdminUsersPage() {
                 <h3 className="text-lg font-bold text-neutral-900 dark:text-neutral-100">
                   Delete User & Associated Business
                 </h3>
-                <p className="mt-1 text-xs text-neutral-500">
+                <p className="mt-1 text-xs text-muted-foreground">
                   User ID: <span className="font-mono font-medium">{userToDelete.id}</span>
                 </p>
               </div>
@@ -656,22 +656,22 @@ function StatCard({
   description: string;
 }) {
   return (
-    <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+    <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
       <div className="flex items-center justify-between">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-neutral-50 border border-neutral-200">
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-neutral-50 border border-border">
           {icon}
         </div>
       </div>
 
-      <p className="mt-4 text-xs font-medium text-neutral-500">
+      <p className="mt-4 text-xs font-medium text-muted-foreground">
         {label}
       </p>
 
-      <p className="mt-1 text-2xl font-bold tracking-tight text-neutral-950">
+      <p className="mt-1 text-2xl font-bold tracking-tight text-foreground">
         {value}
       </p>
 
-      <p className="mt-1 text-xs text-neutral-500">
+      <p className="mt-1 text-xs text-muted-foreground">
         {description}
       </p>
     </div>

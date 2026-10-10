@@ -133,7 +133,7 @@ export default function AdminUserDetailPage() {
       <div className="space-y-4 p-6">
         <Link
           href="/admin/users"
-          className="inline-flex items-center text-sm text-neutral-500 hover:text-neutral-950 transition"
+          className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Users
@@ -149,7 +149,7 @@ export default function AdminUserDetailPage() {
           <button
             type="button"
             onClick={loadUser}
-            className="mt-5 inline-flex items-center gap-2 rounded-xl bg-purple-600 px-5 py-2.5 text-xs font-bold text-white hover:bg-purple-700 transition shadow-sm"
+            className="ui-button-primary mt-5 inline-flex items-center gap-2 px-5 py-2.5 text-xs font-bold transition"
           >
             <RefreshCw className="h-4 w-4" />
             Retry Connection
@@ -174,7 +174,7 @@ export default function AdminUserDetailPage() {
       <div>
         <Link
           href="/admin/users"
-          className="mb-4 inline-flex items-center text-sm text-neutral-500 hover:text-neutral-950 transition"
+          className="mb-4 inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Users
@@ -188,7 +188,7 @@ export default function AdminUserDetailPage() {
 
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-2xl font-bold tracking-tight text-neutral-950 sm:text-3xl">
+                <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
                   {user.name}
                 </h1>
 
@@ -203,7 +203,7 @@ export default function AdminUserDetailPage() {
                 </span>
               </div>
 
-              <p className="mt-1 text-sm text-neutral-500">{user.email}</p>
+              <p className="mt-1 text-sm text-muted-foreground">{user.email}</p>
 
               <p className="mt-1 text-xs font-mono text-neutral-400">
                 {user.id}
@@ -284,12 +284,12 @@ export default function AdminUserDetailPage() {
       <div className="grid gap-6 xl:grid-cols-3">
         {/* Account Information */}
         <div className="space-y-6 xl:col-span-2">
-          <section className="rounded-2xl border border-neutral-200 bg-white shadow-sm">
+          <section className="rounded-2xl border border-border bg-card shadow-sm">
             <div className="border-b border-neutral-100 p-5">
-              <h2 className="font-semibold text-neutral-950">
+              <h2 className="font-semibold text-foreground">
                 Account Information
               </h2>
-              <p className="mt-1 text-xs text-neutral-500">
+              <p className="mt-1 text-xs text-muted-foreground">
                 Basic account and workspace information.
               </p>
             </div>
@@ -315,12 +315,12 @@ export default function AdminUserDetailPage() {
 
           {/* Linked Businesses */}
           {user.businesses && user.businesses.length > 0 && (
-            <section className="rounded-2xl border border-neutral-200 bg-white shadow-sm">
+            <section className="rounded-2xl border border-border bg-card shadow-sm">
               <div className="border-b border-neutral-100 p-5">
-                <h2 className="font-semibold text-neutral-950">
+                <h2 className="font-semibold text-foreground">
                   Associated Businesses
                 </h2>
-                <p className="mt-1 text-xs text-neutral-500">
+                <p className="mt-1 text-xs text-muted-foreground">
                   Business profiles registered or managed by this user.
                 </p>
               </div>
@@ -342,7 +342,7 @@ export default function AdminUserDetailPage() {
                         >
                           {biz.name}
                         </Link>
-                        <p className="text-xs text-neutral-500">
+                        <p className="text-xs text-muted-foreground">
                           {biz.category} • {biz.campaigns} campaigns
                         </p>
                       </div>
@@ -357,10 +357,10 @@ export default function AdminUserDetailPage() {
           )}
 
           {/* Activity */}
-          <section className="rounded-2xl border border-neutral-200 bg-white shadow-sm">
+          <section className="rounded-2xl border border-border bg-card shadow-sm">
             <div className="border-b border-neutral-100 p-5">
-              <h2 className="font-semibold text-neutral-950">Recent Activity</h2>
-              <p className="mt-1 text-xs text-neutral-500">
+              <h2 className="font-semibold text-foreground">Recent Activity</h2>
+              <p className="mt-1 text-xs text-muted-foreground">
                 Latest activity from this account.
               </p>
             </div>
@@ -371,7 +371,7 @@ export default function AdminUserDetailPage() {
                   key={`${activity.title}-${idx}`}
                   className="flex gap-4 p-5"
                 >
-                  <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-purple-50 border border-purple-100 text-purple-700">
+                  <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-purple-50 border border-border text-purple-700">
                     <CheckCircle2 className="h-4 w-4" />
                   </div>
 
@@ -380,7 +380,7 @@ export default function AdminUserDetailPage() {
                       {activity.title}
                     </p>
 
-                    <p className="mt-1 text-xs text-neutral-500">
+                    <p className="mt-1 text-xs text-muted-foreground">
                       {activity.description}
                     </p>
 
@@ -396,13 +396,13 @@ export default function AdminUserDetailPage() {
 
         {/* Right Column */}
         <div className="space-y-6">
-          <section className="rounded-2xl border border-neutral-200 bg-white shadow-sm">
+          <section className="rounded-2xl border border-border bg-card shadow-sm">
             <div className="border-b border-neutral-100 p-5">
-              <h2 className="font-semibold text-neutral-950">Account Controls</h2>
+              <h2 className="font-semibold text-foreground">Account Controls</h2>
             </div>
 
             <div className="space-y-3 p-5">
-              <div className="rounded-lg border border-neutral-200 p-3 bg-neutral-50 text-xs text-neutral-600">
+              <div className="rounded-lg border border-border p-3 bg-neutral-50 text-xs text-neutral-600">
                 <p className="font-medium text-neutral-900 mb-1">Live Database Record</p>
                 This user is synced directly with SQLite <code>app.db</code>. Changes to activation status apply immediately.
               </div>
@@ -411,10 +411,10 @@ export default function AdminUserDetailPage() {
                 type="button"
                 onClick={toggleStatus}
                 disabled={updating}
-                className="w-full flex items-center justify-between rounded-xl border border-neutral-200 p-3 text-sm font-medium text-neutral-800 transition hover:bg-neutral-50"
+                className="ui-button-secondary w-full flex items-center justify-between border border-border p-3 text-sm font-medium transition"
               >
                 <span className="flex items-center">
-                  <Ban className="mr-3 h-4 w-4 text-neutral-500" />
+                  <Ban className="mr-3 h-4 w-4 text-muted-foreground" />
                   Toggle Suspend/Active
                 </span>
                 <span className="text-xs text-neutral-400">{user.status}</span>
@@ -427,7 +427,7 @@ export default function AdminUserDetailPage() {
       {/* Delete User & Business Warning Modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-neutral-200 dark:bg-neutral-900 dark:border-neutral-800">
+          <div className="w-full max-w-md rounded-2xl bg-card p-6 shadow-2xl border border-border dark:bg-neutral-900 dark:border-neutral-800">
             <div className="flex items-start gap-4">
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-600 dark:bg-red-950/60 dark:text-red-400">
                 <AlertTriangle className="h-6 w-6" />
@@ -436,7 +436,7 @@ export default function AdminUserDetailPage() {
                 <h3 className="text-lg font-bold text-neutral-900 dark:text-neutral-100">
                   Delete User & Associated Business
                 </h3>
-                <p className="mt-1 text-xs text-neutral-500">
+                <p className="mt-1 text-xs text-muted-foreground">
                   User ID: <span className="font-mono font-medium">{user.id}</span>
                 </p>
               </div>
@@ -506,14 +506,14 @@ function InfoCard({
   value: string;
 }) {
   return (
-    <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+    <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-neutral-500">{label}</p>
+        <p className="text-sm text-muted-foreground">{label}</p>
         {icon}
       </div>
 
       <div className="mt-3">
-        <h3 className="text-2xl font-bold tracking-tight text-neutral-950">
+        <h3 className="text-2xl font-bold tracking-tight text-foreground">
           {value}
         </h3>
       </div>
@@ -530,8 +530,8 @@ function DetailItem({
 }) {
   return (
     <div>
-      <p className="text-xs font-medium text-neutral-500">{label}</p>
-      <p className="mt-1 text-sm font-semibold text-neutral-950">{value}</p>
+      <p className="text-xs font-medium text-muted-foreground">{label}</p>
+      <p className="mt-1 text-sm font-semibold text-foreground">{value}</p>
     </div>
   );
 }

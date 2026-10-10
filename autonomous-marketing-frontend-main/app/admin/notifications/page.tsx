@@ -451,7 +451,7 @@ export default function AdminNotificationsPage() {
             <button
               type="button"
               onClick={markAllAsRead}
-              className="inline-flex h-10 items-center gap-2 rounded-xl border border-border px-3 text-sm font-medium hover:bg-muted"
+              className="ui-button-secondary inline-flex h-10 items-center gap-2 border border-border px-3 text-sm font-medium"
             >
               <CheckCheck className="h-4 w-4" />
               Mark all read
@@ -460,7 +460,7 @@ export default function AdminNotificationsPage() {
             <button
               type="button"
               onClick={clearReadNotifications}
-              className="inline-flex h-10 items-center gap-2 rounded-xl border border-border px-3 text-sm font-medium hover:bg-muted"
+              className="ui-button-secondary inline-flex h-10 items-center gap-2 border border-border px-3 text-sm font-medium"
             >
               <Trash2 className="h-4 w-4" />
               Clear read
@@ -561,7 +561,7 @@ export default function AdminNotificationsPage() {
                             onClick={() =>
                               markAsRead(notification.id)
                             }
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-muted"
+                            className="ui-button-secondary inline-flex items-center gap-1.5 border border-border px-3 py-1.5 text-xs font-medium"
                           >
                             {notification.actionLabel}
                             <ChevronRight className="h-3.5 w-3.5" />
@@ -636,7 +636,7 @@ export default function AdminNotificationsPage() {
 
           <button
             type="button"
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-border px-4 text-sm font-medium hover:bg-muted"
+            className="ui-button-secondary inline-flex h-10 items-center justify-center gap-2 border border-border px-4 text-sm font-medium"
           >
             Configure alerts
             <ChevronRight className="h-4 w-4" />

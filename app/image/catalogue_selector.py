@@ -2,6 +2,7 @@ from pathlib import Path
 
 from app.image.catalogue import (
     CatalogueAssetRepository,
+    _campaign_catalogue,
 )
 
 
@@ -45,6 +46,9 @@ class CatalogueSelector:
                 f"for brand '{brand_name}'."
             )
 
+        if _campaign_catalogue.get() is not None and index >= 0:
+            # Reuse this business's catalogue for longer campaigns.
+            index %= len(assets)
         if index < 0 or index >= len(assets):
             raise IndexError(
                 "Catalogue asset index out of range."
