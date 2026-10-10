@@ -24,6 +24,17 @@ Caddy image/config also keeps the external network attachment during rollback.
 Both Stock Times HTTPS domains are included in post-deploy checks. Caddy recreation
 can briefly interrupt traffic to both applications.
 
+Update retries compare persistent mounts to `docker inspect` of the running
+containers, not the Compose file left by the earlier failed checkout. Existing
+mounts must keep their source, destination, type and read/write mode. Only the
+three known credentials/settings/analytics bind directories may be added to existing
+API/workers. Their container directories must be empty before maintenance and are
+copied to protected backup locations after stopping writers to verify they remained
+empty. Nonempty data blocks the update for a deliberate transfer.
+Rollback pins the running containers' images, environment, command, entrypoint,
+healthcheck and actual mounts. This preserves the old storage layout on retry;
+literal dollar signs in resolved configuration are escaped for Compose parsing.
+
 Read-only VPS checks:
 
 ```bash

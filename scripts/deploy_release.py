@@ -11,6 +11,74 @@ import tarfile
 SERVICES = ['backend', 'frontend', 'celery_worker', 'celery_beat', 'caddy']
 RUNTIME = ['.env', '.env.docker', 'data', 'generated']
 STOCK_ROUTE = '\nthestocktimes.online, www.thestocktimes.online {\n    reverse_proxy stocktimes-web:80\n}\n'
+NEW_STORAGE = {'/app/data/credentials': 'data/credentials', '/app/data/settings': 'data/settings', '/app/data/analytics': 'data/analytics'}
+
+
+def container_mounts(container):
+    return [{'type': item['Type'], 'source': item.get('Name') if item['Type'] == 'volume' else item['Source'],
+             'target': item['Destination'], 'read_only': not item['RW']} for item in container.get('Mounts', [])]
+
+
+def check_mounts(service, container, config, root):
+    desired = {}
+    for mount in config['services'][service].get('volumes', []):
+        source = mount.get('source')
+        if mount['type'] == 'volume':
+            source = config.get('volumes', {}).get(source, {}).get('name', source)
+        desired[mount['target']] = (mount['type'], source, bool(mount.get('read_only', False)))
+    existing = {m['target']: (m['type'], m['source'], m['read_only']) for m in container_mounts(container)}
+    for target, identity in existing.items():
+        if desired.get(target) != identity:
+            raise RuntimeError('Existing persistent mount changed: ' + service + ':' + target)
+    additions = []
+    for target in desired.keys() - existing.keys():
+        identity = desired[target]
+        expected = (root / NEW_STORAGE.get(target, '__not_allowed__')).as_posix()
+        if service not in {'backend', 'celery_worker', 'celery_beat'} or target not in NEW_STORAGE or identity != ('bind', expected, False):
+            raise RuntimeError('Unexpected new mount: ' + service + ':' + target)
+        additions.append(target)
+    return additions
+
+
+def snapshot_container(service, container, rollback):
+    specification = rollback['services'][service]
+    specification['image'] = container['Image']
+    specification.pop('build', None)
+    specification.pop('env_file', None)
+    specification['pull_policy'] = 'never'
+    actual = container['Config']
+    specification['environment'] = dict(item.split('=', 1) for item in actual.get('Env', []) if '=' in item)
+    specification['command'] = actual.get('Cmd') or []
+    specification['entrypoint'] = actual.get('Entrypoint') or []
+    specification['volumes'] = container_mounts(container)
+    for mount in specification['volumes']:
+        if mount['type'] == 'volume':
+            rollback.setdefault('volumes', {})[mount['source']] = {'external': True, 'name': mount['source']}
+    if 'Healthcheck' in actual:
+        specification['healthcheck'] = {'test': actual['Healthcheck']['Test']}
+    else:
+        specification['healthcheck'] = {'disable': True}
+
+
+def literal_compose(value):
+    # A resolved config is parsed again on rollback; keep literal dollar signs.
+    if isinstance(value, str):
+        return value.replace('$', '$$')
+    if isinstance(value, list):
+        return [literal_compose(item) for item in value]
+    if isinstance(value, dict):
+        return {key: literal_compose(item) for key, item in value.items()}
+    return value
+
+
+def check_empty_storage(container, targets):
+    if not targets:
+        return
+    code = 'from pathlib import Path; import sys; targets=' + repr(targets) + '; sys.exit(any(p.exists() and (not p.is_dir() or any(p.rglob("*"))) for p in map(Path, targets)))'
+    try:
+        run(['docker', 'exec', container['Id'], 'python', '-c', code])
+    except RuntimeError:
+        raise RuntimeError('New storage mount would hide container data; back up and transfer it before deployment') from None
 
 
 def shared_caddy(text):
@@ -124,6 +192,7 @@ def main(root, target):
         return
     rollback = json.loads(json.dumps(old))
     rollback_services = []
+    running_containers = {}
     for service in SERVICES:
         if service not in old['services']:
             continue
@@ -135,9 +204,8 @@ def main(root, target):
             raise RuntimeError('Existing service not running: ' + service)
         rollback_services.append(service)
         container = json.loads(run(['docker', 'inspect', cid]))[0]
-        rollback['services'][service]['image'] = container['Image']
-        rollback['services'][service].pop('build', None)
-        rollback['services'][service]['pull_policy'] = 'never'
+        running_containers[service] = container
+        snapshot_container(service, container, rollback)
     # Preserve the manually attached shared network even in the old-image rollback.
     rollback.setdefault('networks', {})['web'] = {'external': True, 'name': 'web'}
     caddy_networks = rollback['services']['caddy'].setdefault('networks', {'default': {}})
@@ -158,7 +226,7 @@ def main(root, target):
     stamp = datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%SZ')
     backup = root / 'backups' / (stamp + '-' + target[:12])
     backup.mkdir(parents=True, mode=0o700)
-    (backup / 'rollback.json').write_text(json.dumps(rollback))
+    (backup / 'rollback.json').write_text(json.dumps(literal_compose(rollback)))
     (backup / 'Caddyfile').write_bytes((root / 'Caddyfile').read_bytes())
     merged_caddy = shared_caddy((root / 'Caddyfile').read_text())
     (backup / 'previous-commit.txt').write_bytes(run(['git', 'rev-parse', 'HEAD']))
@@ -172,10 +240,15 @@ def main(root, target):
     (root / 'Caddyfile').write_text(merged_caddy)
     os.environ['MAEACO_RELEASE_TAG'] = target
     new = json.loads(run([*compose, 'config', '--format', 'json']))
-    # Preserve database configuration and every existing persistent mount.
-    for service in old['services']:
-        if old['services'][service].get('volumes', []) != new['services'][service].get('volumes', []):
-            raise RuntimeError('Persistent mounts changed: ' + service)
+    # Compare against live containers, not the checkout left by a failed retry.
+    storage_additions = {}
+    for service, container in running_containers.items():
+        additions = check_mounts(service, container, new, root)
+        check_empty_storage(container, additions)
+        storage_additions[service] = additions
+    check_mounts('postgres', actual, new, root)
+    redis_id = run([*compose, 'ps', '-q', 'redis']).decode().strip()
+    check_mounts('redis', json.loads(run(['docker', 'inspect', redis_id]))[0], new, root)
     if old['services']['postgres']['environment'] != new['services']['postgres']['environment']:
         raise RuntimeError('PostgreSQL configuration changed')
     backend_id = run([*compose, 'ps', '-q', 'backend']).decode().strip()
@@ -189,6 +262,22 @@ def main(root, target):
     print('Build and database preflight passed. Entering maintenance.', flush=True)
     try:
         run([*compose, 'stop', '--timeout', '60', *[s for s in rollback_services if s in {'backend', 'celery_worker', 'celery_beat'}]])
+        # Recheck after stopping writers, before covering directories with binds.
+        for service, targets in storage_additions.items():
+            if not targets:
+                continue
+            container = running_containers[service]
+            for target in targets:
+                location = backup / ('container-' + service + '-' + Path(target).name)
+                location.mkdir(mode=0o700)
+                # Missing directories are safe; copy only paths confirmed to exist.
+                # The pre-stop check rejected nonempty directories; stopped containers
+                # cannot execute Python. Copy using docker cp to a protected backup.
+                result = subprocess.run(['docker', 'cp', container['Id'] + ':' + target + '/.', str(location)], capture_output=True)
+                if result.returncode and b'Could not find' not in result.stderr and b'no such file' not in result.stderr.lower():
+                    raise RuntimeError('Unable to verify stopped container storage: ' + service + ':' + target)
+                if any(location.rglob('*')):
+                    raise RuntimeError('Container storage changed during maintenance; transfer backed-up files before retry')
         dump = run([*compose, 'exec', '-T', 'postgres', 'sh', '-c', 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Fc'])
         if not dump:
             raise RuntimeError('Empty database backup')
