@@ -1,27 +1,8 @@
 import { CalendarDays, Clock3 } from "lucide-react";
 
-const posts = [
-  {
-    platform: "Instagram",
-    title: "5 ways to improve your social media presence",
-    date: "Today",
-    time: "6:30 PM",
-  },
-  {
-    platform: "LinkedIn",
-    title: "What businesses should know about AI marketing",
-    date: "Tomorrow",
-    time: "10:00 AM",
-  },
-  {
-    platform: "Facebook",
-    title: "Behind the scenes: our latest campaign",
-    date: "Tomorrow",
-    time: "5:00 PM",
-  },
-];
+type ScheduledPost = { platform: string; title: string; date: string; time: string };
 
-export function UpcomingPosts() {
+export function UpcomingPosts({posts = []}: {posts?: ScheduledPost[]}) {
   return (
     <div className="rounded-2xl border border-border bg-card">
       <div className="border-b border-border p-5">
@@ -36,6 +17,7 @@ export function UpcomingPosts() {
       </div>
 
       <div className="divide-y divide-border">
+        {posts.length === 0 && <p className="p-5 text-sm text-muted-foreground">No scheduled post data available.</p>}
         {posts.map((post) => (
           <div key={post.title} className="p-5">
             <div className="flex gap-4">
@@ -51,7 +33,7 @@ export function UpcomingPosts() {
 
                   <span className="flex items-center gap-1">
                     <Clock3 className="h-3 w-3" />
-                    {post.date} · {post.time}
+                    {post.date} Â· {post.time}
                   </span>
                 </div>
               </div>

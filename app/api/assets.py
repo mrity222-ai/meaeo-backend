@@ -81,7 +81,7 @@ def _validate_upload_metadata(
         file.content_type or ""
     ).strip().lower()
 
-    if content_type not in ALLOWED_MIME_TYPES:
+    if content_type not in ALLOWED_MIME_TYPES | {"", "application/octet-stream"}:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=(

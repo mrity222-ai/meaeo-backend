@@ -14,6 +14,28 @@ function load(file, imports = {}, globals = {}) {
 }
 const campaigns = load('lib/api/campaigns.ts');
 const analytics = load('lib/api/analytics.ts');
+const summary = load('lib/dashboard-summary.ts');
+
+test('Campaign summary retains zero and counts only published posts', () => {
+  assert.equal(summary.campaignPublishingSummary([], 'autonomous').progress, null);
+  const result = summary.campaignPublishingSummary([{publish_status:'failed'}, {publish_status:'pending'}, {publish_status:'published'}], 'autonomous');
+  assert.equal(result.published, 1);
+  assert.equal(result.progress, 33);
+  assert.equal(summary.campaignPublishingSummary([{publish_status:'pending'}], 'autonomous').progress, 0);
+});
+
+test('Next scheduled post uses real future eligible dates, not a next AI run estimate', () => {
+  const posts = [
+    {publish_status:'pending',review_status:'rejected',scheduled_for:'2030-01-02T08:00:00Z'},
+    {publish_status:'pending',review_status:'pending',scheduled_for:'2030-01-02T10:00:00Z'},
+    {publish_status:'pending',review_status:'approved',scheduled_for:'2030-01-03T10:00:00Z'},
+    {publish_status:'published',review_status:'approved',scheduled_for:'2030-01-02T09:00:00Z'},
+    {publish_status:'pending',review_status:'approved',scheduled_for:'2020-01-01T09:00:00Z'},
+  ];
+  const now = Date.parse('2030-01-01T00:00:00Z');
+  assert.equal(summary.campaignPublishingSummary(posts,'autonomous',now).nextScheduledFor, posts[1].scheduled_for);
+  assert.equal(summary.campaignPublishingSummary(posts,'human_intervention',now).nextScheduledFor, posts[2].scheduled_for);
+});
 
 test('Google performance query keeps business, date range and location and rejects stale business', async () => {
   let selected=7; const calls=[];

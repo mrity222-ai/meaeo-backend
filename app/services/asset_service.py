@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import hashlib
 import hmac
-import mimetypes
+import warnings
+from PIL import Image, UnidentifiedImageError
 import secrets
 import time
 from datetime import datetime, timezone
@@ -128,21 +129,23 @@ class AssetService:
         mime_type: str,
     ) -> str:
 
-        extension = source_path.suffix.lower()
+        return {"image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp"}[mime_type]
 
-        if extension in {
-            ".jpg",
-            ".jpeg",
-            ".png",
-            ".webp",
-        }:
-            return extension
-
-        guessed = mimetypes.guess_extension(
-            mime_type
-        )
-
-        return guessed or ".bin"
+    @staticmethod
+    def _image_mime_type(path: Path) -> str:
+        try:
+            with warnings.catch_warnings():
+                warnings.simplefilter("error", Image.DecompressionBombWarning)
+                with Image.open(path) as image:
+                    mime = {"JPEG": "image/jpeg", "PNG": "image/png", "WEBP": "image/webp"}.get(image.format)
+                    if mime is None:
+                        raise ValueError("Unsupported image format. Allowed: JPEG, PNG, WEBP.")
+                    image.verify()
+                with Image.open(path) as image:
+                    image.load()
+                return mime
+        except (UnidentifiedImageError, OSError, SyntaxError, Image.DecompressionBombWarning, Image.DecompressionBombError) as exc:
+            raise ValueError("Invalid or damaged image. Upload a valid JPEG, PNG or WEBP.") from exc
 
     @staticmethod
     def _hash_file(
@@ -225,20 +228,7 @@ class AssetService:
                 "Asset source is not a file."
             )
 
-        mime_type, _ = mimetypes.guess_type(
-            source_path.name
-        )
-
-        mime_type = (
-            mime_type
-            or "application/octet-stream"
-        )
-
-        if mime_type not in self.ALLOWED_MIME_TYPES:
-            raise ValueError(
-                "Unsupported image type: "
-                f"{mime_type}"
-            )
+        mime_type = self._image_mime_type(source_path)
 
         file_hash = self._hash_file(
             source_path

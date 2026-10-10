@@ -19,6 +19,58 @@ from app.services.campaign_asset_service import CampaignAssetService
 from app.services.brand_profile_service import BrandProfileService
 from app.schemas.brand import BrandProfileUpdate
 from app.security.tenant import TenantContext
+from fastapi import UploadFile, HTTPException
+from starlette.datastructures import Headers
+from app.api.assets import _validate_upload_metadata
+
+
+@pytest.mark.parametrize('format,mime', [('PNG','image/png'),('JPEG','image/jpeg'),('WEBP','image/webp')])
+def test_image_content_controls_mime_and_storage_extension(setup, tmp_path, format, mime):
+    _, assets, _ = setup
+    path = tmp_path / 'upload.tmp'
+    Image.new('RGB', (8, 8), 'orange').save(path, format=format)
+    asset = assets.register_file(tenant_id='t1', business_account_id=1, source_path=path, source='logo', original_filename='LOGO.JPG')
+    assert asset.mime_type == mime
+    assert asset.storage_key.endswith({'image/png':'.png','image/jpeg':'.jpg','image/webp':'.webp'}[mime])
+
+
+@pytest.mark.parametrize('content', [b'', b'not an image'])
+def test_invalid_image_is_rejected_before_storage(setup, tmp_path, content):
+    _, assets, _ = setup
+    path = tmp_path / 'fake.png'
+    path.write_bytes(content)
+    with pytest.raises(ValueError, match='Invalid or damaged'):
+        assets.register_file(tenant_id='t1', business_account_id=1, source_path=path, source='logo')
+
+
+def test_gif_and_oversized_images_are_rejected(tmp_path, monkeypatch):
+    path = tmp_path / 'fake.png'
+    Image.new('RGB', (8, 8)).save(path, format='GIF')
+    with pytest.raises(ValueError, match='Unsupported image format'):
+        AssetService._image_mime_type(path)
+    Image.new('RGB', (8, 8)).save(path, format='PNG')
+    monkeypatch.setattr(Image, 'MAX_IMAGE_PIXELS', 10)
+    with pytest.raises(ValueError, match='Invalid or damaged'):
+        AssetService._image_mime_type(path)
+
+
+def test_corrupt_png_checksum_is_a_validation_error(tmp_path):
+    path = tmp_path / 'corrupt.png'
+    Image.new('RGB', (8, 8)).save(path, format='PNG')
+    data = bytearray(path.read_bytes())
+    data[29] ^= 1
+    path.write_bytes(data)
+    with pytest.raises(ValueError, match='Invalid or damaged'):
+        AssetService._image_mime_type(path)
+
+
+def test_generic_upload_mime_still_requires_image_extension():
+    from io import BytesIO
+    for mime in ['', 'application/octet-stream']:
+        file = UploadFile(BytesIO(), filename='LOGO.PNG', headers=Headers({'content-type':mime}))
+        assert _validate_upload_metadata(file) == ('LOGO.PNG', '.png')
+    with pytest.raises(HTTPException):
+        _validate_upload_metadata(UploadFile(BytesIO(), filename='payload.exe', headers=Headers({'content-type':'application/octet-stream'})))
 
 
 @pytest.fixture

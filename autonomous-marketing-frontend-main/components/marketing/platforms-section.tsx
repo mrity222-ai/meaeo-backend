@@ -1,11 +1,11 @@
 "use client";
 import { useState } from "react";
 const platforms = [
-  { name: "Instagram", logo: "/smi/instagram.jpg" },
-  { name: "Facebook", logo: "/smi/facebook.jpg" },
-  { name: "LinkedIn", logo: "/smi/linkedin.jpg" },
-  { name: "Google Business", logo: "/smi/gmb.jpg" },
-  { name: "Google Maps", logo: "/smi/maps.jpg" },
+  { name: "Instagram", logo: "/SMI/instagram.jpg" },
+  { name: "Facebook", logo: "/SMI/facebook.jpg" },
+  { name: "LinkedIn", logo: "/SMI/linkedin.jpg" },
+  { name: "Google Business", logo: "/SMI/gmb.jpg" },
+  { name: "Google Maps", logo: "/SMI/maps.jpg" },
 ];
 
 export function PlatformsSection() {

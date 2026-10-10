@@ -6,6 +6,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 
@@ -58,6 +59,9 @@ import {
   type CampaignAnalytics,
 } from "@/lib/api/analytics";
 
+import { campaignPublishingSummary } from "@/lib/dashboard-summary";
+import { getBusinessChannels } from "@/lib/api/connections";
+
 type CampaignWithData = {
   campaign: CampaignResponse;
   posts: CampaignPostResponse[];
@@ -94,7 +98,7 @@ function formatDate(value: string): string {
   const date = new Date(value);
 
   if (Number.isNaN(date.getTime())) {
-    return "—";
+    return "â€”";
   }
 
   return date.toLocaleDateString(
@@ -141,7 +145,7 @@ function getPlatformInitials(
   platforms: string[],
 ): string {
   if (!platforms.length) {
-    return "—";
+    return "â€”";
   }
 
   return platforms
@@ -153,8 +157,10 @@ function getPlatformInitials(
 }
 
 export function DashboardPage() {
+  const requestVersion = useRef(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [campaigns, setCampaigns] = useState<CampaignWithData[]>([]);
+  const [connectedCount, setConnectedCount] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -174,7 +180,7 @@ export function DashboardPage() {
         method: "POST",
         body: JSON.stringify({ business_account_id: businessId }),
       });
-      setPreviewNotice(resp.message || "2 AI Preview Posts generated & saved in draft! Connect your social accounts to start auto-publishing.");
+      setPreviewNotice(resp.message || "Preview generation completed. Review the generated posts.");
       await loadDashboard(true);
     } catch (err: any) {
       if (err?.status === 402 || err?.message?.includes("Payment Required") || err?.message?.includes("limit")) {
@@ -189,6 +195,7 @@ export function DashboardPage() {
 
   const loadDashboard = useCallback(
     async (showRefreshState = false) => {
+      const version = ++requestVersion.current;
       if (showRefreshState) {
         setRefreshing(true);
       } else {
@@ -201,8 +208,7 @@ export function DashboardPage() {
       const selectedTenant = getTenantId();
       try {
         if (!selectedBusiness || !selectedTenant) throw new Error("Select a business to view its dashboard.");
-        const campaignList =
-          await getCampaigns();
+        const [campaignList, channels] = await Promise.all([getCampaigns(), getBusinessChannels(selectedBusiness).catch(() => null)]);
 
         const campaignData =
           await Promise.all(
@@ -230,18 +236,23 @@ export function DashboardPage() {
             ),
           );
 
-        if (getBusinessAccountId() !== selectedBusiness || getTenantId() !== selectedTenant) return;
+        if (version !== requestVersion.current || getBusinessAccountId() !== selectedBusiness || getTenantId() !== selectedTenant) return;
         setCampaigns(campaignData);
+        setConnectedCount(channels ? channels.channels.filter(channel => channel.connected).length : null);
       } catch (err) {
-        if (getBusinessAccountId() !== selectedBusiness || getTenantId() !== selectedTenant) return;
+        if (version !== requestVersion.current || getBusinessAccountId() !== selectedBusiness || getTenantId() !== selectedTenant) return;
+        setCampaigns([]);
+        setConnectedCount(null);
         setError(
           err instanceof Error
             ? err.message
             : "Unable to load the dashboard.",
         );
       } finally {
-        setLoading(false);
-        setRefreshing(false);
+        if (version === requestVersion.current && getBusinessAccountId() === selectedBusiness && getTenantId() === selectedTenant) {
+          setLoading(false);
+          setRefreshing(false);
+        }
       }
     },
     [],
@@ -249,7 +260,7 @@ export function DashboardPage() {
 
   useEffect(() => {
     void loadDashboard();
-    const reload = () => { setCampaigns([]); setSelectedPost(null); void loadDashboard(); };
+    const reload = () => { setCampaigns([]); setConnectedCount(null); setSelectedPost(null); void loadDashboard(); };
     window.addEventListener("business-context-changed", reload);
     window.addEventListener("storage", reload);
     return () => { window.removeEventListener("business-context-changed", reload); window.removeEventListener("storage", reload); };
@@ -393,7 +404,7 @@ export function DashboardPage() {
               </button>
 
               <Link
-                href="/campaigns/new"
+                href="/campaigns"
                 className="ui-button-primary inline-flex items-center gap-2 px-5 py-2 text-xs sm:text-sm font-bold transition"
               >
                 <Rocket className="h-4 w-4" />
@@ -472,7 +483,7 @@ export function DashboardPage() {
                   </div>
                 </div>
                 <p className="ui-metric mt-3 text-2xl lg:text-3xl font-bold tracking-tight">
-                  {String(dashboardStats.publishedPosts)}
+                  {loading || error ? "Not available" : String(dashboardStats.publishedPosts)}
                 </p>
               </div>
               <div className="mt-3 flex items-center gap-2">
@@ -493,75 +504,55 @@ export function DashboardPage() {
                   </div>
                 </div>
                 <p className="ui-metric mt-3 text-2xl lg:text-3xl font-bold tracking-tight">
-                  {dashboardStats.runningCampaigns > 0 ? `${dashboardStats.runningCampaigns} Active` : "1 Active"}
+                  {loading || error ? "Not available" : `${dashboardStats.runningCampaigns} Active`}
                 </p>
               </div>
               <div className="mt-3 flex items-center gap-2">
                 <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-extrabold text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-600 animate-pulse" />
-                  Live
+                  {loading || error ? "Status unavailable" : dashboardStats.runningCampaigns > 0 ? "Active" : "No active campaigns"}
                 </span>
                 <p className="text-[10px] text-muted-foreground truncate">Campaigns currently running</p>
               </div>
             </div>
           </section>
 
-          {/* Active Autonomous Campaigns Section */}
+          {/* Running Campaigns Section */}
           <section className="mt-6 rounded-2xl border bg-card p-5">
             <div className="flex items-center justify-between border-b pb-4">
               <div className="flex items-center gap-2">
                 <Activity className="h-5 w-5 text-purple-600" />
-                <h2 className="font-bold text-base text-foreground">Active Autonomous Campaigns</h2>
+                <h2 className="font-bold text-base text-foreground">Running Campaigns</h2>
               </div>
               <Link href="/campaigns" className="inline-flex items-center gap-1 text-xs font-bold text-purple-600 hover:underline">
-                View all ({campaigns.length || 1}) <ChevronRight className="h-3.5 w-3.5" />
+                View all ({loading || error ? "—" : runningCampaigns.length}) <ChevronRight className="h-3.5 w-3.5" />
               </Link>
             </div>
 
-            <div className="mt-4 flex flex-col gap-4 rounded-xl border p-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-start gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300">
-                  <Rocket className="h-5 w-5" />
-                </div>
-                <div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="font-bold text-sm text-foreground">
-                      {campaigns[0]?.campaign.campaign_name || "Product Awareness Campaign"}
-                    </h3>
-                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-extrabold text-emerald-700">
-                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-600" />
-                      Running
-                    </span>
-                    <span className="rounded-full bg-purple-100 px-2 py-0.5 text-[10px] font-extrabold text-purple-700 dark:bg-purple-950 dark:text-purple-300">
-                      Autonomous
-                    </span>
+            {loading || error ? (<p className="mt-4 text-sm text-muted-foreground">{loading ? "Loading campaigns…" : "Campaign data unavailable"}</p>) : runningCampaigns.length === 0 ? (
+              <p className="mt-4 text-sm text-muted-foreground">No running campaigns. Create or start a campaign to begin publishing.</p>
+            ) : runningCampaigns.map(({campaign, posts}) => {
+              const {published, progress, nextScheduledFor} = campaignPublishingSummary(posts, campaign.execution_mode);
+              return (
+                <div key={campaign.id} className="mt-4 flex flex-col gap-4 rounded-xl border p-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <Link href={`/campaigns/${campaign.id}`} className="font-bold text-sm hover:underline">{campaign.campaign_name}</Link>
+                    <span className={`ml-2 rounded-full px-2 py-0.5 text-xs ${getStatusClasses(campaign.status)}`}>{formatStatus(campaign.status)}</span>
+                    <span className="ml-2 text-xs text-muted-foreground">{campaign.execution_mode === "autonomous" ? "Autonomous" : "Require approval"}</span>
+                    <p className="mt-1 text-xs text-muted-foreground">{posts.length} posts generated Â· Created {formatDate(campaign.created_at)}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">Next scheduled post: {nextScheduledFor ? new Date(nextScheduledFor).toLocaleString() : "No upcoming scheduled post"}</p>
                   </div>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {campaigns[0]?.posts.length || 7} posts generated · Created Sep 26, 2026 · AI Next Run: 2h 45m
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-3">
-                <div className="hidden sm:block text-right text-xs">
-                  <p className="font-semibold text-slate-700 dark:text-slate-300">Delivery Progress <span className="text-purple-600 font-bold">67% [14/21]</span></p>
-                  <div className="mt-1.5 h-1.5 w-32 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
-                    <div className="h-full bg-purple-600 rounded-full w-[67%]" />
+                  <div className="flex flex-wrap items-center gap-3">
+                    <div className="text-xs">
+                      <p>Publishing progress: {progress == null ? "No posts generated" : `${progress}% (${published}/${posts.length} posts published)`}</p>
+                      {progress != null && <div className="mt-1 h-1.5 w-32 rounded-full bg-muted"><div className="h-full rounded-full bg-purple-600" style={{width: `${progress}%`}} /></div>}
+                    </div>
+                    <button type="button" disabled={actionState !== null} onClick={() => void handleCampaignAction(campaign, "pause")} className="ui-button-secondary border px-3 py-1.5 text-xs font-bold disabled:opacity-50">{actionIsRunning(campaign.id, "pause") ? "Pausingâ€¦" : "Pause"}</button>
+                    <Link href={`/campaigns/${campaign.id}`} className="ui-button-secondary border px-3 py-1.5 text-xs font-bold">View campaign</Link>
                   </div>
                 </div>
-
-                <button
-                  type="button"
-                  onClick={() => campaigns[0] && handleCampaignAction(campaigns[0].campaign, "pause")}
-                  className="ui-button-secondary border px-3 py-1.5 text-xs font-bold transition"
-                >
-                  Pause
-                </button>
-                <Link href="/campaigns" className="ui-button-secondary border px-3 py-1.5 text-xs font-bold transition">
-                  Edit
-                </Link>
-              </div>
-            </div>
+              );
+            })}
           </section>
 
           {/* Quick Action Cards (Middle Row) */}
@@ -576,7 +567,7 @@ export function DashboardPage() {
                 <p className="mt-1 text-xs text-muted-foreground">Start a new AI marketing campaign.</p>
               </div>
               <Link
-                href="/campaigns/new"
+                href="/campaigns"
                 className="ui-button-primary mt-4 inline-flex w-full items-center justify-center gap-2 py-2.5 text-xs font-bold transition"
               >
                 <span>+ Create Campaign</span>
@@ -596,7 +587,7 @@ export function DashboardPage() {
                 href="/connections"
                 className="ui-button-secondary mt-4 inline-flex w-full items-center justify-center gap-2 border border-purple-200 py-2.5 text-xs font-bold text-purple-700 transition dark:border-purple-800 dark:bg-purple-950/60 dark:text-purple-300"
               >
-                <span>Manage Channels (3 Connected)</span>
+                <span>Manage Channels ({connectedCount == null ? "Count unavailable" : `${connectedCount} Connected`})</span>
               </Link>
             </div>
 
@@ -610,7 +601,7 @@ export function DashboardPage() {
                 <p className="mt-1 text-xs text-muted-foreground">Review upcoming scheduled content.</p>
               </div>
               <Link
-                href="/content-calendar"
+                href="/calendar"
                 className="ui-button-secondary mt-4 inline-flex w-full items-center justify-center gap-2 border border-border py-2.5 text-xs font-bold transition dark:border-slate-800 dark:text-slate-300"
               >
                 <CalendarDays className="h-3.5 w-3.5" />
@@ -671,7 +662,7 @@ export function DashboardPage() {
                             Day {post.day || idx + 1}
                           </span>
                           <span className="text-[11px] font-semibold text-muted-foreground">
-                            {post.platforms?.join(" • ") || "Instagram"}
+                            {post.platforms?.join(" â€¢ ") || "Instagram"}
                           </span>
                         </div>
 
@@ -716,7 +707,7 @@ export function DashboardPage() {
                         onClick={() => setSelectedPost(post)}
                         className="font-bold text-purple-600 hover:underline flex items-center gap-1"
                       >
-                        {post.review_status === "approved" ? "View Post ↗" : "Review & Approve ↗"}
+                        {post.review_status === "approved" ? "View Post â†—" : "Review & Approve â†—"}
                       </button>
                     </div>
                   </div>
@@ -804,7 +795,7 @@ export function DashboardPage() {
             <div className="mt-4">
               <h3 className="text-lg font-bold text-foreground">{selectedPost.title}</h3>
               <p className="mt-1 text-xs text-muted-foreground">
-                Campaign: {selectedPost.campaignName} • Created {formatDate(selectedPost.created_at)}
+                Campaign: {selectedPost.campaignName} â€¢ Created {formatDate(selectedPost.created_at)}
               </p>
 
               {selectedPost.publishing_error && <p role="alert" className="text-sm text-red-600">{selectedPost.publishing_error}</p>}
@@ -1229,7 +1220,7 @@ function EmptyCampaignState() {
       </p>
 
       <Link
-        href="/campaigns/new"
+        href="/campaigns"
         className="ui-button-primary mt-5 inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-primary-foreground"
       >
         <Sparkles className="h-4 w-4" />

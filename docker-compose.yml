@@ -79,6 +79,8 @@ services:
       args:
         NEXT_PUBLIC_API_URL: https://${BACKEND_DOMAIN:-api.maeaco.com}
         NEXT_PUBLIC_META_REDIRECT_URI: https://${BACKEND_DOMAIN:-api.maeaco.com}/api/v1/oauth/callback/meta
+        NEXT_PUBLIC_GOOGLE_BUSINESS_REDIRECT_URI: ${GOOGLE_BUSINESS_REDIRECT_URI:-https://${BACKEND_DOMAIN:-api.maeaco.com}/api/v1/oauth/callback/google_business}
+        NEXT_PUBLIC_LINKEDIN_REDIRECT_URI: ${LINKEDIN_REDIRECT_URI:-https://${BACKEND_DOMAIN:-api.maeaco.com}/api/v1/oauth/callback/linkedin}
     container_name: maeaco-frontend
     restart: always
     depends_on:
