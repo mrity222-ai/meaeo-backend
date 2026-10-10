@@ -6,6 +6,23 @@ from scripts.deploy_release import archive, restore
 from scripts import deploy_release
 import json
 import pytest
+import subprocess
+import sys
+
+
+def test_empty_subdirectories_do_not_hide_data(tmp_path, monkeypatch):
+    root = tmp_path / 'credentials'
+    (root / 'tenant' / 'empty').mkdir(parents=True)
+    def execute_check(args):
+        result = subprocess.run([sys.executable, '-c', args[-1]], capture_output=True)
+        if result.returncode:
+            raise RuntimeError('Container check failed')
+        return result.stdout
+    monkeypatch.setattr(deploy_release, 'run', execute_check)
+    deploy_release.check_empty_storage(running_backend(), [str(root), str(tmp_path / 'missing')])
+    (root / 'tenant' / 'token.json').write_text('private')
+    with pytest.raises(RuntimeError, match='hide container data'):
+        deploy_release.check_empty_storage(running_backend(), [str(root)])
 
 
 def running_backend():

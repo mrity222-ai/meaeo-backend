@@ -74,7 +74,13 @@ def literal_compose(value):
 def check_empty_storage(container, targets):
     if not targets:
         return
-    code = 'from pathlib import Path; import sys; targets=' + repr(targets) + '; sys.exit(any(p.exists() and (not p.is_dir() or any(p.rglob("*"))) for p in map(Path, targets)))'
+    code = ('from pathlib import Path\nimport sys\ntargets=' + repr(targets) + '\n'
+            'def occupied(p):\n'
+            '    if p.is_symlink(): return True\n'
+            '    if not p.exists(): return False\n'
+            '    if not p.is_dir(): return True\n'
+            '    return any(c.is_symlink() or not c.is_dir() for c in p.rglob("*"))\n'
+            'sys.exit(any(occupied(Path(target)) for target in targets))\n')
     try:
         run(['docker', 'exec', container['Id'], 'python', '-c', code])
     except RuntimeError:
@@ -276,7 +282,7 @@ def main(root, target):
                 result = subprocess.run(['docker', 'cp', container['Id'] + ':' + target + '/.', str(location)], capture_output=True)
                 if result.returncode and b'Could not find' not in result.stderr and b'no such file' not in result.stderr.lower():
                     raise RuntimeError('Unable to verify stopped container storage: ' + service + ':' + target)
-                if any(location.rglob('*')):
+                if any(item.is_symlink() or not item.is_dir() for item in location.rglob('*')):
                     raise RuntimeError('Container storage changed during maintenance; transfer backed-up files before retry')
         dump = run([*compose, 'exec', '-T', 'postgres', 'sh', '-c', 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Fc'])
         if not dump:
