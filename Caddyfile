@@ -7,3 +7,7 @@
 {$BACKEND_DOMAIN:api.localhost} {
     reverse_proxy backend:8000
 }
+
+thestocktimes.online, www.thestocktimes.online {
+    reverse_proxy stocktimes-web:80
+}

@@ -1,8 +1,42 @@
 # Production update: GitHub → Docker Compose → Caddy
 
 This workflow handles a first installation and subsequent updates at
-`/var/www/maeaco-system`. It does not provision the operating system/Docker,
+`/opt/apps/meaeo-backend`. It does not provision the operating system/Docker,
 create API credentials or automatically repair an unknown database baseline.
+
+## Existing shared VPS: maeaco and Stock Times
+
+The deployment path is `/opt/apps/meaeo-backend`. Caddy handles both applications.
+The external Docker network `web` must already exist, and `stocktimes-web` must be
+attached to it. Compose permanently attaches maeaco Caddy to both its own default
+network and `web`; manual Caddy network attachment is no longer required after a
+recreate. Stock Times containers are not rebuilt, stopped or recreated by this runner.
+
+The existing server Caddyfile is backed up and preserved across checkout; the known
+Stock Times block is added if absent. An incomplete/different Stock Times route blocks
+deployment for review. Other source changes, including edited Compose files, still
+block deployment. Confirm server configuration before pushing main.
+
+The existing backend/frontend/Caddy must be running. Missing Celery worker/beat
+containers can be introduced by this update. On failure, newly introduced workers
+are stopped and only previously running application services restart. The previous
+Caddy image/config also keeps the external network attachment during rollback.
+Both Stock Times HTTPS domains are included in post-deploy checks. Caddy recreation
+can briefly interrupt traffic to both applications.
+
+Read-only VPS checks:
+
+```bash
+cd /opt/apps/meaeo-backend
+git status --short
+python3 --version
+docker compose --env-file .env ps
+docker compose --env-file .env exec -T backend python -m alembic current
+docker network inspect web --format '{{json .Containers}}'
+```
+
+If `.env.docker` is used, include `--env-file .env.docker` after `--env-file .env`.
+GitHub `VPS_USERNAME` must match the SSH user (currently root in the supplied setup).
 
 ## First installation
 
@@ -10,10 +44,10 @@ Use a Linux VPS with Docker Compose, Git, curl and Python 3.12+. Configure domai
 DNS to the server IP and allow incoming TCP ports 80/443. Clone the pushed repository:
 
 ```bash
-sudo mkdir -p /var/www/maeaco-system
-sudo chown "$USER":"$USER" /var/www/maeaco-system
-git clone https://github.com/mrity222-ai/meaeo-backend.git /var/www/maeaco-system
-cd /var/www/maeaco-system
+sudo mkdir -p /opt/apps/meaeo-backend
+sudo chown "$USER":"$USER" /opt/apps/meaeo-backend
+git clone https://github.com/mrity222-ai/meaeo-backend.git /opt/apps/meaeo-backend
+cd /opt/apps/meaeo-backend
 cp .env.production.example .env
 chmod 600 .env
 nano .env
@@ -56,8 +90,9 @@ and runtime files remain available for diagnosis and retry. No volume deletion o
    fetch access. Main pushes deploy automatically after verification.
 3. VPS requirements: Linux, Python **3.12+** (safe tar extraction), Git, curl and
    Docker Compose supporting `config --format json` and `up --wait`.
-   For updates, existing PostgreSQL, Redis, API, frontend, worker, beat and Caddy
-   must be running. For first installation, follow the section above.
+   For updates, existing PostgreSQL, Redis, API, frontend and Caddy must be running.
+   Missing worker/beat services can be added. For first installation, follow the
+   section above; the shared Stock Times network prerequisite still applies.
 4. Keep `.env` and optional `.env.docker` on the VPS. Preserve the existing
    PostgreSQL password, credential encryption key and storage directories.
    Set production publishing/provider/storage and public HTTPS URLs as required
@@ -106,6 +141,9 @@ the real connected accounts. Local tests cannot certify VPS credentials or DNS.
 - First-install bootstrap/order/retry tests: 6 passed (SQLite schema tests and
   mocked orchestration); combined with preflight: 10 passed. Deployment shell
   syntax was checked with Bash. PostgreSQL/VPS integration remains a live check.
+- Shared Caddy/network/domain checks: 4 additional tests passed; the current
+  deployment/bootstrap test subset has 14 passing tests. Compose configuration
+  and the actual VPS path were checked locally; server network state is unverified.
 - Node contracts: 18 passed, including updated onboarding fixtures.
 - Frontend production build: passed, 56 routes.
 - Workflow YAML and Docker Compose configuration: passed.

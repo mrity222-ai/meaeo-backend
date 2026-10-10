@@ -53,10 +53,10 @@ jobs:
           command_timeout: 60m
           script: |
             set -eu
-            cd /var/www/maeaco-system
+            cd /opt/apps/meaeo-backend
             git fetch origin ${{ github.sha }}
             release_script=$(mktemp)
             trap 'rm -f "$release_script"' EXIT
             chmod 700 "$release_script"
             git show ${{ github.sha }}:scripts/deploy_release.py > "$release_script"
-            python3 "$release_script" /var/www/maeaco-system ${{ github.sha }}
+            python3 "$release_script" /opt/apps/meaeo-backend ${{ github.sha }}

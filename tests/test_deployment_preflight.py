@@ -3,6 +3,43 @@ from scripts.check_release_files import scan
 from scripts.deployment_database import ADDITIONS, PREVIOUS, TARGET, check_baseline
 from app.database.base import DatabaseBase
 from scripts.deploy_release import archive, restore
+from scripts import deploy_release
+import json
+import pytest
+
+
+def test_shared_caddy_preserves_other_sites_without_duplicate_route():
+    existing = 'other.example.com {\n reverse_proxy other:80\n}\n'
+    merged = deploy_release.shared_caddy(existing)
+    assert existing.strip() in merged
+    assert 'thestocktimes.online, www.thestocktimes.online' in merged
+    assert deploy_release.shared_caddy(merged) == merged
+    with pytest.raises(RuntimeError, match='needs review'):
+        deploy_release.shared_caddy('thestocktimes.online { reverse_proxy unknown:80 }')
+
+
+@pytest.mark.parametrize('attached', [True, False])
+def test_network_requires_stocktimes_upstream(monkeypatch, attached):
+    calls = []
+    def fake_run(args):
+        calls.append(args)
+        return json.dumps([{'Containers': {'id': {'Name': 'stocktimes-web' if attached else 'different-app'}}}]).encode()
+    monkeypatch.setattr(deploy_release, 'run', fake_run)
+    if attached:
+        deploy_release.check_shared_network()
+    else:
+        with pytest.raises(RuntimeError, match='stocktimes-web'):
+            deploy_release.check_shared_network()
+    assert calls == [['docker', 'network', 'inspect', 'web']]
+
+
+def test_live_verification_checks_both_stocktimes_domains(monkeypatch):
+    calls = []
+    monkeypatch.setattr(deploy_release, 'run', lambda args: calls.append(args))
+    deploy_release.verify_live(['docker', 'compose'], {'services': {'caddy': {'environment': {'FRONTEND_DOMAIN': 'maeaco.com', 'BACKEND_DOMAIN': 'api.maeaco.com'}}}})
+    urls = [args[-1] for args in calls if args[0] == 'curl']
+    assert 'https://thestocktimes.online' in urls
+    assert 'https://www.thestocktimes.online' in urls
 
 
 def schema():

@@ -150,6 +150,9 @@ services:
     image: caddy:2-alpine
     container_name: maeaco-caddy
     restart: always
+    networks:
+      - default
+      - web
     ports:
       - "80:80"
       - "443:443"
@@ -163,6 +166,11 @@ services:
     depends_on:
       - frontend
       - backend
+
+networks:
+  web:
+    external: true
+    name: web
 
 volumes:
   postgres_data:
